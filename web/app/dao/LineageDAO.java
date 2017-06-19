@@ -240,26 +240,33 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         parameters.addValue("urn", node.urn);
         NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
 
-        rows = namedParameterJdbcTemplate.queryForList(GET_APP_ATTR, parameters);
+        rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
 
         for (Map row : rows) {
             // node only knows id, level, and urn, assign all other attributes
-            node.app_code = (String) row.get("app_code");
+
+            // stored in dict_dataset, so has those fields
+            node.name = (String) row.get("name");
+            node.schema = (String) row.get("schema");
+            JsonNode prop = Json.parse(row.get("properties"));
+
+            // properties is a JsonNode, extract what we want out of it
+            node.description = prop.get("description").asText();
+            node.app_code = prop.get("app_code").asText();
+
+            /*node.app_code = (String) row.get("app_code");
             node.description = (String) row.get("description");
             node.tech_matrix_id = (int) row.get("tech_matrix_id");
             node.doc_url = (String) row.get("doc_url");
-            //node.parent_app_id = (int) row.get("parent_app_id");
             node.app_status = (String) row.get("app_status");
-            //node.last_modified = (String) row.get("last_modified");
             node.is_logical = (String) row.get("is_logical");
             node.uri_type = (String) row.get("uri_type");
             node.uri = (String) row.get("uri");
             node.lifecycle_layer_id = (String) row.get("lifecycle_layer_id");
-            node.short_connection_string = (String) row.get("short_connection_string");
+            node.short_connection_string = (String) row.get("short_connection_string");*/
             node._sort_list.add("urn");
             node._sort_list.add("app_code");
             node._sort_list.add("description");
-            //node._sort_list.add("last_modified");
         }
     }
 
@@ -275,7 +282,8 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             // node only knows id, level, and urn, assign all other attributes
             node.name = (String) row.get("name");
             node.schema = (String) row.get("schema");
-            node.properties = (String) row.get("properties");
+            JsonNode prop = Json.parse(row.get("properties"));
+            node.description = prop.get("description").asText();
             node.source = (String) row.get("source");
             node.storage_type = (String) row.get("dataset_type"); // what the js calls storage_type, the sql calls dataset_type
             node.dataset_type = (String) row.get("dataset_type");
@@ -304,11 +312,18 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         parameters.addValue("urn", node.urn);
         NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
 
-        rows = namedParameterJdbcTemplate.queryForList(GET_DB_ATTR, parameters);
+        rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
         // node only knows id, level, and urn, assign all other attributes
 
         for (Map row : rows) {
-            node.db_code = (String) row.get("db_code");
+            node.name = (String) row.get("name");
+            node.schema = (String) row.get("schema");
+            JsonNode prop = Json.parse(row.get("properties"));
+            node.description = prop.get("description").asText();
+            node.jdbc_url = prop.get("jdbc_url").asText();
+            node.db_code = prop.get("db_code").asText();
+
+            /*node.db_code = (String) row.get("db_code");
             node.primary_dataset_type = (String) row.get("primary_dataset_type");
             node.description = (String) row.get("description");
             node.is_logical = (String) row.get("is_logical");
@@ -321,7 +336,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             node.extra_deployment_tag2 = (String) row.get("extra_deployment_tag2");
             node.extra_deployment_tag3 = (String) row.get("extra_deployment_tag3");
             node.replication_role = (String) row.get("replication_role");
-            node.jdbc_url = (String) row.get("jdbc_url");
+            node.jdbc_url = (String) row.get("jdbc_url");*/
             node._sort_list.add("urn");
             node._sort_list.add("db_code");
             //node._sort_list.add("last_modified");
