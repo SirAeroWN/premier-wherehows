@@ -15,6 +15,8 @@ package wherehows.common.schemas;
 
 import wherehows.common.DatasetPath;
 import wherehows.common.utils.StringUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -51,14 +53,22 @@ public class LineageRecord implements Record, Comparable<LineageRecord> {
   Long deleteCount;
   Long updateCount;
   String flowPath;
+  String parent_urn;
+  String child_urn;
   char SEPR = 0x001A;
   List<Object> allFields;
+  private static final Logger logger = LoggerFactory.getLogger(LineageRecord.class);
 
   public LineageRecord(Integer appId, Long flowExecId, String jobName, Long jobExecId) {
     this.appId = appId;
     this.flowExecId = flowExecId;
     this.jobName = jobName;
     this.jobExecId = jobExecId;
+  }
+
+  public LineageRecord(String parent_urn, String child_urn) {
+    this.parent_urn = parent_urn;
+    this.child_urn = child_urn;
   }
 
   public String getFullObjectName() {
@@ -97,7 +107,7 @@ public class LineageRecord implements Record, Comparable<LineageRecord> {
 
   public String toDatabaseValue() {
     allFields = new ArrayList<>();
-    allFields.add(appId);
+    /*allFields.add(appId);
     allFields.add(flowExecId);
     allFields.add(jobExecId);
     allFields.add(jobExecUUID);
@@ -120,11 +130,26 @@ public class LineageRecord implements Record, Comparable<LineageRecord> {
     allFields.add(insertCount);
     allFields.add(deleteCount);
     allFields.add(updateCount);
-    allFields.add(flowPath);
+    allFields.add(flowPath);*/
+    allFields.add(parent_urn);
+    allFields.add(child_urn);
 
     // add the created_date and wh_etl_exec_id
-    allFields.add(System.currentTimeMillis()/1000);
-    allFields.add(null);
+    //allFields.add(System.currentTimeMillis()/1000);
+    //allFields.add(null);
+    StringBuilder sb = new StringBuilder();
+    for (Object o : allFields) {
+      sb.append(StringUtil.toDbString(o));
+      sb.append(",");
+    }
+    sb.deleteCharAt(sb.length() - 1);
+    return sb.toString();
+  }
+
+  public String toFamilyDatabaseValue() {
+    allFields = new ArrayList<>();
+    allFields.add(parent_urn);
+    allFields.add(child_urn);
     StringBuilder sb = new StringBuilder();
     for (Object o : allFields) {
       sb.append(StringUtil.toDbString(o));
