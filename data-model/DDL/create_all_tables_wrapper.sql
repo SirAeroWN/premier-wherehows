@@ -26,6 +26,8 @@ source ETL_DDL/patterns.sql;
 source ETL_DDL/kafka_tracking.sql;
 source ETL_DDL/dataset_info_metadata.sql;
 
+source ETL_DDL/family_setup.sql;
+
 source WEB_DDL/track.sql;
 source WEB_DDL/users.sql;
 

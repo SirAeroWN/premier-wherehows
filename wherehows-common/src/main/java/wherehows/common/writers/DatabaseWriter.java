@@ -89,6 +89,31 @@ public class DatabaseWriter extends Writer {
     return false;
   }
 
+  public synchronized boolean flushFam()
+          throws SQLException {
+    if (records.size() == 0) {
+      return false;
+    }
+
+    StringBuilder sb = new StringBuilder();
+    sb.append("INSERT INTO " + this.tableName + " (parent_urn, child_urn) VALUES ");
+    for (Record r : this.records) {
+      sb.append("(" + r.toDatabaseValue() + "),");
+    }
+    sb.deleteCharAt(sb.length() - 1);
+
+    logger.debug("In databaseWriter : " + sb.toString());
+
+    try {
+      this.jdbcTemplate.execute(sb.toString());
+    } catch (DataAccessException e) {
+      logger.error("This statement have error : " + sb.toString());
+      this.records.clear(); // need to recover the records.
+    }
+    this.records.clear();
+    return false;
+  }
+
   @Override
   public void close()
       throws SQLException {

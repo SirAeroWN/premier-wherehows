@@ -698,13 +698,14 @@ var g_downLevel = 1;
         var g = new dagreD3.graphlib.Graph();
         if (rotation)
         {
-            g.setGraph({rankdir: "LR"});
+            g.setGraph({rankdir: "TB"});
         }
         else
         {
-            g.setGraph({rankdir: "TB"});
+            g.setGraph({rankdir: "LR"});
         }
 
+        // this part is what needs to be customized
         g.setDefaultEdgeLabel(function() { return {}; });
 
         var styles = { 'LI_FLOW_START': 'fill:lightsteelblue', 'LI_FLOW_END' : 'fill:lightsteelblue',
@@ -769,7 +770,33 @@ var g_downLevel = 1;
                         name = data.nodes[i]['abstracted_object_name'];
                     }
                 }
-                else{
+                else if (data.nodes[i].node_type == 'app'){
+                    shape = "ellipse";
+                    if (data.nodes[i]["app_code"])
+                    {
+                        schema_type = data.nodes[i]["app_code"];
+                        name = data.nodes[i]["app_code"];
+                    }
+                    else
+                    {
+                        schema_type = "ETL_job";
+                        name = "ETL_job";
+                    }
+                }
+                else if (data.nodes[i].node_type == 'DB'){
+                    shape = "rect";
+                    if (data.nodes[i]["db_code"])
+                    {
+                        schema_type = data.nodes[i]["db_code"];
+                        name = data.nodes[i]["db_code"];
+                    }
+                    else
+                    {
+                        schema_type = "Database";
+                        name = "Database";
+                    }
+                }
+                else {
                     shape = "ellipse";
                     if (data.nodes[i]["job_type"])
                     {
@@ -778,44 +805,44 @@ var g_downLevel = 1;
                     }
                     else
                     {
-                        schema_type = "sql";
-                        name = "sql";
+                        schema_type = "default";
+                        name = data.nodes[i]["urn"];
                     }
                 }
 
-                if (schema_type.toLowerCase() == 'pig')
+                if (schema_type.toLowerCase() == 'druid')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:lightblue', id: data.nodes[i].id, shape: shape});
                 else if (schema_type.toLowerCase() == 'hdfs')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:thistle', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'nas')
+                else if (schema_type.toLowerCase() == 'parquet')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:tan', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'teradata')
+                else if (schema_type.toLowerCase() == 'lucene')
+                    g.setNode(data.nodes[i].id,
+                        { label: name, style:'fill:seagreen', id: data.nodes[i].id, shape: shape});
+                else if (schema_type.toLowerCase() == 'natezza')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:mistyrose', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'shell')
+                else if (schema_type.toLowerCase() == 'pulse')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:sandybrown', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'mload')
+                else if (schema_type.toLowerCase() == 'move-it')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:peachpuff', id: data.nodes[i].id, shape: shape});
                 else if (schema_type.toLowerCase() == 'sql')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:navajowhite', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'lassen')
+                else if (schema_type.toLowerCase() == 'extract')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:palegreen', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'cmd')
+                else if (schema_type.toLowerCase() == 'transform')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:orange', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'tpt')
+                else if (schema_type.toLowerCase() == 'load')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:wheat', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'informatica')
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:seagreen', id: data.nodes[i].id, shape: shape});
                 else if (schema_type.toLowerCase() == 'java')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:lightcoral', id: data.nodes[i].id, shape: shape});
@@ -975,7 +1002,7 @@ var g_downLevel = 1;
 
         var zoom = d3.behavior.zoom().on("zoom", function() {
             svgGroup.attr("transform", "translate(" + d3.event.translate + ")" +
-            "scale(" + d3.event.scale + ")");
+                "scale(" + d3.event.scale + ")");
 
             var t = [-d3.event.translate[0]*minimapScale/d3.event.scale, -d3.event.translate[1]*minimapScale/d3.event.scale];
 
@@ -996,7 +1023,7 @@ var g_downLevel = 1;
             })
             .call(tooltip);
         attachContextMenus();
-  }
+    }
 
     $(document).ready(setupSearch);
 

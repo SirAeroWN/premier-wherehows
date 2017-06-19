@@ -15,6 +15,7 @@ package dao;
 
 import java.math.BigDecimal;
 import java.math.BigInteger;
+import java.lang.Math.*;
 import java.util.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -31,1220 +32,318 @@ import play.Play;
 import play.libs.Json;
 import utils.Lineage;
 
-public class LineageDAO extends AbstractMySQLOpenSourceDAO
-{
-	private final static String GET_APPLICATION_ID = "SELECT DISTINCT app_id FROM " +
-			"job_execution_data_lineage WHERE abstracted_object_name = ?";
-
-	private final static String GET_FLOW_NAME = "SELECT flow_name FROM " +
-			"flow WHERE app_id = ? and flow_id = ?";
-
-	private final static String GET_JOB = "SELECT ca.app_id, ca.app_code as cluster, " +
-			"jedl.job_name, fj.job_path, fj.job_type, jedl.flow_path, jedl.storage_type, jedl.source_target_type, " +
-			"jedl.operation, jedl.source_srl_no, jedl.srl_no, " +
-			"max(jedl.job_exec_id) as job_exec_id FROM job_execution_data_lineage jedl " +
-			"JOIN cfg_application ca on ca.app_id = jedl.app_id " +
-			"LEFT JOIN job_execution je on jedl.app_id = je.app_id " +
-			"and jedl.flow_exec_id = je.flow_exec_id and jedl.job_exec_id = je.job_exec_id " +
-			"LEFT JOIN flow_job fj on je.app_id = fj.app_id and je.flow_id = fj.flow_id and je.job_id = fj.job_id " +
-			"WHERE abstracted_object_name in ( :names ) and " +
-			"jedl.flow_path not REGEXP '^(rent-metrics:|tracking-investigation:)' and " +
-			"FROM_UNIXTIME(job_finished_unixtime) >  CURRENT_DATE - INTERVAL (:days) DAY " +
-			"GROUP BY ca.app_id, cluster, jedl.job_name, jedl.flow_path, jedl.source_target_type, " +
-			"jedl.storage_type, jedl.operation " +
-			"ORDER BY jedl.source_target_type DESC, jedl.job_finished_unixtime";
-
-	private final static String GET_UP_LEVEL_JOB = "SELECT ca.app_id, ca.app_code as cluster, " +
-			"jedl.job_name, fj.job_path, fj.job_type, jedl.flow_path, jedl.storage_type, jedl.source_target_type, " +
-			"jedl.operation, jedl.source_srl_no, jedl.srl_no, " +
-			"max(jedl.job_exec_id) as job_exec_id FROM job_execution_data_lineage jedl " +
-			"JOIN cfg_application ca on ca.app_id = jedl.app_id " +
-			"LEFT JOIN job_execution je on jedl.app_id = je.app_id " +
-			"and jedl.flow_exec_id = je.flow_exec_id and jedl.job_exec_id = je.job_exec_id " +
-			"LEFT JOIN flow_job fj on je.app_id = fj.app_id and je.flow_id = fj.flow_id and je.job_id = fj.job_id " +
-			"WHERE abstracted_object_name in ( :names ) and jedl.source_target_type = 'target' and " +
-			"jedl.flow_path not REGEXP '^(rent-metrics:|tracking-investigation:)' and " +
-			"FROM_UNIXTIME(job_finished_unixtime) >  CURRENT_DATE - INTERVAL (:days) DAY " +
-			"GROUP BY ca.app_id, cluster, jedl.job_name, jedl.flow_path, jedl.source_target_type, " +
-			"jedl.storage_type, jedl.operation " +
-			"ORDER BY jedl.source_target_type DESC, jedl.job_finished_unixtime";
-
-	private final static String GET_JOB_WITH_SOURCE = "SELECT ca.app_id, ca.app_code as cluster, " +
-			"jedl.job_name, fj.job_path, fj.job_type, jedl.flow_path, jedl.storage_type, jedl.source_target_type, " +
-			"jedl.operation, jedl.source_srl_no, jedl.srl_no, " +
-			"max(jedl.job_exec_id) as job_exec_id FROM job_execution_data_lineage jedl " +
-			"JOIN cfg_application ca on ca.app_id = jedl.app_id " +
-			"LEFT JOIN job_execution je on jedl.app_id = je.app_id " +
-			"and jedl.flow_exec_id = je.flow_exec_id and jedl.job_exec_id = je.job_exec_id " +
-			"LEFT JOIN flow_job fj on je.app_id = fj.app_id and je.flow_id = fj.flow_id and je.job_id = fj.job_id " +
-			"WHERE abstracted_object_name in ( :names ) and jedl.source_target_type != (:type) and " +
-			"jedl.flow_path not REGEXP '^(rent-metrics:|tracking-investigation:)' and " +
-			"FROM_UNIXTIME(job_finished_unixtime) >  CURRENT_DATE - INTERVAL (:days) DAY " +
-			"GROUP BY ca.app_id, cluster, jedl.job_name, jedl.flow_path, jedl.source_target_type, " +
-			"jedl.storage_type, jedl.operation " +
-			"ORDER BY jedl.source_target_type DESC, jedl.job_finished_unixtime";
-
-	private final static String GET_DATA = "SELECT storage_type, operation, " +
-			"abstracted_object_name, source_target_type, job_start_unixtime, job_finished_unixtime, " +
-			"FROM_UNIXTIME(job_start_unixtime) as start_time, " +
-			"FROM_UNIXTIME(job_finished_unixtime) as end_time " +
-			"FROM job_execution_data_lineage WHERE app_id = ? and job_exec_id = ? and " +
-			"flow_path not REGEXP '^(rent-metrics:|tracking-investigation:)' and " +
-			"COALESCE(source_srl_no, srl_no) = srl_no ORDER BY source_target_type DESC";
-
-	private final static String GET_DATA_FILTER_OUT_LASSEN = "SELECT j1.storage_type, j1.operation, " +
-			"j1.abstracted_object_name, j1.source_target_type, j1.job_start_unixtime, j1.job_finished_unixtime, " +
-			"FROM_UNIXTIME(j1.job_start_unixtime) as start_time, " +
-			"FROM_UNIXTIME(j1.job_finished_unixtime) as end_time " +
-			"FROM job_execution_data_lineage j1 " +
-			"JOIN job_execution_data_lineage j2 on j1.app_id = j2.app_id and j1.job_exec_id = j2.job_exec_id " +
-			"and j2.abstracted_object_name in (:names) and j2.source_target_type = 'source' " +
-			"WHERE j1.app_id = (:appid) and j1.job_exec_id = (:execid) and " +
-			"j1.flow_path not REGEXP '^(rent-metrics:|tracking-investigation:)' and " +
-			"COALESCE(j1.source_srl_no, j1.srl_no) = j2.srl_no ORDER BY j1.source_target_type DESC";
-
-
-	private final static String GET_APP_ID  = "SELECT app_id FROM cfg_application WHERE LOWER(app_code) = ?";
-
-
-	private final static String GET_FLOW_JOB = "SELECT ca.app_id, ca.app_code, je.flow_id, je.job_id, " +
-			"jedl.job_name, fj.job_path, fj.job_type, jedl.flow_path, jedl.storage_type, " +
-			"jedl.source_target_type, jedl.operation, jedl.job_exec_id, fj.pre_jobs, fj.post_jobs, " +
-			"FROM_UNIXTIME(jedl.job_start_unixtime) as start_time, " +
-			"FROM_UNIXTIME(jedl.job_finished_unixtime) as end_time " +
-			"FROM job_execution_data_lineage jedl " +
-			"JOIN cfg_application ca on ca.app_id = jedl.app_id " +
-			"JOIN job_execution je on jedl.app_id = je.app_id and " +
-			"jedl.flow_exec_id = je.flow_exec_id and jedl.job_exec_id = je.job_exec_id " +
-			"JOIN flow_job fj on je.app_id = fj.app_id and je.flow_id = fj.flow_id and je.job_id = fj.job_id " +
-			"WHERE jedl.app_id = ? and jedl.flow_exec_id = ? and " +
-			"FROM_UNIXTIME(job_finished_unixtime) >  CURRENT_DATE - INTERVAL ? DAY";
-
-	private final static String GET_LATEST_FLOW_EXEC_ID = "SELECT max(flow_exec_id) FROM " +
-			"flow_execution where app_id = ? and flow_id = ?";
-
-	private final static String GET_FLOW_DATA_LINEAGE = "SELECT ca.app_code, jedl.job_exec_id, jedl.job_name, " +
-			"jedl.storage_type, jedl.abstracted_object_name, jedl.source_target_type, jedl.record_count, " +
-			"jedl.app_id, jedl.partition_type, jedl.operation, jedl.partition_start, " +
-			"jedl.partition_end, jedl.full_object_name, " +
-			"FROM_UNIXTIME(jedl.job_start_unixtime) as start_time, " +
-			"FROM_UNIXTIME(jedl.job_finished_unixtime) as end_time FROM job_execution_data_lineage jedl " +
-			"JOIN cfg_application ca on ca.app_id = jedl.app_id " +
-			"WHERE jedl.app_id = ? and jedl.flow_exec_id = ? ORDER BY jedl.partition_end DESC";
-
-	private final static String GET_ONE_LEVEL_IMPACT_DATABASES = "SELECT DISTINCT j.storage_type, " +
-			"j.abstracted_object_name, d.id FROM job_execution_data_lineage j " +
-			"LEFT JOIN dict_dataset d ON d.urn = concat(j.storage_type, '://', j.abstracted_object_name) " +
-			"WHERE (app_id, job_exec_id) in ( " +
-			"SELECT app_id, job_exec_id FROM job_execution_data_lineage " +
-			"WHERE abstracted_object_name in (:pathlist) and source_target_type = 'source' and " +
-			"FROM_UNIXTIME(job_finished_unixtime) >  CURRENT_DATE - INTERVAL 60 DAY ) and " +
-			"abstracted_object_name not like '/tmp/%' and abstracted_object_name not like '%tmp' " +
-			"and source_target_type = 'target' and " +
-			"FROM_UNIXTIME(job_finished_unixtime) >  CURRENT_DATE - INTERVAL 60 DAY";
-
-	private final static String GET_MAPPED_OBJECT_NAME = "SELECT mapped_object_name " +
-			"FROM cfg_object_name_map WHERE object_name = ?";
-
-	private final static String GET_OBJECT_NAME_BY_MAPPED_NAME = "SELECT object_name " +
-			"FROM cfg_object_name_map WHERE mapped_object_name = ?";
-
-
-	public static JsonNode getObjectAdjacnet(String urn, int upLevel, int downLevel, int lookBackTime)
-	{
-		int level = 0;
-		LineagePathInfo pathInfo = utils.Lineage.convertFromURN(urn);
-		List<LineageNode> nodes = new ArrayList<LineageNode>();
-		List<LineageEdge> edges = new ArrayList<LineageEdge>();
-		Map<Long, List<LineageNode>> addedSourceNodes= new HashMap<Long, List<LineageNode>>();
-		Map<Long, List<LineageNode>> addedTargetNodes= new HashMap<Long, List<LineageNode>>();
-		Map<Long, LineageNode> addedJobNodes = new HashMap<Long, LineageNode>();
-		List<LineageNode> allSourceNodes = new ArrayList<LineageNode>();
-		List<LineageNode> allTargetNodes = new ArrayList<LineageNode>();
-		getObjectAdjacentNode(
-				pathInfo,
-				level,
-				upLevel,
-				downLevel,
-				null,
-				allSourceNodes,
-				allTargetNodes,
-				addedSourceNodes,
-				addedTargetNodes,
-				addedJobNodes,
-				lookBackTime);
-
-		return renderGraph(
-				pathInfo,
-				urn,
-				upLevel,
-				downLevel,
-				allSourceNodes,
-				allTargetNodes,
-				addedSourceNodes,
-				addedTargetNodes,
-				addedJobNodes,
-				nodes,
-				edges);
-	}
-
-	public static void addSourceNode(
-			LineageNode jobNode,
-			Map<Long, List<LineageNode>> addedSourceNodes,
-			Map<String, List<LineageNode>> addedTargetDataNodes,
-			Map<String, LineageNode> addedSourceDataNodes,
-			Map<String, List<LineageNode>> toBeConvertedSourceDataNodes,
-			List<LineageNode> nodes,
-			List<LineageEdge> edges,
-			boolean isUpLevel)
-	{
-		List<LineageNode> sourceNodes = addedSourceNodes.get(jobNode.exec_id);
-		if (sourceNodes != null)
-		{
-			for(LineageNode node : sourceNodes)
-			{
-				List<LineageNode> existTargetNodes = addedTargetDataNodes.get(node.abstracted_path);
-				LineageNode existNode = null;
-				if (existTargetNodes != null)
-				{
-					Collections.sort(existTargetNodes, new Comparator<LineageNode>(){
-						public int compare(LineageNode node1, LineageNode node2){
-							if(node1.job_end_unix_time == node2.job_end_unix_time)
-								return 0;
-							return node1.job_end_unix_time > node2.job_end_unix_time ? -1 : 1;
-						}
-					});
-					for(LineageNode target : existTargetNodes)
-					{
-						if (node.job_start_unix_time >= target.job_end_unix_time)
-						{
-							existNode = target;
-							break;
-						}
-					}
-				}
-				if (existNode == null)
-				{
-					existNode = addedSourceDataNodes.get(node.abstracted_path);
-				}
-				if (existNode != null)
-				{   node.id = existNode.id;
-				}
-				else
-				{
-					node.id = nodes.size();
-					nodes.add(node);
-					addedSourceDataNodes.put(node.abstracted_path, node);
-					if (isUpLevel) {
-						List<LineageNode> originalSourceNodes = toBeConvertedSourceDataNodes.get(node.abstracted_path);
-						if (originalSourceNodes == null) {
-							originalSourceNodes = new ArrayList<LineageNode>();
-						}
-						originalSourceNodes.add(node);
-						toBeConvertedSourceDataNodes.put(node.abstracted_path, originalSourceNodes);
-					}
-
-				}
-				LineageEdge edge = new LineageEdge();
-				edge.id = edges.size();
-				edge.source = node.id;
-				edge.target = jobNode.id;
-				edge.label = node.operation;
-				edge.chain = "";
-				edges.add(edge);
-			}
-		}
-	}
-
-	public static void addTargetNode(
-			LineageNode jobNode,
-			Map<Long, List<LineageNode>> addedTargetNodes,
-			Map<String, List<LineageNode>> addedTargetDataNodes,
-			Map<String, LineageNode> toBeClearedSourceDataNodes,
-			List<LineageNode> nodes,
-			List<LineageEdge> edges,
-			boolean isUpLevel)
-	{
-		List<LineageNode> targetNodes = addedTargetNodes.get(jobNode.exec_id);
-		if (targetNodes != null)
-		{
-			for(LineageNode node : targetNodes)
-			{
-				List<LineageNode> existTargetNodes = addedTargetDataNodes.get(node.abstracted_path);
-				LineageNode existNode = null;
-				if (existTargetNodes != null)
-				{
-					for(LineageNode target : existTargetNodes)
-					{
-						if (target.partition_end != null)
-						{
-							if (target.partition_end == node.partition_end)
-							{
-								existNode = target;
-								break;
-							}
-						}
-						else if(target.job_end_unix_time == node.job_end_unix_time)
-						{
-							existNode = target;
-							break;
-						}
-					}
-				}
-				if (isUpLevel) {
-					if (existNode == null)
-					{
-						existNode = toBeClearedSourceDataNodes.get(node.abstracted_path);
-						if (existNode != null && existNode.job_start_unix_time < node.job_end_unix_time)
-						{
-							existNode = null;
-						}
-					}
-				}
-
-				if (existNode != null)
-				{
-					node.id = existNode.id;
-				}
-				else
-				{
-					node.id = nodes.size();
-					nodes.add(node);
-					if (existTargetNodes == null)
-					{
-						existTargetNodes = new ArrayList<LineageNode>();
-					}
-					existTargetNodes.add(node);
-					addedTargetDataNodes.put(node.abstracted_path, existTargetNodes);
-				}
-				LineageEdge edge = new LineageEdge();
-				edge.id = edges.size();
-				edge.source = jobNode.id;
-				edge.target = node.id;
-				edge.label = node.operation;
-				edge.chain = "";
-				edges.add(edge);
-			}
-		}
-	}
-
-	public static JsonNode renderGraph(LineagePathInfo pathInfo,
-									   String urn,
-									   int upLevel,
-									   int downLevel,
-									   List<LineageNode> allSourceNodes,
-									   List<LineageNode> allTargetNodes,
-									   Map<Long, List<LineageNode>> addedSourceNodes,
-									   Map<Long, List<LineageNode>> addedTargetNodes,
-									   Map<Long, LineageNode> addedJobNodes,
-									   List<LineageNode> nodes,
-									   List<LineageEdge> edges)
-	{
-		ObjectNode resultNode = Json.newObject();
-		String message = null;
-		Map<String, LineageNode> addedSourceDataNodes = new HashMap<String, LineageNode>();
-		Map<String, LineageNode> toBeClearedSourceDataNodes = new HashMap<String, LineageNode>();
-		Map<String, List<LineageNode>> addedTargetDataNodes = new HashMap<String, List<LineageNode>>();
-		Map<String, List<LineageNode>> toBeConvertedSourceDataNodes = new HashMap<String, List<LineageNode>>();
-		message = "No lineage information found for this dataset";
-		if (allSourceNodes.size() == 0 && allTargetNodes.size() == 0)
-		{
-			LineageNode node = new LineageNode();
-			node.id = nodes.size();
-			node._sort_list = new ArrayList<String>();
-			node.node_type = "data";
-			node.abstracted_path = pathInfo.filePath;
-			node.storage_type = pathInfo.storageType;
-			node._sort_list.add("abstracted_path");
-			node._sort_list.add("storage_type");
-			node._sort_list.add("urn");
-			node.urn = urn;
-			nodes.add(node);
-		}
-		else
-		{
-			message = "Found lineage information";
-			for(int i = 0; i < Math.max(upLevel, downLevel); i++)
-			{
-				if (i < upLevel)
-				{
-					if (toBeConvertedSourceDataNodes.size() > 0)
-					{
-						for(Map.Entry<String, List<LineageNode> > mapEntry : toBeConvertedSourceDataNodes.entrySet())
-						{
-							List<LineageNode> hashedNodes = addedTargetDataNodes.get(mapEntry.getKey());
-							List<LineageNode> list = mapEntry.getValue();
-							if (list != null && list.size() > 0)
-							{
-								if (hashedNodes == null)
-								{
-									hashedNodes = new ArrayList<LineageNode>();
-								}
-								hashedNodes.addAll(list);
-								addedTargetDataNodes.put(mapEntry.getKey(), hashedNodes);
-							}
-
-						}
-						toBeConvertedSourceDataNodes.clear();
-					}
-					if (addedSourceDataNodes.size() > 0)
-					{
-						toBeClearedSourceDataNodes.putAll(addedSourceDataNodes);
-						addedSourceDataNodes.clear();
-					}
-
-					for(LineageNode job : addedJobNodes.values())
-					{
-						if (job.level != i)
-						{
-							continue;
-						}
-						job.id = nodes.size();
-						nodes.add(job);
-						addTargetNode(job,
-								addedTargetNodes,
-								addedTargetDataNodes,
-								toBeClearedSourceDataNodes,
-								nodes,
-								edges,
-								true);
-
-						addSourceNode(job,
-								addedSourceNodes,
-								addedTargetDataNodes,
-								addedSourceDataNodes,
-								toBeConvertedSourceDataNodes,
-								nodes,
-								edges,
-								true);
-					}
-				}
-				if ((i > 0) && (i < downLevel))
-				{
-					for(LineageNode job : addedJobNodes.values())
-					{
-						if (job.level != -i)
-						{
-							continue;
-						}
-						job.id = nodes.size();
-						nodes.add(job);
-						addTargetNode(job,
-								addedTargetNodes,
-								addedTargetDataNodes,
-								toBeClearedSourceDataNodes,
-								nodes,
-								edges,
-								false);
-
-						addSourceNode(job,
-								addedSourceNodes,
-								addedTargetDataNodes,
-								addedSourceDataNodes,
-								toBeConvertedSourceDataNodes,
-								nodes,
-								edges,
-								false);
-					}
-				}
-			}
-		}
-		resultNode.set("nodes", Json.toJson(nodes));
-		resultNode.set("links", Json.toJson(edges));
-		resultNode.put("urn", urn);
-		resultNode.put("message", message);
-		return resultNode;
-
-	}
-
-	public static List<String> getLiasDatasetNames(String abstractedObjectName)
-	{
-		if (StringUtils.isBlank(abstractedObjectName))
-			return null;
-		List<String> totalNames = new ArrayList<String>();
-		totalNames.add(abstractedObjectName);
-		List<String> mappedNames = getJdbcTemplate().queryForList(GET_MAPPED_OBJECT_NAME, String.class, abstractedObjectName);
-		if (mappedNames != null && mappedNames.size() > 0)
-		{
-			totalNames.addAll(mappedNames);
-			for (String name : mappedNames)
-			{
-				List<String> objNames = getJdbcTemplate().queryForList(
-						GET_OBJECT_NAME_BY_MAPPED_NAME, String.class, name);
-				{
-					if (objNames != null)
-					{
-						totalNames.addAll(objNames);
-					}
-				}
-
-			}
-		}
-		else
-		{
-			List<String> objNames = getJdbcTemplate().queryForList(
-					GET_OBJECT_NAME_BY_MAPPED_NAME, String.class, abstractedObjectName);
-			{
-				if (objNames != null)
-				{
-					totalNames.addAll(objNames);
-				}
-			}
-
-		}
-		List<String> results = new ArrayList<String>();
-		Set<String> sets = new HashSet<String>();
-		sets.addAll(totalNames);
-		results.addAll(sets);
-		return results;
-	}
-
-	public static void getNodes(
-			LineagePathInfo pathInfo,
-			int level,
-			int upLevel,
-			int downLevel,
-			LineageNode currentNode,
-			List<LineageNode> allSourceNodes,
-			List<LineageNode> allTargetNodes,
-			Map<Long, List<LineageNode>>addedSourceNodes,
-			Map<Long, List<LineageNode>>addedTargetNodes,
-			Map<Long, LineageNode> addedJobNodes,
-			int lookBackTime)
-	{
-		if (upLevel < 1 && downLevel < 1)
-		{
-			return;
-		}
-		if (currentNode != null)
-		{
-			if ( StringUtils.isBlank(currentNode.source_target_type))
-			{
-				Logger.error("Source target type is not available");
-				Logger.error(currentNode.abstracted_path);
-				return;
-			}
-			else if (currentNode.source_target_type.equalsIgnoreCase("target") && downLevel <= 0)
-			{
-				Logger.warn("Dataset " + currentNode.abstracted_path + " downLevel = " + Integer.toString(downLevel));
-				return;
-			}
-			else if (currentNode.source_target_type.equalsIgnoreCase("source") && upLevel <= 0)
-			{
-				Logger.warn("Dataset " + currentNode.abstracted_path + " upLevel = " + Integer.toString(upLevel));
-				return;
-			}
-		}
-		List<String> nameList = getLiasDatasetNames(pathInfo.filePath);
-		List<Map<String, Object>> rows = null;
-		MapSqlParameterSource parameters = new MapSqlParameterSource();
-		parameters.addValue("names", nameList);
-		NamedParameterJdbcTemplate namedParameterJdbcTemplate = new
-				NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
-		parameters.addValue("days", lookBackTime);
-
-		if (currentNode != null)
-		{
-			if (currentNode.source_target_type.equalsIgnoreCase("source"))
-			{
-				rows = namedParameterJdbcTemplate.queryForList(
-						GET_UP_LEVEL_JOB,
-						parameters);
-			}
-			else
-			{
-				parameters.addValue("type", currentNode.source_target_type);
-				rows = namedParameterJdbcTemplate.queryForList(
-						GET_JOB_WITH_SOURCE,
-						parameters);
-			}
-
-		}
-		else
-		{
-			rows = namedParameterJdbcTemplate.queryForList(
-					GET_JOB,
-					parameters);
-		}
-
-		if (rows != null) {
-			for (Map row : rows) {
-				LineageNode node = new LineageNode();
-				Object jobExecIdObject = row.get("job_exec_id");
-				if (jobExecIdObject == null) {
-					continue;
-				}
-				Long jobExecId = ((BigInteger) jobExecIdObject).longValue();
-				if (addedJobNodes.get(jobExecId) != null) {
-					continue;
-				}
-				node._sort_list = new ArrayList<String>();
-				node.node_type = "script";
-				node.job_type = (String) row.get("job_type");
-				node.cluster = (String) row.get("cluster");
-				node.job_name = (String) row.get("job_name");
-				node.job_path = (String) row.get("flow_path") + "/" + node.job_name;
-				node.exec_id = jobExecId;
-				node.operation = (String) row.get("operation");
-				node.source_target_type = (String) row.get("source_target_type");
-				node.level = level;
-				node._sort_list.add("cluster");
-				node._sort_list.add("job_path");
-				node._sort_list.add("job_name");
-				node._sort_list.add("job_type");
-				node._sort_list.add("job_start_time");
-				node._sort_list.add("job_end_time");
-				node._sort_list.add("exec_id");
-				addedJobNodes.put(jobExecId, node);
-				List<LineageNode> sourceNodeList = new ArrayList<LineageNode>();
-				List<LineageNode> targetNodeList = new ArrayList<LineageNode>();
-				int applicationID = (int)row.get("app_id");
-				Long jobId = ((BigInteger)row.get("job_exec_id")).longValue();
-				List<Map<String, Object>> relatedDataRows = null;
-
-				if (node.source_target_type.equalsIgnoreCase("source") && node.operation.equalsIgnoreCase("JDBC Read"))
-				{
-					MapSqlParameterSource lassenParams = new MapSqlParameterSource();
-					lassenParams.addValue("names", nameList);
-					lassenParams.addValue("appid", applicationID);
-					lassenParams.addValue("execid", jobId);
-					relatedDataRows = namedParameterJdbcTemplate.queryForList(
-							GET_DATA_FILTER_OUT_LASSEN,
-							lassenParams);
-				}
-				else
-				{
-					relatedDataRows = getJdbcTemplate().queryForList(
-							GET_DATA,
-							applicationID,
-							jobId);
-				}
-
-				if (relatedDataRows != null) {
-					for (Map relatedDataRow : relatedDataRows)
-					{
-						String abstractedObjectName = (String)relatedDataRow.get("abstracted_object_name");
-						if (abstractedObjectName.startsWith("/tmp/"))
-						{
-							continue;
-						}
-						String relatedSourceType = (String)relatedDataRow.get("source_target_type");
-						LineageNode relatedNode = new LineageNode();
-						relatedNode._sort_list = new ArrayList<String>();
-						relatedNode.node_type = "data";
-						relatedNode.level = level;
-						relatedNode.source_target_type = relatedSourceType;
-						relatedNode.abstracted_path = (String)relatedDataRow.get("abstracted_object_name");
-						relatedNode.storage_type = ((String)relatedDataRow.get("storage_type")).toLowerCase();
-						relatedNode.job_start_unix_time = (Long)relatedDataRow.get("job_start_unixtime");
-
-						relatedNode.job_start_time = relatedDataRow.get("start_time").toString();
-						relatedNode.job_end_time = relatedDataRow.get("end_time").toString();
-						relatedNode.job_end_unix_time = (Long)relatedDataRow.get("job_finished_unixtime");
-						node.job_start_unix_time = relatedNode.job_start_unix_time;
-						node.job_end_unix_time = relatedNode.job_end_unix_time;
-						node.job_start_time = relatedNode.job_start_time;
-						node.job_end_time = relatedNode.job_end_time;
-						relatedNode.operation = (String)relatedDataRow.get("operation");
-						LineagePathInfo info = new LineagePathInfo();
-						info.filePath = relatedNode.abstracted_path;
-						info.storageType = relatedNode.storage_type;
-						relatedNode.urn = utils.Lineage.convertToURN(info);
-						relatedNode._sort_list.add("abstracted_path");
-						relatedNode._sort_list.add("storage_type");
-						relatedNode._sort_list.add("urn");
-						if (relatedSourceType.equalsIgnoreCase("source"))
-						{
-							if (node.source_target_type.equalsIgnoreCase("target") ||
-									utils.Lineage.isInList(nameList, relatedNode.abstracted_path))
-							{
-								sourceNodeList.add(relatedNode);
-								allSourceNodes.add(relatedNode);
-							}
-						}
-						else if (relatedSourceType.equalsIgnoreCase("target"))
-						{
-							if (node.source_target_type.equalsIgnoreCase("source") ||
-									utils.Lineage.isInList(nameList, relatedNode.abstracted_path))
-							{
-								targetNodeList.add(relatedNode);
-								allTargetNodes.add(relatedNode);
-							}
-						}
-					}
-					if (sourceNodeList.size() > 0)
-					{
-						addedSourceNodes.put(jobExecId, sourceNodeList);
-					}
-					if (targetNodeList.size() > 0)
-					{
-						addedTargetNodes.put(jobExecId, targetNodeList);
-					}
-				}
-			}
-		}
-		if ((allSourceNodes != null ) && (allSourceNodes.size() > 0) && (upLevel > 1))
-		{
-			List<LineageNode> currentSourceNodes = new ArrayList<LineageNode>();
-			currentSourceNodes.addAll(allSourceNodes);
-			for(LineageNode sourceNode : currentSourceNodes)
-			{
-				LineagePathInfo subPath = new LineagePathInfo();
-				subPath.storageType = sourceNode.storage_type;
-				subPath.filePath = sourceNode.abstracted_path;
-				if (sourceNode.level == level)
-				{
-					getObjectAdjacentNode(
-							subPath,
-							level+1,
-							upLevel - 1,
-							0,
-							sourceNode,
-							allSourceNodes,
-							allTargetNodes,
-							addedSourceNodes,
-							addedTargetNodes,
-							addedJobNodes,
-							lookBackTime);
-				}
-			}
-		}
-		if ((allTargetNodes != null ) && (allTargetNodes.size() > 0) && (downLevel > 1))
-		{
-			List<LineageNode> currentTargetNodes = new ArrayList<LineageNode>();
-			currentTargetNodes.addAll(allTargetNodes);
-			for(LineageNode targetNode : currentTargetNodes)
-			{
-				LineagePathInfo subPath = new LineagePathInfo();
-				subPath.storageType = targetNode.storage_type;
-				subPath.filePath = targetNode.abstracted_path;
-				if (targetNode.level == level)
-				{
-					getObjectAdjacentNode(
-							subPath,
-							level-1,
-							0,
-							downLevel - 1,
-							targetNode,
-							allSourceNodes,
-							allTargetNodes,
-							addedSourceNodes,
-							addedTargetNodes,
-							addedJobNodes,
-							lookBackTime);
-				}
-			}
-		}
-
-	}
-
-	public static void getObjectAdjacentNode(
-			LineagePathInfo pathInfo,
-			int level,
-			int upLevel,
-			int downLevel,
-			LineageNode currentNode,
-			List<LineageNode> allSourceNodes,
-			List<LineageNode> allTargetNodes,
-			Map<Long, List<LineageNode>> addedSourceNodes,
-			Map<Long, List<LineageNode>> addedTargetNodes,
-			Map<Long, LineageNode> addedJobNodes,
-			int lookBackTime)
-	{
-		if (upLevel < 1 && downLevel < 1)
-		{
-			return;
-		}
-
-		if (pathInfo == null || StringUtils.isBlank(pathInfo.filePath))
-		{
-			return;
-		}
-		getNodes(
-				pathInfo,
-				level,
-				upLevel,
-				downLevel,
-				currentNode,
-				allSourceNodes,
-				allTargetNodes,
-				addedSourceNodes,
-				addedTargetNodes,
-				addedJobNodes,
-				lookBackTime);
-	}
-
-	public static ObjectNode getFlowLineage(String application, String project, Long flowId)
-	{
-		ObjectNode resultNode = Json.newObject();
-		List<LineageNode> nodes = new ArrayList<LineageNode>();
-		List<LineageEdge> edges = new ArrayList<LineageEdge>();
-		String flowName = null;
-
-		Map<Long, Integer> addedJobNodes = new HashMap<Long, Integer>();
-		Map<Pair, Integer> addedDataNodes = new HashMap<Pair, Integer>();
-
-		if (StringUtils.isBlank(application) || StringUtils.isBlank(project) || (flowId <= 0))
-		{
-			resultNode.set("nodes", Json.toJson(nodes));
-			resultNode.set("links", Json.toJson(edges));
-			return resultNode;
-		}
-
-		String applicationName = application.replace(".", " ");
-
-		int appID = 0;
-		try
-		{
-			appID = getJdbcTemplate().queryForObject(
-					GET_APP_ID,
-					new Object[] {applicationName},
-					Integer.class);
-		}
-		catch(EmptyResultDataAccessException e)
-		{
-			Logger.error("getFlowLineage get application id failed, application name = " + application);
-			Logger.error("Exception = " + e.getMessage());
-		}
-
-		Map<Long, List<LineageNode>> nodeHash = new HashMap<Long, List<LineageNode>>();
-		Map<String, List<LineageNode>> partitionedNodeHash = new HashMap<String, List<LineageNode>>();
-
-		if (appID != 0)
-		{
-			try
-			{
-				flowName = getJdbcTemplate().queryForObject(
-						GET_FLOW_NAME,
-						new Object[] {appID, flowId},
-						String.class);
-			}
-			catch(EmptyResultDataAccessException e)
-			{
-				Logger.error("getFlowLineage get flow name failed, application name = " + application +
-						" flowId " + Long.toString(flowId));
-				Logger.error("Exception = " + e.getMessage());
-			}
-
-			Long flowExecId = 0L;
-			try
-			{
-				flowExecId = getJdbcTemplate().queryForObject(
-						GET_LATEST_FLOW_EXEC_ID,
-						new Object[] {appID, flowId},
-						Long.class);
-			}
-			catch(EmptyResultDataAccessException e)
-			{
-				Logger.error("getFlowLineage get flow execution id failed, application name = " + application +
-						" flowId " + Long.toString(flowExecId));
-				Logger.error("Exception = " + e.getMessage());
-			}
-			List<Map<String, Object>> rows = null;
-			rows = getJdbcTemplate().queryForList(
-					GET_FLOW_DATA_LINEAGE,
-					appID,
-					flowExecId);
-			if (rows != null)
-			{
-				for (Map row : rows) {
-					Long jobExecId = ((BigInteger)row.get("job_exec_id")).longValue();
-					LineageNode node = new LineageNode();
-					node.abstracted_path = (String)row.get("abstracted_object_name");
-					node.source_target_type = (String)row.get("source_target_type");
-					node.exec_id = jobExecId;
-					Object recordCountObject = row.get("record_count");
-					if (recordCountObject != null)
-					{
-						node.record_count = ((BigInteger)recordCountObject).longValue();
-					}
-
-					node.application_id = (int)row.get("app_id");
-					node.cluster = (String)row.get("app_code");
-					node.partition_type = (String)row.get("partition_type");
-					node.operation = (String)row.get("operation");
-					node.partition_start = (String)row.get("partition_start");
-					node.partition_end = (String)row.get("partition_end");
-					node.full_object_name = (String)row.get("full_object_name");
-					node.job_start_time = row.get("start_time").toString();
-					node.job_end_time = row.get("end_time").toString();
-					node.storage_type = ((String)row.get("storage_type")).toLowerCase();
-					node.node_type = "data";
-					node._sort_list = new ArrayList<String>();
-					node._sort_list.add("cluster");
-					node._sort_list.add("abstracted_path");
-					node._sort_list.add("storage_type");
-					node._sort_list.add("partition_type");
-					node._sort_list.add("partition_start");
-					node._sort_list.add("partition_end");
-					node._sort_list.add("source_target_type");
-					List<LineageNode> nodeList = nodeHash.get(jobExecId);
-					if (nodeList != null)
-					{
-						nodeList.add(node);
-					}
-					else
-					{
-						nodeList = new ArrayList<LineageNode>();
-						nodeList.add(node);
-						nodeHash.put(jobExecId, nodeList);
-					}
-				}
-			}
-
-			List<LineageNode> jobNodes = new ArrayList<LineageNode>();
-			List<Map<String, Object>> jobRows = null;
-			jobRows = getJdbcTemplate().queryForList(
-					GET_FLOW_JOB,
-					appID,
-					flowExecId,
-					30);
-			int index = 0;
-			int edgeIndex = 0;
-			Map<Long, LineageNode> jobNodeMap = new HashMap<Long, LineageNode>();
-			List<Pair> addedEdges = new ArrayList<Pair>();
-			if (rows != null)
-			{
-				for (Map row : jobRows) {
-					Long jobExecId = ((BigInteger)row.get("job_exec_id")).longValue();
-					LineageNode node = new LineageNode();
-					node._sort_list = new ArrayList<String>();
-					node.node_type = "script";
-					node.job_type = (String)row.get("job_type");
-					node.cluster = (String)row.get("app_code");
-					node.job_path = (String)row.get("job_path");
-					node.job_name = (String)row.get("job_name");
-					node.pre_jobs = (String)row.get("pre_jobs");
-					node.post_jobs = (String)row.get("post_jobs");
-					node.job_id = (Long)row.get("job_id");
-					node.job_start_time = row.get("start_time").toString();
-					node.job_end_time = row.get("end_time").toString();
-					node.exec_id = jobExecId;
-					node._sort_list.add("cluster");
-					node._sort_list.add("job_path");
-					node._sort_list.add("job_name");
-					node._sort_list.add("job_type");
-					node._sort_list.add("job_start_time");
-					node._sort_list.add("job_end_time");
-					Integer id = addedJobNodes.get(jobExecId);
-					if (id == null)
-					{
-						node.id = index++;
-						nodes.add(node);
-						jobNodeMap.put(node.job_id, node);
-						jobNodes.add(node);
-						addedJobNodes.put(jobExecId, node.id);
-					}
-					else
-					{
-						node.id = id;
-					}
-
-					String sourceType = (String)row.get("source_target_type");
-					if (sourceType.equalsIgnoreCase("target"))
-					{
-						List<LineageNode> sourceNodeList = nodeHash.get(jobExecId);
-						if (sourceNodeList != null && sourceNodeList.size() > 0)
-						{
-							for(LineageNode sourceNode : sourceNodeList)
-							{
-								if (sourceNode.source_target_type.equalsIgnoreCase("source"))
-								{
-									Pair matchedSourcePair = new ImmutablePair<>(
-											sourceNode.abstracted_path,
-											sourceNode.partition_end);
-									Integer nodeId = addedDataNodes.get(matchedSourcePair);
-									if (nodeId == null)
-									{
-										List<LineageNode> nodeList = partitionedNodeHash.get(sourceNode.abstracted_path);
-										if (StringUtils.isBlank(sourceNode.partition_end))
-										{
-											Boolean bFound = false;
-											if (nodeList != null)
-											{
-												for(LineageNode n : nodeList)
-												{
-													if (StringUtils.isNotBlank(n.partition_end) &&
-															n.partition_end.compareTo(sourceNode.job_start_time) < 0)
-													{
-														sourceNode.id = n.id;
-														bFound = true;
-														break;
-													}
-												}
-											}
-											if (!bFound)
-											{
-												sourceNode.id = index++;
-												nodes.add(sourceNode);
-												Pair sourcePair = new ImmutablePair<>(
-														sourceNode.abstracted_path,
-														sourceNode.partition_end);
-												addedDataNodes.put(sourcePair, sourceNode.id);
-											}
-										}
-										else
-										{
-											if (nodeList == null)
-											{
-												nodeList = new ArrayList<LineageNode>();
-											}
-											nodeList.add(sourceNode);
-											partitionedNodeHash.put(sourceNode.abstracted_path, nodeList);
-											sourceNode.id = index++;
-											nodes.add(sourceNode);
-											Pair sourcePair = new ImmutablePair<>(
-													sourceNode.abstracted_path,
-													sourceNode.partition_end);
-											addedDataNodes.put(sourcePair, sourceNode.id);
-										}
-									}
-									else
-									{
-										sourceNode.id = nodeId;
-									}
-									LineageEdge edge = new LineageEdge();
-									edge.id = edgeIndex++;
-									edge.source = sourceNode.id;
-									edge.target = node.id;
-									if (StringUtils.isNotBlank(sourceNode.operation))
-									{
-										edge.label = sourceNode.operation;
-									}
-									else
-									{
-										edge.label = "load";
-									}
-									edge.chain = "data";
-									edges.add(edge);
-								}
-							}
-						}
-					}
-					else if (sourceType.equalsIgnoreCase("source"))
-					{
-
-						List<LineageNode> targetNodeList = nodeHash.get(jobExecId);
-						if (targetNodeList != null && targetNodeList.size() > 0)
-						{
-							for(LineageNode targetNode : targetNodeList)
-							{
-								if (targetNode.source_target_type.equalsIgnoreCase("target"))
-								{
-									Pair matchedTargetPair = new ImmutablePair<>(
-											targetNode.abstracted_path,
-											targetNode.partition_end);
-									Integer nodeId = addedDataNodes.get(matchedTargetPair);
-									if (nodeId == null)
-									{
-										List<LineageNode> nodeList = partitionedNodeHash.get(targetNode.abstracted_path);
-										if (StringUtils.isBlank(targetNode.partition_end))
-										{
-											Boolean bFound = false;
-											if (nodeList != null)
-											{
-												for(LineageNode n : nodeList)
-												{
-													if (StringUtils.isNotBlank(n.partition_end) &&
-															n.partition_end.compareTo(targetNode.job_start_time) < 0)
-													{
-														targetNode.id = n.id;
-														bFound = true;
-														break;
-													}
-												}
-											}
-											if (!bFound)
-											{
-												targetNode.id = index++;
-												nodes.add(targetNode);
-												Pair targetPair = new ImmutablePair<>(
-														targetNode.abstracted_path,
-														targetNode.partition_end);
-												addedDataNodes.put(targetPair, targetNode.id);
-											}
-										}
-										else
-										{
-											if (nodeList == null)
-											{
-												nodeList = new ArrayList<LineageNode>();
-											}
-											nodeList.add(targetNode);
-											partitionedNodeHash.put(targetNode.abstracted_path, nodeList);
-											targetNode.id = index++;
-											nodes.add(targetNode);
-											Pair targetPair = new ImmutablePair<>(
-													targetNode.abstracted_path,
-													targetNode.partition_end);
-											addedDataNodes.put(targetPair, targetNode.id);
-										}
-									}
-									else
-									{
-										targetNode.id = nodeId;
-									}
-									LineageEdge edge = new LineageEdge();
-									edge.id = edgeIndex++;
-									edge.source = node.id;
-									edge.target = targetNode.id;
-									if (StringUtils.isNotBlank(targetNode.operation))
-									{
-										edge.label = targetNode.operation;
-									}
-									else
-									{
-										edge.label = "load";
-									}
-									edge.chain = "data";
-									edges.add(edge);
-								}
-							}
-						}
-					}
-				}
-				for (LineageNode node : jobNodes)
-				{
-					Long jobId = node.job_id;
-					if (StringUtils.isNotBlank(node.pre_jobs))
-					{
-						String [] prevJobIds = node.pre_jobs.split(",");
-						if (prevJobIds != null)
-						{
-							for(String jobIdString: prevJobIds)
-							{
-								if(StringUtils.isNotBlank(jobIdString))
-								{
-									Long id = Long.parseLong(jobIdString);
-									LineageNode sourceNode = jobNodeMap.get(id);
-									if (sourceNode != null)
-									{
-										Pair pair = new ImmutablePair<>(sourceNode.id, node.id);
-										if (!addedEdges.contains(pair))
-										{
-											LineageEdge edge = new LineageEdge();
-											edge.id = edgeIndex++;
-											edge.source = sourceNode.id;
-											edge.target = node.id;
-											edge.label = "";
-											edge.type = "job";
-											edges.add(edge);
-											addedEdges.add(pair);
-										}
-									}
-								}
-							}
-						}
-					}
-
-					if (StringUtils.isNotBlank(node.post_jobs))
-					{
-						String [] postJobIds = node.post_jobs.split(",");
-						if (postJobIds != null)
-						{
-							for(String jobIdString: postJobIds)
-							{
-								if(StringUtils.isNotBlank(jobIdString))
-								{
-									Long id = Long.parseLong(jobIdString);
-									LineageNode targetNode = jobNodeMap.get(id);
-									if (targetNode != null)
-									{
-										Pair pair = new ImmutablePair<>(node.id, targetNode.id);
-										if (!addedEdges.contains(pair))
-										{
-											LineageEdge edge = new LineageEdge();
-											edge.id = edgeIndex++;
-											edge.source = node.id;
-											edge.target = targetNode.id;
-											edge.label = "";
-											edge.type = "job";
-											edges.add(edge);
-											addedEdges.add(pair);
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-			}
-		}
-		resultNode.set("nodes", Json.toJson(nodes));
-		resultNode.set("links", Json.toJson(edges));
-		resultNode.put("flowName", flowName);
-		return resultNode;
-	}
-
-	public static void getImpactDatasets(
-			List<String> searchUrnList,
-			int level,
-			List<ImpactDataset> impactDatasets)
-	{
-		if (searchUrnList != null && searchUrnList.size() > 0) {
-
-			if (impactDatasets == null)
-			{
-				impactDatasets = new ArrayList<ImpactDataset>();
-			}
-
-			List<String> pathList = new ArrayList<String>();
-			List<String> nextSearchList = new ArrayList<String>();
-
-			for (String urn : searchUrnList)
-			{
-				LineagePathInfo pathInfo = Lineage.convertFromURN(urn);
-				if (pathInfo != null && StringUtils.isNotBlank(pathInfo.filePath))
-				{
-					if (!pathList.contains(pathInfo.filePath))
-					{
-						pathList.add(pathInfo.filePath);
-					}
-				}
-			}
-
-			if (pathList != null && pathList.size() > 0)
-			{
-				Map<String, List> param = Collections.singletonMap("pathlist", pathList);
-				NamedParameterJdbcTemplate namedParameterJdbcTemplate = new
-						NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
-				List<ImpactDataset> impactDatasetList = namedParameterJdbcTemplate.query(
-						GET_ONE_LEVEL_IMPACT_DATABASES,
-						param,
-						new ImpactDatasetRowMapper());
-
-				if (impactDatasetList != null) {
-					for (ImpactDataset dataset : impactDatasetList) {
-						dataset.level = level;
-						if (impactDatasets.stream().filter(o -> o.urn.equals(dataset.urn)).findFirst().isPresent())
-						{
-							continue;
-						}
-						impactDatasets.add(dataset);
-						nextSearchList.add(dataset.urn);
-					}
-				}
-			}
-
-			if (nextSearchList.size() > 0)
-			{
-				getImpactDatasets(nextSearchList, level + 1, impactDatasets);
-			}
-		}
-	}
-
-	public static List<ImpactDataset> getImpactDatasetsByUrn(String urn)
-	{
-		List<ImpactDataset> impactDatasetList = new ArrayList<ImpactDataset>();
-
-		if (StringUtils.isNotBlank(urn))
-		{
-			List<String> searchUrnList = new ArrayList<String>();
-			searchUrnList.add(urn);
-			getImpactDatasets(searchUrnList, 1, impactDatasetList);
-		}
-
-		return impactDatasetList;
-	}
-
+public class LineageDAO extends AbstractMySQLOpenSourceDAO {
+
+    private final static String GET_PARENTS = "SELECT parent_urn FROM family WHERE child_urn = ?";
+
+    private final static String GET_CHILDREN = "SELECT child_urn FROM family WHERE parent_urn = ?";
+
+    private final static String GET_DATA_ATTR = "SELECT * FROM dict_dataset WHERE urn = :urn";
+
+    private final static String GET_APP_ATTR = "SELECT * FROM cfg_application WHERE app_id = :urn";
+
+    private final static String GET_DB_ATTR = "SELECT * FROM cfg_database WHERE uri = :urn";
+
+    public static JsonNode getObjectAdjacnet(String urn, int upLevel, int downLevel, int lookBackTime) {
+        // lineage is stored in an ajacency table with columns: id | parent_urn | child_urn
+        // ignores look back time
+
+        int level = 0; // level goes up for parents, down for children
+
+        // lists of nodes and edges
+        List<LineageNode> nodes = new ArrayList<LineageNode>();
+        List<LineageEdge> edges = new ArrayList<LineageEdge>();
+
+        // create jsonNode
+        ObjectNode resultNode = Json.newObject();
+
+        // create a single node and add it to list of nodes
+        // dislike that this code is repeated in the function...
+        LineageNode node = new LineageNode();
+        node.id = nodes.size();
+        node.level = level;
+        node.urn = urn;
+        node._sort_list = new ArrayList<String>();
+        switch (parseURN(urn)) {
+            case "app":
+                node.node_type = "app";
+                // do assignment stuff
+                assignApp(node);
+                break;
+            case "data":
+                node.node_type = "data";
+                // do assignment stuff
+                assignData(node);
+                break;
+            case "DB":
+                node.node_type = "DB";
+                // do assignment stuff
+                assignDB(node);
+                break;
+            default:
+                Logger.error("parsing failed for origin URN: " + urn);
+        }
+        nodes.add(node);
+
+        // add all ancestors of origin to nodes & edges
+        getRelativeGraph(nodes, edges, upLevel, 1, node);
+        getRelativeGraph(nodes, edges, downLevel, -1, node);
+
+        // now stick nodes and edges into the JsonNode
+        resultNode.set("nodes", Json.toJson(nodes));
+        resultNode.set("links", Json.toJson(edges));
+        resultNode.put("urn", urn);
+        resultNode.put("message", "Gee, I hope this works");
+        return resultNode;
+    }
+
+    private static String parseURN(String urn) {
+            String file_type = urn.substring(0, urn.indexOf("://")).toLowerCase();
+            switch (file_type) {
+                case "raw-parquet":
+                case "domain-parquet":
+                case "opportunity-parquet":
+                case "parquet":
+                case "supply-druid":
+                case "purchase-druid":
+                case "druid":
+                case "lucene":
+                    // this is a dataset so we call the dataset handling function
+                    return "data";
+                case "natezza":
+                case "pulse":
+                case "qa":
+                case "sa":
+                case "pim":
+                case "datamgt":
+                    // this is a database so call the database handling function
+                    return "DB";
+                case "moveit-extract":
+                case "moveit-transform":
+                    return "app";
+                default:
+                    // must be an error if we got here
+                    Logger.error("could not parse URN, assuming job: " + urn);
+                    return "app";
+            }
+    }
+
+    private static void getRelativeGraph(List<LineageNode> nodes, List<LineageEdge> edges, int maxDepth, int direction, LineageNode currNode) {
+        //LineageNode currNode = nodes.get(nodes.size() - 1);
+        if (Math.abs(currNode.level) <= Math.abs(maxDepth)) {
+            // do our thing
+            List<String> relatives = getRelatives(currNode.urn, direction);
+            Logger.debug(relatives.toString());
+            for (String relative : relatives) {
+                LineageNode node = new LineageNode();
+                node.id = nodes.size();
+                node.level = currNode.level + direction;
+                node.urn = relative;
+                node._sort_list = new ArrayList<String>();
+                LineageEdge edge = new LineageEdge();
+                edge.id = edges.size();
+                switch (parseURN(relative)) {
+                    case "app":
+                        // do assignment stuff
+                        node.node_type = "app";
+                        assignApp(node);
+                        nodes.add(node);
+                        edges.add(edge);
+                        getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
+                        break;
+                    case "data":
+                        // do assignment stuff
+                        node.node_type = "data";
+                        assignData(node);
+                        nodes.add(node);
+                        edges.add(edge);
+                        getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
+                        break;
+                    case "DB":
+                        // do assignment stuff
+                        node.node_type = "DB";
+                        assignDB(node);
+                        nodes.add(node);
+                        edges.add(edge);
+                        getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
+                        break;
+                    default:
+                        Logger.error("parsing failed for relative URN: " + relative);
+                }
+                String target = "";
+                String source = "";
+                if (direction > 0) {
+                    edge.target = currNode.id;
+                    target = currNode.node_type;
+                    edge.source = node.id;
+                    source = node.node_type;
+                } else {
+                    edge.target = node.id;
+                    target = node.node_type;
+                    edge.source = currNode.id;
+                    source = currNode.node_type;
+                }
+                if ((source == "data" && target == "data") || (source == "data" && target == "DB") || (source == "DB" && target == "DB") || (source == "DB" && target == "data")) {
+                    edge.label = "source";
+                } else if (source == "data" && target == "app") {
+                    edge.label = "read";
+                } else if (source == "app" && target == "app") {
+                    edge.label = "spawned";
+                    edge.type = "job";
+                } else if ((source == "app" && target == "data") || (source == "app" && target == "DB")) {
+                    edge.label = "created";
+                    edge.type = "job";
+                } else if (source == "DB" && target == "app") {
+                    edge.label = "imported";
+                } else {
+                    edge.label = "influenced";
+                }
+            }
+        }
+        // we have reached maximum requested depth, let's peace out
+    }
+
+    private static List<String> getRelatives(String urn, int direction) {
+        if (direction > 0) {
+            return getParents(urn);
+        } else if (direction < 0) {
+            return getChildren(urn);
+        } else {
+            Logger.error("Direction cannot equal 0");
+            return null;
+        }
+    }
+
+    private static List<String> getParents(String urn) {
+        List<String> parents = getJdbcTemplate().queryForList(GET_PARENTS, String.class, urn);
+        if (parents == null || parents.size() == 0) {
+            Logger.error("couldn't find any parents for URN: " + urn);
+        }
+        return parents;
+    }
+
+    private static List<String> getChildren(String urn) {
+        List<String> children = getJdbcTemplate().queryForList(GET_CHILDREN, String.class, urn);
+        if (children == null || children.size() == 0) {
+            Logger.error("couldn't find any children for URN: " + urn);
+        }
+        return children;
+    }
+
+    /*
+    TODO: assignXXX methods need to be modified to reflect the fact that ds, db, and apps are now all stored in dict_dataset
+    this also means they probably need to parse the properties field to get some of the info
+    */
+    private static void assignApp(LineageNode node) {
+        List<Map<String, Object>> rows = null;
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("urn", node.urn);
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
+
+        rows = namedParameterJdbcTemplate.queryForList(GET_APP_ATTR, parameters);
+
+        for (Map row : rows) {
+            // node only knows id, level, and urn, assign all other attributes
+            node.app_code = (String) row.get("app_code");
+            node.description = (String) row.get("description");
+            node.tech_matrix_id = (int) row.get("tech_matrix_id");
+            node.doc_url = (String) row.get("doc_url");
+            //node.parent_app_id = (int) row.get("parent_app_id");
+            node.app_status = (String) row.get("app_status");
+            //node.last_modified = (String) row.get("last_modified");
+            node.is_logical = (String) row.get("is_logical");
+            node.uri_type = (String) row.get("uri_type");
+            node.uri = (String) row.get("uri");
+            node.lifecycle_layer_id = (String) row.get("lifecycle_layer_id");
+            node.short_connection_string = (String) row.get("short_connection_string");
+            node._sort_list.add("urn");
+            node._sort_list.add("app_code");
+            node._sort_list.add("description");
+            //node._sort_list.add("last_modified");
+        }
+    }
+
+    private static void assignData(LineageNode node) {
+        List<Map<String, Object>> rows = null;
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("urn", node.urn);
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
+
+        rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
+
+        for (Map row : rows) {
+            // node only knows id, level, and urn, assign all other attributes
+            node.name = (String) row.get("name");
+            node.schema = (String) row.get("schema");
+            node.properties = (String) row.get("properties");
+            node.source = (String) row.get("source");
+            node.storage_type = (String) row.get("dataset_type"); // what the js calls storage_type, the sql calls dataset_type
+            node.dataset_type = (String) row.get("dataset_type");
+            //node.source_created_time = (String) row.get("source_created_time");
+            //node.source_modified_time = (String) row.get("source_modified_time");
+            //node.created_time = (String) row.get("created_time");
+            //node.modified_time = (String) row.get("modified_time");
+            node.abstracted_path = node.urn.substring(node.urn.indexOf("://") + 3, node.urn.length()).toLowerCase();
+            try {
+                node._sort_list.add("abstracted_path");
+                node._sort_list.add("storage_type");
+                node._sort_list.add("urn");
+            } catch (NullPointerException e) {
+                if (node == null) {
+                    Logger.debug("it's node");
+                } else if (node._sort_list == null) {
+                    Logger.debug("it's sort list|" + Math.abs(node.level));
+                }
+            }
+        }
+    }
+
+    private static void assignDB(LineageNode node) {
+        List<Map<String, Object>> rows = null;
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("urn", node.urn);
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
+
+        rows = namedParameterJdbcTemplate.queryForList(GET_DB_ATTR, parameters);
+        // node only knows id, level, and urn, assign all other attributes
+
+        for (Map row : rows) {
+            node.db_code = (String) row.get("db_code");
+            node.primary_dataset_type = (String) row.get("primary_dataset_type");
+            node.description = (String) row.get("description");
+            node.is_logical = (String) row.get("is_logical");
+            node.deployment_tier = (String) row.get("deployment_tier");
+            node.data_center = (String) row.get("data_center");
+            //node.associated_dc_num = (int) row.get("associated_dc_num");
+            node.cluster = (String) row.get("cluster");
+            //node.cluster_size = (int) row.get("cluster_size");
+            node.extra_deployment_tag1 = (String) row.get("extra_deployment_tag1");
+            node.extra_deployment_tag2 = (String) row.get("extra_deployment_tag2");
+            node.extra_deployment_tag3 = (String) row.get("extra_deployment_tag3");
+            node.replication_role = (String) row.get("replication_role");
+            node.jdbc_url = (String) row.get("jdbc_url");
+            node._sort_list.add("urn");
+            node._sort_list.add("db_code");
+            //node._sort_list.add("last_modified");
+        }
+    }
+
+    public static ObjectNode getFlowLineage(String application, String project, Long flowId) {
+        ObjectNode resultNode = Json.newObject();
+        return resultNode;
+    }
+
+    public static List<ImpactDataset> getImpactDatasetsByUrn(String urn) {
+        List<ImpactDataset> impactDatasetList = new ArrayList<ImpactDataset>();
+
+        // if (StringUtils.isNotBlank(urn))
+        // {
+        //     List<String> searchUrnList = new ArrayList<String>();
+        //     searchUrnList.add(urn);
+        //     getImpactDatasets(searchUrnList, 1, impactDatasetList);
+        // }
+
+        return impactDatasetList;
+
+    }
 }
