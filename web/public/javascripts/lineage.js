@@ -772,10 +772,10 @@ var g_downLevel = 1;
                 }
                 else if (data.nodes[i].node_type == 'app'){
                     shape = "ellipse";
-                    if (data.nodes[i]["app_code"])
+                    if (data.nodes[i]["name"])
                     {
-                        schema_type = data.nodes[i]["app_code"];
-                        name = data.nodes[i]["app_code"];
+                        schema_type = data.nodes[i]["name"];
+                        name = data.nodes[i]["name"];
                     }
                     else
                     {
@@ -785,10 +785,10 @@ var g_downLevel = 1;
                 }
                 else if (data.nodes[i].node_type == 'DB'){
                     shape = "rect";
-                    if (data.nodes[i]["db_code"])
+                    if (data.nodes[i]["name"])
                     {
-                        schema_type = data.nodes[i]["db_code"];
-                        name = data.nodes[i]["db_code"];
+                        schema_type = data.nodes[i]["name"];
+                        name = data.nodes[i]["name"];
                     }
                     else
                     {
@@ -810,16 +810,16 @@ var g_downLevel = 1;
                     }
                 }
 
-                if (schema_type.toLowerCase() == 'druid')
+                if (schema_type.toLowerCase().includes('druid'))
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:lightblue', id: data.nodes[i].id, shape: shape});
                 else if (schema_type.toLowerCase() == 'hdfs')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:thistle', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'parquet')
+                else if (schema_type.toLowerCase().includes('parquet'))
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:tan', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'lucene')
+                else if (schema_type.toLowerCase().includes('lucene'))
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:seagreen', id: data.nodes[i].id, shape: shape});
                 else if (schema_type.toLowerCase() == 'natezza')
@@ -828,22 +828,22 @@ var g_downLevel = 1;
                 else if (schema_type.toLowerCase() == 'pulse')
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:sandybrown', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'move-it')
+                else if (schema_type.toLowerCase().includes('moveit'))
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:peachpuff', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'sql')
+                else if (schema_type.toLowerCase().includes('qa'))
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:navajowhite', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'extract')
+                else if (schema_type.toLowerCase().includes('sa'))
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:palegreen', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'transform')
+                else if (schema_type.toLowerCase().includes('pim'))
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:orange', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'load')
+                else if (schema_type.toLowerCase().includes('datamgt'))
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:wheat', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'java')
+                else if (schema_type.toLowerCase().includes('prospector'))
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:lightcoral', id: data.nodes[i].id, shape: shape});
                 else
