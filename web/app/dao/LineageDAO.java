@@ -102,11 +102,13 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             switch (file_type) {
                 case "raw-parquet":
                 case "domain-parquet":
+                case "match-parquet":
                 case "opportunity-parquet":
                 case "parquet":
                 case "supply-druid":
                 case "purchase-druid":
                 case "druid":
+                case "domain-lucene":
                 case "lucene":
                     // this is a dataset so we call the dataset handling function
                     return "data";
@@ -248,7 +250,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             // stored in dict_dataset, so has those fields
             node.name = (String) row.get("name");
             node.schema = (String) row.get("schema");
-            JsonNode prop = Json.parse(row.get("properties"));
+            JsonNode prop = Json.parse((String) row.get("properties"));
 
             // properties is a JsonNode, extract what we want out of it
             node.description = prop.get("description").asText();
@@ -267,6 +269,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             node._sort_list.add("urn");
             node._sort_list.add("app_code");
             node._sort_list.add("description");
+            node._sort_list.add("name");
         }
     }
 
@@ -282,7 +285,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             // node only knows id, level, and urn, assign all other attributes
             node.name = (String) row.get("name");
             node.schema = (String) row.get("schema");
-            JsonNode prop = Json.parse(row.get("properties"));
+            JsonNode prop = Json.parse((String) row.get("properties"));
             node.description = prop.get("description").asText();
             node.source = (String) row.get("source");
             node.storage_type = (String) row.get("dataset_type"); // what the js calls storage_type, the sql calls dataset_type
@@ -296,6 +299,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
                 node._sort_list.add("abstracted_path");
                 node._sort_list.add("storage_type");
                 node._sort_list.add("urn");
+                node._sort_list.add("name");
             } catch (NullPointerException e) {
                 if (node == null) {
                     Logger.debug("it's node");
@@ -318,7 +322,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         for (Map row : rows) {
             node.name = (String) row.get("name");
             node.schema = (String) row.get("schema");
-            JsonNode prop = Json.parse(row.get("properties"));
+            JsonNode prop = Json.parse((String) row.get("properties"));
             node.description = prop.get("description").asText();
             node.jdbc_url = prop.get("jdbc_url").asText();
             node.db_code = prop.get("db_code").asText();
@@ -339,6 +343,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             node.jdbc_url = (String) row.get("jdbc_url");*/
             node._sort_list.add("urn");
             node._sort_list.add("db_code");
+            node._sort_list.add("name");
             //node._sort_list.add("last_modified");
         }
     }
