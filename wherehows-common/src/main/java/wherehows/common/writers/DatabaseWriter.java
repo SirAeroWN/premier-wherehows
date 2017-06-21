@@ -24,6 +24,7 @@ import org.springframework.jdbc.datasource.DriverManagerDataSource;
 import wherehows.common.schemas.AbstractRecord;
 import wherehows.common.schemas.Record;
 import wherehows.common.utils.PreparedStatementUtil;
+//import play.Logger;
 
 
 /**
@@ -82,21 +83,21 @@ public class DatabaseWriter extends Writer {
     try {
       this.jdbcTemplate.execute(sb.toString());
     } catch (DataAccessException e) {
-      logger.error("This statement have error : " + sb.toString());
+      logger.error("This statement have error : " + sb.toString() + " | " + e);
       this.records.clear(); // need to recover the records.
     }
     this.records.clear();
     return false;
   }
 
-  public synchronized boolean flushFam()
+  public synchronized boolean insert(String commaDelimitedNames)
           throws SQLException {
     if (records.size() == 0) {
       return false;
     }
 
     StringBuilder sb = new StringBuilder();
-    sb.append("INSERT INTO " + this.tableName + " (parent_urn, child_urn) VALUES ");
+    sb.append("INSERT INTO " + this.tableName + " (" + commaDelimitedNames + ") VALUES ");
     for (Record r : this.records) {
       sb.append("(" + r.toDatabaseValue() + "),");
     }
@@ -107,7 +108,7 @@ public class DatabaseWriter extends Writer {
     try {
       this.jdbcTemplate.execute(sb.toString());
     } catch (DataAccessException e) {
-      logger.error("This statement have error : " + sb.toString());
+      logger.error("This statement has an error : " + sb.toString() + " | " + e);
       this.records.clear(); // need to recover the records.
     }
     this.records.clear();
@@ -117,7 +118,9 @@ public class DatabaseWriter extends Writer {
   @Override
   public void close()
       throws SQLException {
+    logger.debug("closing...");
     this.flush();
+    logger.debug("flushed");
   }
 
   /**
@@ -138,6 +141,8 @@ public class DatabaseWriter extends Writer {
     final String sql =
         (columnNames != null) ? PreparedStatementUtil.prepareInsertTemplateWithColumn(tableName, columnNames)
             : PreparedStatementUtil.prepareInsertTemplateWithoutColumn(tableName, record0.getAllFields().length);
+    logger.info("sql string: " + sql);
+    logger.error("columnNames: " + columnNames);
     //logger.debug("DatabaseWriter template for " + record0.getClass() + " : " + sql);
 
     for (final Record record : records) {
@@ -153,6 +158,7 @@ public class DatabaseWriter extends Writer {
         }); */
       } catch (IllegalAccessException | DataAccessException ae) {
         logger.error("DatabaseWriter insert error: " + ae);
+        ae.printStackTrace();
       }
     }
     records.clear();
