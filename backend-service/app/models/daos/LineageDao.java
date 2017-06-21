@@ -166,7 +166,12 @@ public class LineageDao {
       for (LineageRecord record : records) {
         dw.append(record);
       }
-      dw.flushFam();
+      Logger.debug("before insert");
+      boolean temp = dw.insert("parent_urn, child_urn");
+      if (!temp) {
+          Logger.debug("insert failed mysteriusly");
+      }
+      Logger.debug("after insert");
     } catch (IOException | SQLException e) {
       e.printStackTrace();
     } finally {
