@@ -146,7 +146,12 @@ public class LineageRecord implements Record, Comparable<LineageRecord> {
     return sb.toString();
   }
 
-  public String toFamilyDatabaseValue() {
+  public String[] getDbColumnNames() {
+    String[] columns = { "parent_urn", "child_urn" };
+    return columns;
+  }
+
+  /*public String toFamilyDatabaseValue() {
     allFields = new ArrayList<>();
     allFields.add(parent_urn);
     allFields.add(child_urn);
@@ -157,7 +162,7 @@ public class LineageRecord implements Record, Comparable<LineageRecord> {
     }
     sb.deleteCharAt(sb.length() - 1);
     return sb.toString();
-  }
+  }*/
 
   /**
    * After analyze, the path need to update to abstract format
