@@ -203,4 +203,77 @@ public class DatasetController extends Controller {
     return ok(resultJson);
   }
 
+  public static Result getLatestOfType(String type) {
+      try {
+        ObjectNode resultJson = Json.newObject();
+        if (type == null) {
+          resultJson.put("return_code", 400);
+          resultJson.put("error_message", "no type provided");
+          return ok(resultJson);
+        } else {
+          resultJson = DatasetDao.getLatestOfType(type);
+          return ok(resultJson);
+        }
+      } catch (SQLException e) {
+        e.printStackTrace();
+      }
+      return ok("there was a problem");
+  }
+
+  public static Result getLatestAfter(String type, long time) {
+    try {
+      ObjectNode resultJson = Json.newObject();
+      if (type == null) {
+        resultJson.put("return_code", 400);
+        resultJson.put("error_message", "type not provided");
+        return ok(resultJson);
+      } else {
+        resultJson = DatasetDao.getLatestAfter(type, time);
+        return ok(resultJson);
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return ok("there was a problem");
+  }
+
+  public static Result getLatestBefore(String type, long time) {
+    try {
+      ObjectNode resultJson = Json.newObject();
+      if (type == null) {
+        resultJson.put("return_code", 400);
+        resultJson.put("error_message", "type not provided");
+        return ok(resultJson);
+      } else {
+        resultJson = DatasetDao.getLatestBefore(type, time);
+        return ok(resultJson);
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return ok("there was a problem");
+  }
+
+  public static Result getLatestBetween(String type, long firsttime, long secondtime) {
+    try {
+      ObjectNode resultJson = Json.newObject();
+      if (type == null) {
+        resultJson.put("return_code", 400);
+        resultJson.put("error_message", "type not provided");
+        return ok(resultJson);
+      } else {
+        if (firsttime > secondtime) {
+          long temp = secondtime;
+          secondtime = firsttime;
+          firsttime = temp;
+        }
+        resultJson = DatasetDao.getLatestBetween(type, firsttime, secondtime);
+        return ok(resultJson);
+      }
+    } catch (SQLException e) {
+        e.printStackTrace();
+    }
+    return ok("there was a problem");
+  }
+
 }
