@@ -44,6 +44,8 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
 
     private final static String GET_DB_ATTR = "SELECT * FROM cfg_database WHERE uri = :urn";
 
+    private final static String GET_PROPERTY = "SELECT property_value FROM wh_property WHERE property_name = ?";
+
     public static JsonNode getObjectAdjacnet(String urn, int upLevel, int downLevel, int lookBackTime) {
         // lineage is stored in an ajacency table with columns: id | parent_urn | child_urn
         // ignores look back time
@@ -64,23 +66,22 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         node.level = level;
         node.urn = urn;
         node._sort_list = new ArrayList<String>();
-        switch (parseURN(urn)) {
+        switch (getType(urn).toLowerCase()) {
             case "app":
                 node.node_type = "app";
-                // do assignment stuff
                 assignApp(node);
                 break;
             case "data":
                 node.node_type = "data";
-                // do assignment stuff
                 assignData(node);
                 break;
             case "DB":
-                node.node_type = "DB";
-                // do assignment stuff
+                node.node_type = "db";
                 assignDB(node);
                 break;
             default:
+                node.node_type = "general";
+                assignGeneral(node);
                 Logger.error("parsing failed for origin URN: " + urn);
         }
         nodes.add(node);
@@ -97,37 +98,83 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         return resultNode;
     }
 
+    /**
+     * Does some thing in old style.
+     *
+     * @deprecated use {@link #getType(String urn)} instead.
+     */
+    @Deprecated
     private static String parseURN(String urn) {
-            String file_type = urn.substring(0, urn.indexOf("://")).toLowerCase();
-            switch (file_type) {
-                case "raw-parquet":
-                case "domain-parquet":
-                case "match-parquet":
-                case "opportunity-parquet":
-                case "parquet":
-                case "supply-druid":
-                case "purchase-druid":
-                case "druid":
-                case "domain-lucene":
-                case "lucene":
-                    // this is a dataset so we call the dataset handling function
-                    return "data";
-                case "natezza":
-                case "pulse":
-                case "qa":
-                case "sa":
-                case "pim":
-                case "datamgt":
-                    // this is a database so call the database handling function
-                    return "DB";
-                case "moveit-extract":
-                case "moveit-transform":
-                    return "app";
+        String file_type = urn.substring(0, urn.indexOf("://")).toLowerCase();
+        switch (file_type) {
+            case "raw-parquet":
+            case "domain-parquet":
+            case "match-parquet":
+            case "opportunity-parquet":
+            case "parquet":
+            case "supply-druid":
+            case "purchase-druid":
+            case "druid":
+            case "domain-lucene":
+            case "lucene":
+                // this is a dataset so we call the dataset handling function
+                return "data";
+            case "natezza":
+            case "pulse":
+            case "qa":
+            case "sa":
+            case "spend":
+            case "pim":
+            case "datamgt":
+                // this is a database so call the database handling function
+                return "DB";
+            case "moveit-extract":
+            case "moveit-transform":
+                return "app";
+            default:
+                // must be an error if we got here
+                Logger.error("could not parse URN, assuming job: " + urn);
+                return "app";
+        }
+    }
+
+    private static String getPrefix(String urn) {
+        return urn.substring(0, urn.indexOf("://")).toLowerCase();
+    }
+
+    private static String getPostfix(String urn) {
+        return urn.substring(urn.indexOf("://") + 3);
+    }
+
+    private static String getType(String urn) {
+        return getProp("type." + getPrefix(urn));
+    }
+
+    private static String getColor(String urn, String node_type) {
+        String color = getProp("color." + getPrefix(urn));
+        if (color == null || color == "default") {
+            // color names come from SVG color pallete at http://www.graphviz.org/doc/info/colors.html
+            switch (node_type.toLowerCase()) {
+                case "data":
+                    return "thistle";
+                case "db":
+                    return "cyan";
+                case "app":
+                    return "tomato";
                 default:
-                    // must be an error if we got here
-                    Logger.error("could not parse URN, assuming job: " + urn);
-                    return "app";
+                    return "olive";
             }
+        }
+        return color;
+    }
+
+    private static String getProp(String propName) {
+        List<String> props = getJdbcTemplate().queryForList(GET_PROPERTY, String.class, propName);
+        if (props == null || props.size() == 0) {
+            Logger.info("Could not find property for property_name: " + propName);
+            return "default";
+        }
+        return props.get(0);
     }
 
     private static void getRelativeGraph(List<LineageNode> nodes, List<LineageEdge> edges, int maxDepth, int direction, LineageNode currNode) {
@@ -144,7 +191,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
                 node._sort_list = new ArrayList<String>();
                 LineageEdge edge = new LineageEdge();
                 edge.id = edges.size();
-                switch (parseURN(relative)) {
+                switch (getType(relative).toLowerCase()) {
                     case "app":
                         // do assignment stuff
                         node.node_type = "app";
@@ -163,13 +210,18 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
                         break;
                     case "DB":
                         // do assignment stuff
-                        node.node_type = "DB";
+                        node.node_type = "db";
                         assignDB(node);
                         nodes.add(node);
                         edges.add(edge);
                         getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
                         break;
                     default:
+                        node.node_type = "general";
+                        assignGeneral(node);
+                        nodes.add(node);
+                        edges.add(edge);
+                        getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
                         Logger.error("parsing failed for relative URN: " + relative);
                 }
                 String target = "";
@@ -185,6 +237,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
                     edge.source = currNode.id;
                     source = currNode.node_type;
                 }
+                // TODO: make this more flexible, perhaps another property?
                 if ((source == "data" && target == "data") || (source == "data" && target == "DB") || (source == "DB" && target == "DB") || (source == "DB" && target == "data")) {
                     edge.label = "source";
                 } else if (source == "data" && target == "app") {
@@ -256,16 +309,10 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             node.description = prop.get("description").asText();
             node.app_code = prop.get("app_code").asText();
 
-            /*node.app_code = (String) row.get("app_code");
-            node.description = (String) row.get("description");
-            node.tech_matrix_id = (int) row.get("tech_matrix_id");
-            node.doc_url = (String) row.get("doc_url");
-            node.app_status = (String) row.get("app_status");
-            node.is_logical = (String) row.get("is_logical");
-            node.uri_type = (String) row.get("uri_type");
-            node.uri = (String) row.get("uri");
-            node.lifecycle_layer_id = (String) row.get("lifecycle_layer_id");
-            node.short_connection_string = (String) row.get("short_connection_string");*/
+            // check wh_property for a user specified color, use some generic defaults if nothing found
+            node.color = getColor(node.urn, node.node_type);
+
+            // set things to show up in tooltip
             node._sort_list.add("urn");
             node._sort_list.add("app_code");
             node._sort_list.add("description");
@@ -290,11 +337,13 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             node.source = (String) row.get("source");
             node.storage_type = (String) row.get("dataset_type"); // what the js calls storage_type, the sql calls dataset_type
             node.dataset_type = (String) row.get("dataset_type");
-            //node.source_created_time = (String) row.get("source_created_time");
-            //node.source_modified_time = (String) row.get("source_modified_time");
-            //node.created_time = (String) row.get("created_time");
-            //node.modified_time = (String) row.get("modified_time");
-            node.abstracted_path = node.urn.substring(node.urn.indexOf("://") + 3, node.urn.length()).toLowerCase();
+
+            // check wh_property for a user specified color, use some generic defaults if nothing found
+            node.color = getColor(node.urn, node.node_type);
+
+            node.abstracted_path = getPostfix(node.urn);
+
+            // set things to show up in tooltip
             try {
                 node._sort_list.add("abstracted_path");
                 node._sort_list.add("storage_type");
@@ -327,24 +376,35 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             node.jdbc_url = prop.get("jdbc_url").asText();
             node.db_code = prop.get("db_code").asText();
 
-            /*node.db_code = (String) row.get("db_code");
-            node.primary_dataset_type = (String) row.get("primary_dataset_type");
-            node.description = (String) row.get("description");
-            node.is_logical = (String) row.get("is_logical");
-            node.deployment_tier = (String) row.get("deployment_tier");
-            node.data_center = (String) row.get("data_center");
-            //node.associated_dc_num = (int) row.get("associated_dc_num");
-            node.cluster = (String) row.get("cluster");
-            //node.cluster_size = (int) row.get("cluster_size");
-            node.extra_deployment_tag1 = (String) row.get("extra_deployment_tag1");
-            node.extra_deployment_tag2 = (String) row.get("extra_deployment_tag2");
-            node.extra_deployment_tag3 = (String) row.get("extra_deployment_tag3");
-            node.replication_role = (String) row.get("replication_role");
-            node.jdbc_url = (String) row.get("jdbc_url");*/
+            // check wh_property for a user specified color, use some generic defaults if nothing found
+            node.color = getColor(node.urn, node.node_type);
+
+            // set things to show up in tooltip
             node._sort_list.add("urn");
             node._sort_list.add("db_code");
             node._sort_list.add("name");
             //node._sort_list.add("last_modified");
+        }
+    }
+
+    private static void assignGeneral(LineageNode node) {
+        List<Map<String, Object>> rows = null;
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("urn", node.urn);
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
+
+        rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
+
+        for (Map row : rows) {
+            node.name = (String) row.get("name");
+            node.schema = (String) row.get("schema");
+
+            // check wh_property for a user specified color, use some generic defaults if nothing found
+            node.color = getColor(node.urn, node.node_type);
+
+            // set things to show up in tooltip
+            node._sort_list.add("urn");
+            node._sort_list.add("name");
         }
     }
 
