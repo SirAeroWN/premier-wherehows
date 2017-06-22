@@ -91,6 +91,8 @@ public class DatasetDao {
 
   public static final String GET_LATEST_BETWEEN_MORPHENE = "AND source_modified_time BETWEEN :firsttime AND :secondtime ";
 
+  public static final String GET_AT_TIME_MORPHEME = "AND source_modified_time = :time ";
+
   public static Map<String, Object> getDatasetById(int datasetId)
     throws SQLException {
     Map<String, Object> params = new HashMap<>();
@@ -471,7 +473,9 @@ public class DatasetDao {
        params.put("type", type);
        List<Map<String, Object>> rows = null;
        rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
-       result.put("urn", (String) rows.get(0).get("urn"));
+       if (rows.size() > 0) {
+         result.put("urn", (String) rows.get(0).get("urn"));
+       }
      }
      return result;
    }
@@ -484,7 +488,9 @@ public class DatasetDao {
        params.put("time", time);
        List<Map<String, Object>> rows = null;
        rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_LATEST_AFTER_MORPHEME + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
-       result.put("urn", (String) rows.get(0).get("urn"));
+       if (rows.size() > 0) {
+         result.put("urn", (String) rows.get(0).get("urn"));
+       }
      }
      return result;
    }
@@ -497,7 +503,9 @@ public class DatasetDao {
        params.put("time", time);
        List<Map<String, Object>> rows = null;
        rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_LATEST_BEFORE_MORPHEME + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
-       result.put("urn", (String) rows.get(0).get("urn"));
+       if (rows.size() > 0) {
+         result.put("urn", (String) rows.get(0).get("urn"));
+       }
      }
      return result;
    }
@@ -511,9 +519,27 @@ public class DatasetDao {
        params.put("secondtime", secondtime);
        List<Map<String, Object>> rows = null;
        rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_LATEST_BETWEEN_MORPHENE + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
-       result.put("urn", (String) rows.get(0).get("urn"));
+       if (rows.size() > 0) {
+         result.put("urn", (String) rows.get(0).get("urn"));
+       }
      }
      return result;
    }
+
+  public static ObjectNode getAtTime(String type, long time) throws SQLException {
+    ObjectNode result = Json.newObject();
+    if (StringUtils.isNotBlank(type)) {
+      Map<String, Object> params = new HashMap<>();
+      params.put("type", type);
+      params.put("time", time);
+      List<Map<String, Object>> rows = null;
+      rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_AT_TIME_MORPHEME + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
+      if (rows.size() > 0) {
+        result.put("urn", (String) rows.get(0).get("urn"));
+      }
+    }
+    return result;
+  }
+
 
 }
