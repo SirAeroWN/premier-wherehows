@@ -752,6 +752,7 @@ var g_downLevel = 1;
                 var schema_type = '';
                 var name;
                 var shape = "rect";
+                var color;
                 if (data.nodes[i].node_type == 'data'){
                     if (data.nodes[i]["storage_type"])
                     {
@@ -783,7 +784,7 @@ var g_downLevel = 1;
                         name = "ETL_job";
                     }
                 }
-                else if (data.nodes[i].node_type == 'DB'){
+                else if (data.nodes[i].node_type == 'db'){
                     shape = "rect";
                     if (data.nodes[i]["name"])
                     {
@@ -798,10 +799,10 @@ var g_downLevel = 1;
                 }
                 else {
                     shape = "ellipse";
-                    if (data.nodes[i]["job_type"])
+                    if (data.nodes[i]["name"])
                     {
-                        schema_type = data.nodes[i]["job_type"];
-                        name = data.nodes[i]["job_type"];
+                        schema_type = data.nodes[i]["name"];
+                        name = data.nodes[i]["name"];
                     }
                     else
                     {
@@ -810,6 +811,15 @@ var g_downLevel = 1;
                     }
                 }
 
+                if (data.nodes[i]["color"]) {
+                    color = data.nodes[i]["color"];
+                    g.setNode(data.nodes[i].id, { label: name, style:'fill:' + color, id: data.nodes[i].id, shape: shape});
+                }
+                else {
+                    g.setNode(data.nodes[i].id, { label: name, style:'fill:pink', id: data.nodes[i].id, shape: shape});
+                }
+
+                /*
                 if (schema_type.toLowerCase().includes('druid'))
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:lightblue', id: data.nodes[i].id, shape: shape});
@@ -849,6 +859,7 @@ var g_downLevel = 1;
                 else
                     g.setNode(data.nodes[i].id,
                         { label: name, style:'fill:pink', id: data.nodes[i].id, shape: shape});
+                */
             }
             for(var i = 0; i < data.links.length; i++)
             {
