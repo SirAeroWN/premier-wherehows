@@ -148,6 +148,12 @@ public class LineageDao {
       List<LineageRecord> records = new ArrayList<LineageRecord>();
       JsonNode parents = lineage.findPath("parent_urn");
       JsonNode children = lineage.findPath("child_urn");
+      if (parents == null) {
+          Logger.error("No parent urn");
+      }
+      if (children == null) {
+          Logger.error("No child urn");
+      }
       //Logger.debug(parents.toString());
       //Logger.debug(children.toString());
       if (parents.isArray() && children.isArray()) {
@@ -166,12 +172,7 @@ public class LineageDao {
       for (LineageRecord record : records) {
         dw.append(record);
       }
-      Logger.debug("before insert");
-      boolean temp = dw.insert("parent_urn, child_urn");
-      if (!temp) {
-          Logger.debug("insert failed mysteriusly");
-      }
-      Logger.debug("after insert");
+        boolean temp = dw.insert("parent_urn, child_urn");
     } catch (IOException | SQLException e) {
       e.printStackTrace();
     } finally {
