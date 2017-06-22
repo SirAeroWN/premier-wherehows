@@ -110,9 +110,10 @@ public class DatabaseWriter extends Writer {
     } catch (DataAccessException e) {
       logger.error("This statement has an error : " + sb.toString() + " | " + e);
       this.records.clear(); // need to recover the records.
+      return false;
     }
     this.records.clear();
-    return false;
+    return true;
   }
 
   @Override
@@ -133,6 +134,7 @@ public class DatabaseWriter extends Writer {
       throws SQLException {
     if (records.size() == 0 || !(records.get(0) instanceof AbstractRecord)) {
       logger.debug("DatabaseWriter no record to insert or unknown record Class.");
+      System.out.println("DatabaseWriter no record or unknown record Class: " + records.size() + " | " + records.get(0) + " | " + (records.get(0) instanceof AbstractRecord));
       return false;
     }
 
@@ -143,6 +145,7 @@ public class DatabaseWriter extends Writer {
             : PreparedStatementUtil.prepareInsertTemplateWithoutColumn(tableName, record0.getAllFields().length);
     logger.info("sql string: " + sql);
     logger.error("columnNames: " + columnNames);
+    System.out.println("sql: " + sql + " | " + columnNames);
     //logger.debug("DatabaseWriter template for " + record0.getClass() + " : " + sql);
 
     for (final Record record : records) {
