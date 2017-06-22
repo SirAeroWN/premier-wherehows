@@ -276,4 +276,40 @@ public class DatasetController extends Controller {
     return ok("there was a problem");
   }
 
+  public static Result getAtTime(String type, long time) {
+    try {
+      ObjectNode resultJson = Json.newObject();
+      if (type == null) {
+        resultJson.put("return_code", 400);
+        resultJson.put("error_message", "type not provided");
+        return ok(resultJson);
+      } else {
+        resultJson = DatasetDao.getAtTime(type, time);
+        return ok(resultJson);
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return ok("there was a problem");
+  }
+
+  public static Result getAtTimeWindow(String type, long time, long window) throws SQLException {
+    try {
+      ObjectNode resultJson = Json.newObject();
+      if (type == null) {
+        resultJson.put("return_code", 400);
+        resultJson.put("error_message", "type not provided");
+        return ok(resultJson);
+      } else {
+        long firsttime = time - window;
+        long secondtime = time + window;
+        resultJson = DatasetDao.getLatestBetween(type, firsttime, secondtime);
+        return ok(resultJson);
+      }
+    } catch (SQLException e) {
+      e.printStackTrace();
+    }
+    return ok("there was a problem");
+  }
+
 }
