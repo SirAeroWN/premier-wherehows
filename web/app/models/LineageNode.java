@@ -92,4 +92,7 @@ public class LineageNode {
     public String lifecycle_layer_id;
     public String short_connection_string;
 
+    // make coloring more flexible
+    public String color;
+
 }
