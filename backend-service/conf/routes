@@ -30,14 +30,20 @@ GET         /dataset/properties           controllers.DatasetController.getDatas
 # Find latest dataset of given type
 GET         /dataset/latest/:type         controllers.DatasetController.getLatestOfType(type: String)
 
-# Find Find latest dataset of given type after a certain date
+# Find latest dataset of given type after a certain date
 GET         /dataset/after/:type/:time    controllers.DatasetController.getLatestAfter(type: String, time: Long)
 
-# Find Find latest dataset of given type after a certain date
+# Find latest dataset of given type after a certain date
 GET         /dataset/before/:type/:time   controllers.DatasetController.getLatestBefore(type: String, time: Long)
 
-# Find Find latest dataset of given type after a certain date
+# Find latest dataset of given type after a certain date
 GET         /dataset/between/:type/:firsttime/:secondtime              controllers.DatasetController.getLatestBetween(type: String, firsttime: Long, secondtime: Long)
+
+# Find  dataset of given type at a certain date
+GET         /dataset/attime/:type/:time              controllers.DatasetController.getAtTime(type: String, time: Long)
+
+# Find  dataset of given type at a certain date within a range (essentially a wrapper for /dataset/between/)
+GET         /dataset/attime/:type/:time/:window              controllers.DatasetController.getAtTimeWindow(type :String, time: Long, window: Long)
 
 
 # Insert a new dataset
