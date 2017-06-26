@@ -470,7 +470,7 @@ public class DatasetDao {
      ObjectNode result = Json.newObject();
      if (StringUtils.isNotBlank(type)) {
        Map<String, Object> params = new HashMap<>();
-       params.put("type", type + "%");
+       params.put("type", type + "://%");
        List<Map<String, Object>> rows = null;
        rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
        if (rows.size() > 0) {
@@ -484,7 +484,7 @@ public class DatasetDao {
      ObjectNode result = Json.newObject();
      if (StringUtils.isNotBlank(type)) {
        Map<String, Object> params = new HashMap<>();
-       params.put("type", type + "%");
+       params.put("type", type + "://%");
        params.put("time", time);
        List<Map<String, Object>> rows = null;
        rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_LATEST_AFTER_MORPHEME + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
@@ -499,7 +499,7 @@ public class DatasetDao {
      ObjectNode result = Json.newObject();
      if (StringUtils.isNotBlank(type)) {
        Map<String, Object> params = new HashMap<>();
-       params.put("type", type + "%");
+       params.put("type", type + "://%");
        params.put("time", time);
        List<Map<String, Object>> rows = null;
        rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_LATEST_BEFORE_MORPHEME + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
@@ -514,7 +514,7 @@ public class DatasetDao {
      ObjectNode result = Json.newObject();
      if (StringUtils.isNotBlank(type)) {
        Map<String, Object> params = new HashMap<>();
-       params.put("type", type + "%");
+       params.put("type", type + "://%");
        params.put("firsttime", firsttime);
        params.put("secondtime", secondtime);
        List<Map<String, Object>> rows = null;
@@ -530,7 +530,7 @@ public class DatasetDao {
     ObjectNode result = Json.newObject();
     if (StringUtils.isNotBlank(type)) {
       Map<String, Object> params = new HashMap<>();
-      params.put("type", type + "%");
+      params.put("type", type + "://%");
       params.put("time", time);
       List<Map<String, Object>> rows = null;
       rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_AT_TIME_MORPHEME + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
