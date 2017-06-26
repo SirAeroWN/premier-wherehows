@@ -31,4 +31,6 @@ source ETL_DDL/family_setup.sql;
 source WEB_DDL/track.sql;
 source WEB_DDL/users.sql;
 
+source ETL_DDL/default_properties.sql;
+
 show tables;
