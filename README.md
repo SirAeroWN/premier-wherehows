@@ -1,5 +1,5 @@
 #IGNORE THIS README FOR NOW
-# WhereHows [![Build Status](https://travis-ci.org/linkedin/WhereHows.svg?branch=master)](https://travis-ci.org/linkedin/WhereHows)
+# WhereHows
 
 WhereHows is a data discovery and lineage tool built at LinkedIn. It integrates with all the major data processing systems and collects both catalog and operational metadata from them. 
 
@@ -11,73 +11,62 @@ WhereHows serves as the single platform that:
 * links data objects with people and processes
 * enables crowdsourcing for data knowledge
 * provides data governance and provenance based on ownership and lineage
- 
-## Documentation
-
-The detailed information can be found in the [Wiki][wiki]
-
-
-## Examples in VM
-
-There is a pre-built vmware image (about 11GB) to quickly demonstrate the functionality of WhereHows. Check out the [VM Guide][VM]
 
 
 ## Getting Started
 
-New to Wherehows? Check out the [Getting Started Guide][GS]
 
 ### Preparation
 
 First, please get Play Framework in place.
-```
-wget http://downloads.typesafe.com/play/2.2.4/play-2.2.4.zip
 
-# Unzip, Remove zipped folder, move play folder to $HOME
-unzip play-2.2.4.zip && rm play-2.2.4.zip && mv play-2.2.4 $HOME/
+    wget http://downloads.typesafe.com/play/2.2.4/play-2.2.4.zip
 
-# Add PLAY_HOME, GRADLE_HOME. Update Path to include new gradle, alias to counteract issues
-echo 'export PLAY_HOME="$HOME/play-2.2.4"' >> ~/.bashrc
-source ~/.bashrc
-```
+    # Unzip, Remove zipped folder, move play folder to $HOME
+    unzip play-2.2.4.zip && rm play-2.2.4.zip && mv play-2.2.4 $HOME/
 
-You need to update the file $PLAY_HOME/framework/build to increase the **JVM stack size** (-Xss1M) to 2M or more.
+    # Add PLAY_HOME, GRADLE_HOME. Update Path to include new gradle, alias to counteract issues
+    echo 'export PLAY_HOME="$HOME/play-2.2.4"' >> ~/.bashrc
+    source ~/.bashrc
 
-Second, please [setup the metadata repository][DB] in MySQL. 
-```
-CREATE DATABASE wherehows
-  DEFAULT CHARACTER SET utf8
-  DEFAULT COLLATE utf8_general_ci;
-
-CREATE USER 'wherehows';
-SET PASSWORD FOR 'wherehows' = PASSWORD('wherehows');
-GRANT ALL ON wherehows.* TO 'wherehows'
-```
-
-Execute the [DDL files][DDL] to create the required repository tables in **wherehows** database.
 
 
 ### Build
 
-1. Get the source code: ```git clone https://github.com/linkedin/WhereHows.git```
-2. Put a few 3rd-party jar files to **metadata-etl/extralibs** directory. Some of these jar files may not be available in Maven Central or Artifactory. See [the download instrucitons][EXJAR] for more detail. ```cd WhereHows/metadata-etl/extralibs``` 
-3. Go back to the **WhereHows** root directory and build all the modules: ```./gradlew build```
-4. Go back to the **WhereHows** root directory and start the metadata ETL and API service: ```cd backend-service ; $PLAY_HOME/play run```
-5. Go back to the **WhereHows** root directory and start the web front-end: ```cd web ; $PLAY_HOME/play run``` Then WhereHows UI is available at http://localhost:9000 by default. For example, ```play run -Dhttp.port=19001``` will use port 19001 to serve UI.
+1. Clone the wherehows-fork repo from HGPG
+2. Go back to the **WhereHows** root directory and build all the modules: `sudo -u ubuntu PLAY_HOME="/opt/play-2.2.4" SBT_OPTS="-Xms1G -Xmx2G -Xss16M" PLAY_OPTS="-Xms1G -Xmx2G -Xss16M"  ./gradlew build`
+3. Set up the SQL tables by running:
 
-## Contribute
+        sudo mysql_tzinfo_to_sql /usr/share/zoneinfo | mysql -u root mysql
+        sudo mysql -u root <<< "CREATE DATABASE wherehows DEFAULT CHARACTER SET utf8 DEFAULT COLLATE utf8_general_ci;"
+        sudo mysql -u root <<< "CREATE USER 'wherehows';"
+        sudo mysql -u root <<< "SET PASSWORD FOR 'wherehows' = PASSWORD('wherehows');"
+        sudo mysql -u root <<< "GRANT ALL ON wherehows.* TO 'wherehows';"
+        sudo mysql -u root <<< "CREATE USER 'wherehows_ro';"
+        sudo mysql -u root <<< "GRANT ALL ON wherehows.* TO 'wherehows_ro'"
+        sudo mysql -u root <<< "SET PASSWORD FOR 'wherehows_ro' = PASSWORD('readmetadata');"
+        sudo mysql -u root <<< "SET GLOBAL sql_mode=(SELECT REPLACE(@@sql_mode,'ONLY_FULL_GROUP_BY',''));"
+        sudo mysql -uwherehows -pwherehows -Dwherehows < /opt/WhereHows/data-model/DDL/create_all_tables_wrapper.sql
+        sudo mysql -uwherehows -pwherehows -Dwherehows < /opt/WhereHows/data-model/DDL/default_properties.sql
+    
+4. Go back to the **WhereHows** root directory and start the metadata ETL and API service: 
 
-Want to contribute? Check out the [Contributors Guide][CON]
+        ./backend-service/target/universal/stage/bin/backend-service -Dhttp.port=19001
+        
+   To start in the background instead, you can use `nohup`:
+   
+   		 nohup ./target/universal/stage/bin/backend-service -Dhttp.port=19001 > $LOG_PATH/backend-service.log 2>&1& 
+        
+5. Go back to the **WhereHows** root directory and start the web front-end: 
 
-## Community
+        ./target/universal/stage/bin/wherehows -Dhttp.port=9000
+  
+   Or run in the background with `nohup`:
+   
+        nohup ./target/universal/stage/bin/wherehows -Dhttp.port=9000 > $LOG_PATH/web.log 2>&1&
+        
+   Then WhereHows UI is available at `http://localhost:9000` by default.
 
-Want help? Check out the [Google Groups][LIST]
 
-
-[wiki]: https://github.com/LinkedIn/Wherehows/wiki
-[GS]: https://github.com/LinkedIn/Wherehows/wiki/Getting-Started
-[CON]: https://github.com/LinkedIn/Wherehows/wiki/Contributing
-[VM]: https://github.com/LinkedIn/Wherehows/wiki/Quick-Start-With-VM
-[EXJAR]: https://github.com/LinkedIn/Wherehows/wiki/Getting-Started#download-third-party-jar-files
-[DDL]: https://github.com/linkedin/WhereHows/tree/master/data-model/DDL
-[DB]: https://github.com/LinkedIn/Wherehows/wiki/Getting-Started#set-up-your-database
-[LIST]: https://groups.google.com/forum/#!forum/wherehows
+ 
+## Documentation
