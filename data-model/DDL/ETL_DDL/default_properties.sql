@@ -40,8 +40,8 @@ VALUES
 	('color.supply-druid', 'lightblue', 'N', NULL),
 	('color.purchase-druid', 'lightblue', 'N', NULL),
 	('color.moveit-transform-patient', 'peachpuff', 'N', NULL),
-	('color.work-parquet', 'tan', 'N', NULL)
-	('color.surgical-supply-file', 'teal', 'N', NULL);
+	('color.work-parquet', 'tan', 'N', NULL),
+	('color.surgical-supply-file', 'teal', 'N', NULL),
 	('type.qa', 'db', 'N', NULL),
 	('type.sa', 'db', 'N', NULL),
 	('type.pim', 'db', 'N', NULL),
@@ -62,7 +62,7 @@ VALUES
 	('type.moveit', 'app', 'N', NULL),
 	('type.prospector', 'app', 'N', NULL),
 	('type.moveit-extract', 'app', 'N', NULL),
-	('type.moveit-transform', 'app', 'N', NULL)
+	('type.moveit-transform', 'app', 'N', NULL),
 	('type.moveit-transform-patient', 'app', 'N', NULL),
-	('type.work-parquet', 'data', 'N', NULL)
+	('type.work-parquet', 'data', 'N', NULL),
 	('type.surgical-supply-file', 'data', 'N', NULL);
