@@ -18,7 +18,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.sql.SQLException;
 import java.util.Map;
 import java.util.List;
-import models.daos.DatasetDao;
+import models.daos.PropertyDao;
 import models.daos.UserDao;
 import utils.Urn;
 import org.springframework.dao.EmptyResultDataAccessException;
@@ -27,3 +27,114 @@ import play.libs.Json;
 import play.mvc.BodyParser;
 import play.mvc.Controller;
 import play.mvc.Result;
+
+/**
+ * Created by norv on 06/26/17.
+ */
+public class PropertyController extends Controller {
+
+    @BodyParser.Of(BodyParser.Json.class)
+    public static Result addAssignProp() {
+        JsonNode props = request().body().asJson();
+        ObjectNode resultJson = Json.newObject();
+        try {
+            PropertyDao.addAssignProp(props);
+            resultJson.put("return_code", 200);
+            resultJson.put("message", "Assignment Property inserted!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultJson.put("return_code", 404);
+            resultJson.put("error_message", e.getMessage());
+        }
+
+        return ok(resultJson);
+    }
+
+    @BodyParser.Of(BodyParser.Json.class)
+    public static Result updateAssignProp() {
+        JsonNode props = request().body().asJson();
+        ObjectNode resultJson = Json.newObject();
+        try {
+            PropertyDao.updateAssignProp(props);
+            resultJson.put("return_code", 200);
+            resultJson.put("message", "Assignment Property updated!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultJson.put("return_code", 404);
+            resultJson.put("error_message", e.getMessage());
+        }
+
+        return ok(resultJson);
+    }
+
+    public static Result getAssignProp(String name)
+            throws SQLException {
+        ObjectNode resultJson = Json.newObject();
+        try {
+            if (name != null) {
+                ObjectNode result = PropertyDao.getAssignProp(name);
+                resultJson.put("return_code", 200);
+                resultJson.put("properties", result);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultJson.put("return_code", 404);
+            resultJson.put("error_message", e.getMessage());
+        }
+
+        return ok(resultJson);
+    }
+
+
+    @BodyParser.Of(BodyParser.Json.class)
+    public static Result addSortListProp() {
+        JsonNode props = request().body().asJson();
+        ObjectNode resultJson = Json.newObject();
+        try {
+            PropertyDao.addSortListProp(props);
+            resultJson.put("return_code", 200);
+            resultJson.put("message", "Sort List Property inserted!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultJson.put("return_code", 404);
+            resultJson.put("error_message", e.getMessage());
+        }
+
+        return ok(resultJson);
+    }
+
+    @BodyParser.Of(BodyParser.Json.class)
+    public static Result updateSortListProp() {
+        JsonNode props = request().body().asJson();
+        ObjectNode resultJson = Json.newObject();
+        try {
+            PropertyDao.updateSortListProp(props);
+            resultJson.put("return_code", 200);
+            resultJson.put("message", "Sort List Property updated!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultJson.put("return_code", 404);
+            resultJson.put("error_message", e.getMessage());
+        }
+
+        return ok(resultJson);
+    }
+
+    public static Result getSortListProp(String name)
+            throws SQLException {
+        ObjectNode resultJson = Json.newObject();
+        try {
+            if (name != null) {
+                ObjectNode result = PropertyDao.getSortListProp(name);
+                resultJson.put("return_code", 200);
+                resultJson.put("properties", result);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultJson.put("return_code", 404);
+            resultJson.put("error_message", e.getMessage());
+        }
+
+        return ok(resultJson);
+    }
+}
