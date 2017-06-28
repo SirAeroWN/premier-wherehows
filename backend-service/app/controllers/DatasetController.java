@@ -312,4 +312,40 @@ public class DatasetController extends Controller {
     return ok("there was a problem");
   }
 
+  public static Result updateProperties() {
+    JsonNode propChanges = request().body().asJson();
+    ObjectNode resultJson = Json.newObject();
+
+    try {
+      DatasetDao.updateProperties(propChanges);
+    } catch (Exception e) {
+      Logger.error(e.getMessage());
+      e.printStackTrace();
+      Logger.error(propChanges.toString());
+      resultJson.put("return_code", 404);
+      resultJson.put("error_message", e.getMessage());
+    }
+    resultJson.put("return_code", 200);
+
+    return ok(resultJson);
+  }
+
+  public static Result setValidity() {
+    JsonNode validNode = request().body().asJson();
+    ObjectNode resultJson = Json.newObject();
+    try {
+      DatasetDao.updateProperties(validNode);
+      resultJson.put("return_code", 200);
+      return ok(resultJson);
+    } catch (SQLException e) {
+      e.printStackTrace();
+    } catch (Exception e) {
+      Logger.error(e.getMessage());
+      e.printStackTrace();
+      resultJson.put("return_code", 404);
+      resultJson.put("error_message", e.getMessage());
+    }
+    return ok("there was a problem");
+  }
+
 }
