@@ -45,6 +45,26 @@ GET         /dataset/attime/:type/:time              controllers.DatasetControll
 # Find  dataset of given type at a certain date within a range (essentially a wrapper for /dataset/between/)
 GET         /dataset/attime/:type/:time/:window              controllers.DatasetController.getAtTimeWindow(type :String, time: Long, window: Long)
 
+# update/add to/change the properties field of a database
+PUT         /dataset/properties           controllers.DatasetController.updateProperties()
+
+# set a dataset's (or other's) validity
+PUT         /dataset/valid                controllers.DatasetController.setValidity()
+
+
+# get/post/put display property values
+GET         /property/assigns/:name       controllers.PropertyController.getAssignProp(name: String)
+
+POST        /property/assigns             controllers.PropertyController.addAssignProp()
+
+PUT         /property/assigns             controllers.PropertyController.updateAssignProp()
+
+GET         /property/sortlist/:name       controllers.PropertyController.getSortListProp(name: String)
+
+POST        /property/sortlist             controllers.PropertyController.addSortListProp()
+
+PUT         /property/sortlist             controllers.PropertyController.updateSortListProp()
+
 
 # Insert a new dataset
 POST        /dataset                      controllers.DatasetController.addDataset()
