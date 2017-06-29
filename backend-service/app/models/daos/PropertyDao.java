@@ -182,33 +182,47 @@ public class PropertyDao {
 
 
     public static void addNodeColor(JsonNode prop) {
-        String name = "color."
+        String name = "node.color." + prop.get("scheme").asText();
+        String value = prop.get("color").asText();
+        setProp(name, value);
     }
 
     public static void updateNodeColor(JsonNode prop) {
-
+        addNodeColor(prop);
     }
 
     public static ObjectNode getNodeColor(String name) {
-
+        name = "node.color." + name;
+        ObjectNode resultJson = Json.newObject();
+        resultJson.put("property_name", name);
+        resultJson.put("property_value", getProp(name));
+        return resultJson;
     }
 
 
 
     public static void addNodeType(JsonNode prop) {
-
+        String name = "node.type." + prop.get("scheme").asText();
+        String value = prop.get("type").asText();
+        setProp(name, value);
     }
 
     public static void updateNodeType(JsonNode prop) {
-
+        addNodeType(prop);
     }
 
     public static ObjectNode getNodeType(String name) {
+        name = "node.type." + name;
+        ObjectNode resultJson = Json.newObject();
+        resultJson.put("property_name", name);
+        resultJson.put("property_value", getProp(name));
+        return resultJson;
 
     }
 
 
 
+    // Edge color is not currently used, but may be in the future
     public static void addEdgeColor(JsonNode prop) {
 
     }
@@ -218,20 +232,50 @@ public class PropertyDao {
     }
 
     public static ObjectNode getEdgeColor(String name) {
-
+        name = "edge.color." + name;
+        ObjectNode resultJson = Json.newObject();
+        resultJson.put("property_name", name);
+        resultJson.put("property_value", getProp(name));
+        return resultJson;
     }
 
 
 
     public static void addEdgeType(JsonNode prop) {
-
+        String name = "edge.type." + prop.get("scheme").asText();
+        String value = prop.get("type").asText();
+        setProp(name, value);
     }
 
     public static void updateEdgeType(JsonNode prop) {
-
+        addEdgeType(prop);
     }
 
     public static ObjectNode getEdgeType(String name) {
+        name = "edge.type." + name;
+        ObjectNode resultJson = Json.newObject();
+        resultJson.put("property_name", name);
+        resultJson.put("property_value", getProp(name));
+        return resultJson;
+    }
 
+
+
+    public static void addEdgeStyle(JsonNode prop) {
+        String name = "edge.style." + prop.get("scheme").asText();
+        String value = prop.get("style").asText();
+        setProp(name, value);
+    }
+
+    public static void updateEdgeStyle(JsonNode prop) {
+        addEdgeStyle(prop);
+    }
+
+    public static ObjectNode getEdgeStyle(String name) {
+        name = "edge.style." + name;
+        ObjectNode resultJson = Json.newObject();
+        resultJson.put("property_name", name);
+        resultJson.put("property_value", getProp(name));
+        return resultJson;
     }
 }
