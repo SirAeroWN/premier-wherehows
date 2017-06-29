@@ -59,11 +59,40 @@ POST        /property/assigns             controllers.PropertyController.addAssi
 
 PUT         /property/assigns             controllers.PropertyController.updateAssignProp()
 
+# _sort_list get/set
 GET         /property/sortlist/:name       controllers.PropertyController.getSortListProp(name: String)
 
 POST        /property/sortlist             controllers.PropertyController.addSortListProp()
 
 PUT         /property/sortlist             controllers.PropertyController.updateSortListProp()
+
+# node color get/set
+GET         /property/node/color/:name       controllers.PropertyController.getNodeColor(name: String)
+
+POST        /property/node/color             controllers.PropertyController.addNodeColor()
+
+PUT         /property/node/color             controllers.PropertyController.updateNodeColor()
+
+# node type get/set
+GET         /property/node/type/:name       controllers.PropertyController.getNodeType(name: String)
+
+POST        /property/node/type             controllers.PropertyController.addNodeType()
+
+PUT         /property/node/type             controllers.PropertyController.updateNodeType()
+
+# edge style get/set
+GET         /property/edge/style/:name       controllers.PropertyController.getEdgeStyle(name: String)
+
+POST        /property/edge/style             controllers.PropertyController.addEdgeStyle()
+
+PUT         /property/edge/style             controllers.PropertyController.updateEdgeStyle()
+
+# edge type get/set
+GET         /property/edge/type/:name       controllers.PropertyController.getEdgeType(name: String)
+
+POST        /property/edge/type             controllers.PropertyController.addEdgeType()
+
+PUT         /property/edge/type             controllers.PropertyController.updateEdgeType()
 
 
 # Insert a new dataset
