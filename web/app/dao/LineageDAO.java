@@ -113,46 +113,6 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         return resultNode;
     }
 
-    /**
-     * Does some thing in old style.
-     *
-     * @deprecated use {@link #getNodeType(String urn)} instead.
-     */
-    @Deprecated
-    private static String parseURN(String urn) {
-        String file_type = urn.substring(0, urn.indexOf("://")).toLowerCase();
-        switch (file_type) {
-            case "raw-parquet":
-            case "domain-parquet":
-            case "match-parquet":
-            case "opportunity-parquet":
-            case "parquet":
-            case "supply-druid":
-            case "purchase-druid":
-            case "druid":
-            case "domain-lucene":
-            case "lucene":
-                // this is a dataset so we call the dataset handling function
-                return "data";
-            case "natezza":
-            case "pulse":
-            case "qa":
-            case "sa":
-            case "spend":
-            case "pim":
-            case "datamgt":
-                // this is a database so call the database handling function
-                return "DB";
-            case "moveit-extract":
-            case "moveit-transform":
-                return "app";
-            default:
-                // must be an error if we got here
-                Logger.error("could not parse URN, assuming job: " + urn);
-                return "app";
-        }
-    }
-
     private static String getPrefix(String urn) {
         return urn.substring(0, urn.indexOf("://")).toLowerCase();
     }
@@ -181,14 +141,6 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             }
         }
         return color;
-    }
-    
-    private static String getEdgeType(String urn) {
-        return getProp("edge.type." + getPrefix(urn));
-    }
-
-    private static String getEdgeColor(String urn) {
-        return getProp("edge.color." + getPrefix(urn));
     }
 
     private static String getProp(String propName) {
@@ -270,14 +222,13 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
                 if (direction > 0) {
                     edge.target = currNode.id;
                     edge.source = node.id;
-                    setEdgeLabel(edge, node, currNode);
-                    setEdgeType(edge, node, currNode);
+                    setEdgeAttr(edge, node, currNode);
                 } else {
                     edge.target = node.id;
                     edge.source = currNode.id;
-                    setEdgeLabel(edge, currNode, node);
-                    setEdgeType(edge, currNode, node);
+                    setEdgeAttr(edge, currNode, node);
                 }
+
             }
         }
         // we have reached maximum requested depth, let's peace out
@@ -308,6 +259,13 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             Logger.error("couldn't find any children for URN: " + urn);
         }
         return children;
+    }
+
+    private static void setEdgeAttr(LineageEdge edge, LineageNode source, LineageNode target) {
+        setEdgeLabel(edge, source, target);
+        setEdgeType(edge, source, target);
+        //setEdgeColor(edge, source, target)
+        setEdgeStyle(edge, source, target);
     }
 
     private static void setEdgeLabel(LineageEdge edge, LineageNode source, LineageNode target) {
@@ -352,6 +310,52 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             edge.type = type;
         } else if (source.node_type == "app") {
             edge.type = "job";
+        } else {
+            edge.type = "default";
+        }
+    }
+
+    private static void setEdgeColor(LineageEdge edge, LineageNode source, LineageNode target) {
+        List<String> colorqueries = new ArrayList<String>();
+        String color = "";
+        colorqueries.add("edge.color.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
+        colorqueries.add("edge.color.from." + getPrefix(source.urn));
+        colorqueries.add("edge.color.to." + getPrefix(target.urn));
+        colorqueries.add("edge.color.between." + source.node_type + "." + target.node_type);
+        colorqueries.add("edge.color.from." + source.node_type);
+        colorqueries.add("edge.color.to." + target.node_type);
+        for (int i = 0; i < colorqueries.size(); i++) {
+            color = getProp(colorqueries.get(i));
+            if (color != "default") {
+                break;
+            }
+        }
+        if (color != "default") {
+            edge.color = color;
+        } else {
+            edge.color = "black";
+        }
+    }
+
+    private static void setEdgeStyle(LineageEdge edge, LineageNode source, LineageNode target) {
+        List<String> stylequeries = new ArrayList<String>();
+        String style = "";
+        stylequeries.add("edge.style.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
+        stylequeries.add("edge.style.from." + getPrefix(source.urn));
+        stylequeries.add("edge.style.to." + getPrefix(target.urn));
+        stylequeries.add("edge.style.between." + source.node_type + "." + target.node_type);
+        stylequeries.add("edge.style.from." + source.node_type);
+        stylequeries.add("edge.style.to." + target.node_type);
+        for (int i = 0; i < stylequeries.size(); i++) {
+            style = getProp(stylequeries.get(i));
+            if (style != "default") {
+                break;
+            }
+        }
+        if (style != "default") {
+            edge.style = style;
+        } else {
+            edge.style = "";
         }
     }
 
@@ -380,7 +384,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
 
         rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
 
-        for (Map row : rows) {
+        for (Map<String, Object> row : rows) {
             // node only knows id, level, and urn, assign all other attributes
 
             // stored in dict_dataset, so has those fields
@@ -407,7 +411,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
 
         rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
 
-        for (Map row : rows) {
+        for (Map<String, Object> row : rows) {
             // node only knows id, level, and urn, assign all other attributes
             JsonNode prop = Json.parse((String) row.get("properties"));
             node.description = prop.get("description").asText();
@@ -421,16 +425,8 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             //node.abstracted_path = getPostfix(node.urn);
 
             // set things to show up in tooltip
-            try {
-                node._sort_list.add("abstracted_path");
-                node._sort_list.add("storage_type");
-            } catch (NullPointerException e) {
-                if (node == null) {
-                    Logger.debug("it's node");
-                } else if (node._sort_list == null) {
-                    Logger.debug("it's sort list|" + Math.abs(node.level));
-                }
-            }
+            node._sort_list.add("abstracted_path");
+            node._sort_list.add("storage_type");
         }
     }
 
@@ -443,7 +439,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
         // node only knows id, level, and urn, assign all other attributes
 
-        for (Map row : rows) {
+        for (Map<String, Object> row : rows) {
             JsonNode prop = Json.parse((String) row.get("properties"));
             node.description = prop.get("description").asText();
             node.jdbc_url = prop.get("jdbc_url").asText();
@@ -466,7 +462,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
 
         rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
 
-        for (Map row : rows) {
+        for (Map<String, Object> row : rows) {
             node.name = (String) row.get("name");
             node.schema = (String) row.get("schema");
 
@@ -501,7 +497,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
 
         rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
 
-        for (Map row : rows) {
+        for (Map<String, Object> row : rows) {
             JsonNode prop = Json.parse((String) row.get("properties"));
             for (String p : propList) {
                 try {
