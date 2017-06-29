@@ -31,7 +31,6 @@ public class Global extends GlobalSettings {
   private static Set<Integer> currentRunningJob;
   @Override
   public void onStart(Application arg0) {
-    Logger.info("vagrant build");
     Logger.info("on start---===");
 
     List<Integer> whiteListList = Play.application().configuration().getIntList("scheduler.jobid.whitelist", null);
