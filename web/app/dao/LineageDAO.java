@@ -66,7 +66,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         node.level = level;
         node.urn = urn;
         node._sort_list = new ArrayList<String>();
-        switch (getType(urn).toLowerCase()) {
+        switch (getNodeType(urn).toLowerCase()) {
             case "app":
                 node.node_type = "app";
                 assignGeneral(node);
@@ -116,7 +116,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
     /**
      * Does some thing in old style.
      *
-     * @deprecated use {@link #getType(String urn)} instead.
+     * @deprecated use {@link #getNodeType(String urn)} instead.
      */
     @Deprecated
     private static String parseURN(String urn) {
@@ -161,12 +161,12 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         return urn.substring(urn.indexOf("://") + 3);
     }
 
-    private static String getType(String urn) {
-        return getProp("type." + getPrefix(urn));
+    private static String getNodeType(String urn) {
+        return getProp("node.type." + getPrefix(urn));
     }
 
-    private static String getColor(String urn, String node_type) {
-        String color = getProp("color." + getPrefix(urn));
+    private static String getNodeColor(String urn, String node_type) {
+        String color = getProp("node.color." + getPrefix(urn));
         if (color == null || color == "default") {
             // color names come from SVG color pallete at http://www.graphviz.org/doc/info/colors.html
             switch (node_type.toLowerCase()) {
@@ -181,6 +181,14 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             }
         }
         return color;
+    }
+    
+    private static String getEdgeType(String urn) {
+        return getProp("edge.type." + getPrefix(urn));
+    }
+
+    private static String getEdgeColor(String urn) {
+        return getProp("edge.color." + getPrefix(urn));
     }
 
     private static String getProp(String propName) {
@@ -206,7 +214,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
                 node._sort_list = new ArrayList<String>();
                 LineageEdge edge = new LineageEdge();
                 edge.id = edges.size();
-                switch (getType(relative).toLowerCase()) {
+                switch (getNodeType(relative).toLowerCase()) {
                     case "app":
                         // do assignment stuff
                         node.node_type = "app";
@@ -463,7 +471,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             node.schema = (String) row.get("schema");
 
             // check wh_property for a user specified color, use some generic defaults if nothing found
-            node.color = getColor(node.urn, node.node_type);
+            node.color = getNodeColor(node.urn, node.node_type);
 
             // set things to show up in tooltip
             node._sort_list.add("urn");
