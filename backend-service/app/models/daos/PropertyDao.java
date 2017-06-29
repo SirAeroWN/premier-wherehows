@@ -80,8 +80,9 @@ public class PropertyDao {
     }
 
 
+
     public static void addAssignProp(JsonNode props) {
-        String name = props.get("name").asText();
+        String name = props.get("scheme").asText();
         JsonNode propNode = props.findPath("properties");
         String propString = "";
         if (propNode.isArray()) {
@@ -99,7 +100,7 @@ public class PropertyDao {
     }
 
     public static void updateAssignProp(JsonNode props) {
-        String name = props.get("name").asText();
+        String name = props.get("scheme").asText();
         JsonNode propNode = props.findPath("properties");
         String propString = getProp("prop." + name) + ",";
         if (propNode.isArray()) {
@@ -129,8 +130,9 @@ public class PropertyDao {
     }
 
 
+
     public static void addSortListProp(JsonNode props) {
-        String name = props.get("name").asText();
+        String name = props.get("scheme").asText();
         JsonNode propNode = props.findPath("properties");
         String propString = "";
         if (propNode.isArray()) {
@@ -148,7 +150,7 @@ public class PropertyDao {
     }
 
     public static void updateSortListProp(JsonNode props) {
-        String name = props.get("name").asText();
+        String name = props.get("scheme").asText();
         JsonNode propNode = props.findPath("properties");
         String propString = getProp("prop.sortlist." + name) + ",";
         if (propNode.isArray()) {
@@ -175,5 +177,61 @@ public class PropertyDao {
         resultJson.put("properties", propString);
 
         return resultJson;
+    }
+
+
+
+    public static void addNodeColor(JsonNode prop) {
+        String name = "color."
+    }
+
+    public static void updateNodeColor(JsonNode prop) {
+
+    }
+
+    public static ObjectNode getNodeColor(String name) {
+
+    }
+
+
+
+    public static void addNodeType(JsonNode prop) {
+
+    }
+
+    public static void updateNodeType(JsonNode prop) {
+
+    }
+
+    public static ObjectNode getNodeType(String name) {
+
+    }
+
+
+
+    public static void addEdgeColor(JsonNode prop) {
+
+    }
+
+    public static void updateEdgeColor(JsonNode prop) {
+
+    }
+
+    public static ObjectNode getEdgeColor(String name) {
+
+    }
+
+
+
+    public static void addEdgeType(JsonNode prop) {
+
+    }
+
+    public static void updateEdgeType(JsonNode prop) {
+
+    }
+
+    public static ObjectNode getEdgeType(String name) {
+
     }
 }
