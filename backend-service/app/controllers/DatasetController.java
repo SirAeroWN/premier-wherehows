@@ -307,7 +307,7 @@ public class DatasetController extends Controller {
         return ok(resultJson);
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      Logger.error("Exception getting latest of type " + type, e);
     }
     return ok("there was a problem");
   }
