@@ -175,7 +175,7 @@ public class PropertyController extends Controller {
         return ok(resultJson);
     }
 
-    public static Result getNodeColor(String scheme) {
+    public static Result getNodeColor(String name) {
         ObjectNode resultJson = Json.newObject();
         try {
             if (name != null) {
@@ -228,7 +228,7 @@ public class PropertyController extends Controller {
         return ok(resultJson);
     }
 
-    public static Result getNodeType(String scheme) throws SQLException {
+    public static Result getNodeType(String name) throws SQLException {
         ObjectNode resultJson = Json.newObject();
         try {
             if (name != null) {
@@ -246,7 +246,7 @@ public class PropertyController extends Controller {
     }
 
 
-
+    // edge color is not currently used, but might be in the future
     @BodyParser.Of(BodyParser.Json.class)
     public static Result addEdgeColor() {
         JsonNode prop = request().body().asJson();
@@ -281,7 +281,7 @@ public class PropertyController extends Controller {
         return ok(resultJson);
     }
 
-    public static Result getEdgeColor(String scheme) throws SQLException {
+    public static Result getEdgeColor(String name) throws SQLException {
         ObjectNode resultJson = Json.newObject();
         try {
             if (name != null) {
@@ -322,7 +322,7 @@ public class PropertyController extends Controller {
         JsonNode prop = request().body().asJson();
         ObjectNode resultJson = Json.newObject();
         try {
-            PropertyDao.updateEdgeColor(prop);
+            PropertyDao.updateEdgeType(prop);
             resultJson.put("return_code", 200);
             resultJson.put("message", "Edge Type updated!");
         } catch (Exception e) {
@@ -334,13 +334,66 @@ public class PropertyController extends Controller {
         return ok(resultJson);
     }
 
-    public static Result getEdgeType(String scheme) throws SQLException {
+    public static Result getEdgeType(String name) throws SQLException {
         ObjectNode resultJson = Json.newObject();
         try {
             if (name != null) {
-                ObjectNode result = PropertyDao.getEdgeColor(name);
+                ObjectNode result = PropertyDao.getEdgeType(name);
                 resultJson.put("return_code", 200);
                 resultJson.put("type", result);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultJson.put("return_code", 404);
+            resultJson.put("error_message", e.getMessage());
+        }
+
+        return ok(resultJson);
+    }
+
+
+
+    @BodyParser.Of(BodyParser.Json.class)
+    public static Result addEdgeStyle() {
+        JsonNode prop = request().body().asJson();
+        ObjectNode resultJson = Json.newObject();
+        try {
+            PropertyDao.addEdgeStyle(prop);
+            resultJson.put("return_code", 200);
+            resultJson.put("message", "Edge Style inserted!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultJson.put("return_code", 404);
+            resultJson.put("error_message", e.getMessage());
+        }
+
+        return ok(resultJson);
+    }
+
+    @BodyParser.Of(BodyParser.Json.class)
+    public static Result updateEdgeStyle() {
+        JsonNode prop = request().body().asJson();
+        ObjectNode resultJson = Json.newObject();
+        try {
+            PropertyDao.updateEdgeStyle(prop);
+            resultJson.put("return_code", 200);
+            resultJson.put("message", "Edge Style updated!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultJson.put("return_code", 404);
+            resultJson.put("error_message", e.getMessage());
+        }
+
+        return ok(resultJson);
+    }
+
+    public static Result getEdgeStyle(String name) throws SQLException {
+        ObjectNode resultJson = Json.newObject();
+        try {
+            if (name != null) {
+                ObjectNode result = PropertyDao.getEdgeStyle(name);
+                resultJson.put("return_code", 200);
+                resultJson.put("Style", result);
             }
         } catch (Exception e) {
             e.printStackTrace();
