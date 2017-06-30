@@ -43,7 +43,7 @@ public class PropertyController extends Controller {
             resultJson.put("message", "Assignment Property inserted!");
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 404);
+            resultJson.put("return_code", 400);
             resultJson.put("error_message", e.getMessage());
         }
 
@@ -60,7 +60,7 @@ public class PropertyController extends Controller {
             resultJson.put("message", "Assignment Property updated!");
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 404);
+            resultJson.put("return_code", 400);
             resultJson.put("error_message", e.getMessage());
         }
 
@@ -97,7 +97,7 @@ public class PropertyController extends Controller {
             resultJson.put("message", "Sort List Property inserted!");
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 404);
+            resultJson.put("return_code", 400);
             resultJson.put("error_message", e.getMessage());
         }
 
@@ -132,7 +132,7 @@ public class PropertyController extends Controller {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 404);
+            resultJson.put("return_code", 400);
             resultJson.put("error_message", e.getMessage());
         }
 
@@ -151,7 +151,7 @@ public class PropertyController extends Controller {
             resultJson.put("message", "Node Color inserted!");
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 404);
+            resultJson.put("return_code", 400);
             resultJson.put("error_message", e.getMessage());
         }
 
@@ -185,7 +185,7 @@ public class PropertyController extends Controller {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 404);
+            resultJson.put("return_code", 400);
             resultJson.put("error_message", e.getMessage());
         }
 
@@ -204,7 +204,7 @@ public class PropertyController extends Controller {
             resultJson.put("message", "Node Type inserted!");
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 404);
+            resultJson.put("return_code", 400);
             resultJson.put("error_message", e.getMessage());
         }
 
@@ -363,7 +363,7 @@ public class PropertyController extends Controller {
             resultJson.put("message", "Edge Style inserted!");
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 404);
+            resultJson.put("return_code", 400);
             resultJson.put("error_message", e.getMessage());
         }
 
@@ -397,7 +397,7 @@ public class PropertyController extends Controller {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 404);
+            resultJson.put("return_code", 400);
             resultJson.put("error_message", e.getMessage());
         }
 
