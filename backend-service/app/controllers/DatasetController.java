@@ -221,8 +221,8 @@ public class DatasetController extends Controller {
   }
 
   public static Result getLatestAfter(String type, long time) {
+    ObjectNode resultJson = Json.newObject();
     try {
-      ObjectNode resultJson = Json.newObject();
       if (type == null) {
         resultJson.put("return_code", 400);
         resultJson.put("error_message", "type not provided");
@@ -234,12 +234,13 @@ public class DatasetController extends Controller {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    return ok("there was a problem");
+    resultJson.put("message", "there was a problem");
+    return ok(resultJson);
   }
 
   public static Result getLatestBefore(String type, long time) {
+    ObjectNode resultJson = Json.newObject();
     try {
-      ObjectNode resultJson = Json.newObject();
       if (type == null) {
         resultJson.put("return_code", 400);
         resultJson.put("error_message", "type not provided");
@@ -251,12 +252,13 @@ public class DatasetController extends Controller {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    return ok("there was a problem");
+    resultJson.put("message", "there was a problem");
+    return ok(resultJson);
   }
 
   public static Result getLatestBetween(String type, long firsttime, long secondtime) {
+    ObjectNode resultJson = Json.newObject();
     try {
-      ObjectNode resultJson = Json.newObject();
       if (type == null) {
         resultJson.put("return_code", 400);
         resultJson.put("error_message", "type not provided");
@@ -273,12 +275,13 @@ public class DatasetController extends Controller {
     } catch (SQLException e) {
         e.printStackTrace();
     }
-    return ok("there was a problem");
+    resultJson.put("message", "there was a problem");
+    return ok(resultJson);
   }
 
   public static Result getAtTime(String type, long time) {
+    ObjectNode resultJson = Json.newObject();
     try {
-      ObjectNode resultJson = Json.newObject();
       if (type == null) {
         resultJson.put("return_code", 400);
         resultJson.put("error_message", "type not provided");
@@ -290,12 +293,13 @@ public class DatasetController extends Controller {
     } catch (SQLException e) {
       e.printStackTrace();
     }
-    return ok("there was a problem");
+    resultJson.put("message", "there was a problem");
+    return ok(resultJson);
   }
 
   public static Result getAtTimeWindow(String type, long time, long window) throws SQLException {
+    ObjectNode resultJson = Json.newObject();
     try {
-      ObjectNode resultJson = Json.newObject();
       if (type == null) {
         resultJson.put("return_code", 400);
         resultJson.put("error_message", "type not provided");
@@ -309,7 +313,8 @@ public class DatasetController extends Controller {
     } catch (SQLException e) {
       Logger.error("Exception getting latest of type " + type, e);
     }
-    return ok("there was a problem");
+    resultJson.put("message", "there was a problem");
+    return ok(resultJson);
   }
 
   public static Result updateProperties() {
@@ -322,11 +327,11 @@ public class DatasetController extends Controller {
       Logger.error(e.getMessage());
       e.printStackTrace();
       Logger.error(propChanges.toString());
-      resultJson.put("return_code", 404);
+      resultJson.put("return_code", 400);
       resultJson.put("error_message", e.getMessage());
     }
     resultJson.put("return_code", 200);
-
+    resultJson.put("message", "properties updated")
     return ok(resultJson);
   }
 
@@ -336,16 +341,18 @@ public class DatasetController extends Controller {
     try {
       DatasetDao.updateProperties(validNode);
       resultJson.put("return_code", 200);
+      resultJson.put("message", "validity updated")
       return ok(resultJson);
     } catch (SQLException e) {
       e.printStackTrace();
     } catch (Exception e) {
       Logger.error(e.getMessage());
       e.printStackTrace();
-      resultJson.put("return_code", 404);
+      resultJson.put("return_code", 400);
       resultJson.put("error_message", e.getMessage());
     }
-    return ok("there was a problem");
+    resultJson.put("message", "there was a problem");
+    return ok(resultJson);
   }
 
 }
