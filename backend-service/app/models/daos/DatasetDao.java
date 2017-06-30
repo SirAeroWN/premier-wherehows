@@ -578,6 +578,7 @@ public class DatasetDao {
       updateDataset(temp);
     } else {
       Logger.debug("nothing found for urn: " + urn);
+      throw new Exception("nothing found for urn: " + urn);
     }
   }
 
