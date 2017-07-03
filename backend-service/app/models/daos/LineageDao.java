@@ -148,12 +148,12 @@ public class LineageDao {
       List<LineageRecord> records = new ArrayList<LineageRecord>();
       JsonNode parents = lineage.findPath("parent_urn");
       JsonNode children = lineage.findPath("child_urn");
-      if (parents == null) {
+      /*if (parents == null) {
           Logger.error("No parent urn");
       }
       if (children == null) {
           Logger.error("No child urn");
-      }
+      }*/
       //Logger.debug(parents.toString());
       //Logger.debug(children.toString());
       if (parents.isArray() && children.isArray()) {

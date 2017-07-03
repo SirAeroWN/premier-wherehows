@@ -18,13 +18,17 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.PropertyNamingStrategy;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import java.sql.SQLException;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Map.Entry;
+import java.util.Iterator;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.EmptyResultDataAccessException;
 import play.libs.Json;
+import play.Logger;
 import utils.JdbcUtil;
 import wherehows.common.schemas.DatasetDependencyRecord;
 import wherehows.common.schemas.DatasetRecord;
@@ -39,7 +43,7 @@ import wherehows.common.writers.DatabaseWriter;
 public class DatasetDao {
 
   public static final String GET_DATASET_BY_ID = "SELECT * FROM dict_dataset WHERE id = :id";
-  public static final String GET_DATASET_BY_URN = "SELECT * FROM dict_dataset WHERE urn = :urn";
+  public static final String GET_DATASET_BY_URN = "SELECT * FROM dict_dataset WHERE urn=:urn";
 
   public static final String DEFAULT_CLUSTER_NAME = "ltx1-holdem";
   public static final String CLUSTER_NAME_KEY = "cluster_name";
@@ -81,7 +85,7 @@ public class DatasetDao {
           "WHERE c.mapped_object_type = ? and " +
           "(c.mapped_object_name = ? or c.mapped_object_name like ?)";
 
-  public static final String GET_LATEST_PREFIX = "SELECT urn from dict_dataset WHERE (dataset_type=:type OR urn LIKE :type ) "; // room for ANDs
+  public static final String GET_LATEST_PREFIX = "SELECT urn from dict_dataset WHERE (dataset_type=:type OR urn LIKE :type ) AND (properties LIKE '%\"valid\": \"true\"%' OR properties LIKE '%\"valid\":\"true\"%') "; // room for ANDs
 
   public static final String GET_LATEST_SUFFIX = "ORDER BY source_modified_time DESC LIMIT 1"; // any middle section needs to end in a space
 
@@ -475,6 +479,8 @@ public class DatasetDao {
        rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
        if (rows.size() > 0) {
          result.put("urn", (String) rows.get(0).get("urn"));
+       } else {
+         result.put("message", "none found");
        }
      }
      return result;
@@ -490,6 +496,8 @@ public class DatasetDao {
        rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_LATEST_AFTER_MORPHEME + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
        if (rows.size() > 0) {
          result.put("urn", (String) rows.get(0).get("urn"));
+       } else {
+         result.put("message", "none found");
        }
      }
      return result;
@@ -505,6 +513,8 @@ public class DatasetDao {
        rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_LATEST_BEFORE_MORPHEME + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
        if (rows.size() > 0) {
          result.put("urn", (String) rows.get(0).get("urn"));
+       } else {
+         result.put("message", "none found");
        }
      }
      return result;
@@ -521,6 +531,8 @@ public class DatasetDao {
        rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_LATEST_BETWEEN_MORPHENE + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
        if (rows.size() > 0) {
          result.put("urn", (String) rows.get(0).get("urn"));
+       } else {
+         result.put("message", "none found");
        }
      }
      return result;
@@ -536,10 +548,53 @@ public class DatasetDao {
       rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_LATEST_PREFIX + GET_AT_TIME_MORPHEME + GET_LATEST_SUFFIX, params); // should only get one response from this, ever
       if (rows.size() > 0) {
         result.put("urn", (String) rows.get(0).get("urn"));
+      } else {
+        result.put("message", "none found");
       }
     }
     return result;
   }
 
+  public static void updateProperties(JsonNode propChanges) throws Exception, SQLException, IOException {
+    String urn = propChanges.get("urn").textValue();
+    Map<String, Object> row = null;
+    Logger.info("urn: " + urn);
+    Map<String, Object> params = new HashMap<>();
+    params.put("urn", urn);
+    List<Map<String, Object>> rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList("SELECT * FROM dict_dataset WHERE urn=:urn", params);
+    if (rows.size() > 0) {
+      row = rows.get(0);
+      Logger.info("row: " + row.toString());
+      String oldProps = (String) row.get("properties");
+      String youngProps = propChanges.toString();
+      String updateProps = editProps(oldProps, youngProps);
+      Logger.info("updateProps: " + updateProps);
+      row.put("properties", updateProps);
+      row.remove("created_time");
+      row.remove("modified_time");
+      row.remove("wh_etl_exec_id");
+      ObjectMapper mapper = new ObjectMapper();
+      JsonNode temp = mapper.convertValue(row, JsonNode.class);
+      updateDataset(temp);
+    } else {
+      Logger.debug("nothing found for urn: " + urn);
+      throw new Exception("nothing found for urn: " + urn);
+    }
+  }
+
+  public static String editProps(String ogPropString, String ygPropString) throws IOException {
+    JsonNode ogPropNode = Json.parse(ogPropString);
+    JsonNode ygPropNode = Json.parse(ygPropString);
+
+    Iterator<Map.Entry<String, JsonNode>> ygPropIter = ygPropNode.fields();
+
+    while (ygPropIter.hasNext()) {
+      Entry<String,JsonNode> field = ygPropIter.next();
+      if (field.getKey() != "urn") {
+        ((ObjectNode) ogPropNode).put(field.getKey(), field.getValue());
+      }
+    }
+    return ogPropNode.toString();
+  }
 
 }

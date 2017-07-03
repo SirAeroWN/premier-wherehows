@@ -103,12 +103,13 @@ public class DatabaseWriter extends Writer {
     }
     sb.deleteCharAt(sb.length() - 1);
 
-    logger.debug("In databaseWriter : " + sb.toString());
+    String statement = sb.toString();
+    logger.debug("In databaseWriter : " + statement);
 
     try {
-      this.jdbcTemplate.execute(sb.toString());
+      this.jdbcTemplate.execute(statement);
     } catch (DataAccessException e) {
-      logger.error("This statement has an error : " + sb.toString() + " | " + e);
+      logger.error("This statement has an error : " + statement, e);
       this.records.clear(); // need to recover the records.
       return false;
     }

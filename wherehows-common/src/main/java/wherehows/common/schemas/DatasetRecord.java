@@ -99,8 +99,8 @@ public class DatasetRecord extends AbstractRecord {
     allFieldNames.add("source_created_time");
     allFieldNames.add("source_modified_time");
     // add the created_date, modified_date and wh_etl_exec_id
-    allFieldNames.add("created_time");
     allFieldNames.add("modified_time");
+    allFieldNames.add("created_time");
     allFieldNames.add("wh_etl_exec_id");
     return allFieldNames;
   }

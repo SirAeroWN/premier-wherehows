@@ -819,52 +819,12 @@ var g_downLevel = 1;
                     g.setNode(data.nodes[i].id, { label: name, style:'fill:pink', id: data.nodes[i].id, shape: shape});
                 }
 
-                /*
-                if (schema_type.toLowerCase().includes('druid'))
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:lightblue', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'hdfs')
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:thistle', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase().includes('parquet'))
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:tan', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase().includes('lucene'))
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:seagreen', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'natezza')
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:mistyrose', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase() == 'pulse')
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:sandybrown', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase().includes('moveit'))
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:peachpuff', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase().includes('qa'))
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:navajowhite', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase().includes('sa'))
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:palegreen', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase().includes('pim'))
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:orange', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase().includes('datamgt'))
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:wheat', id: data.nodes[i].id, shape: shape});
-                else if (schema_type.toLowerCase().includes('prospector'))
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:lightcoral', id: data.nodes[i].id, shape: shape});
-                else
-                    g.setNode(data.nodes[i].id,
-                        { label: name, style:'fill:pink', id: data.nodes[i].id, shape: shape});
-                */
             }
             for(var i = 0; i < data.links.length; i++)
             {
                 var source = data.links[i].source;
                 var target = data.links[i].target;
+                var style = data.links[i].style;
                 if (!data.nodes[target].sourceLinks)
                 {
                     data.nodes[target].sourceLinks = [];
@@ -885,7 +845,7 @@ var g_downLevel = 1;
                 }
                 else
                 {
-                    g.setEdge(data.links[i].source, data.links[i].target, {label:data.links[i].label});
+                    g.setEdge(data.links[i].source, data.links[i].target, {label:data.links[i].label, style: style});
                 }
             }
         }

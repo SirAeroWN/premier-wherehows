@@ -66,22 +66,36 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         node.level = level;
         node.urn = urn;
         node._sort_list = new ArrayList<String>();
-        switch (getType(urn).toLowerCase()) {
+        switch (getNodeType(urn).toLowerCase()) {
             case "app":
                 node.node_type = "app";
-                assignApp(node);
+                assignGeneral(node);
+                if (assignPrefs(node) == false) {
+                    assignApp(node);
+                    Logger.debug("using default assigner for " + node.urn);
+                }
                 break;
             case "data":
                 node.node_type = "data";
-                assignData(node);
+                assignGeneral(node);
+                if (assignPrefs(node) == false) {
+                    assignData(node);
+                    Logger.debug("using default assigner for " + node.urn);
+                }
+                node.abstracted_path = getPostfix(node.urn);
                 break;
-            case "DB":
+            case "db":
                 node.node_type = "db";
-                assignDB(node);
+                assignGeneral(node);
+                if (assignPrefs(node) == false) {
+                    assignDB(node);
+                    Logger.debug("using default assigner for " + node.urn);
+                }
                 break;
             default:
                 node.node_type = "general";
                 assignGeneral(node);
+                assignPrefs(node);
                 Logger.error("parsing failed for origin URN: " + urn);
         }
         nodes.add(node);
@@ -95,47 +109,8 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         resultNode.set("links", Json.toJson(edges));
         resultNode.put("urn", urn);
         resultNode.put("message", "Gee, I hope this works");
+        //Logger.debug(resultNode.toString());
         return resultNode;
-    }
-
-    /**
-     * Does some thing in old style.
-     *
-     * @deprecated use {@link #getType(String urn)} instead.
-     */
-    @Deprecated
-    private static String parseURN(String urn) {
-        String file_type = urn.substring(0, urn.indexOf("://")).toLowerCase();
-        switch (file_type) {
-            case "raw-parquet":
-            case "domain-parquet":
-            case "match-parquet":
-            case "opportunity-parquet":
-            case "parquet":
-            case "supply-druid":
-            case "purchase-druid":
-            case "druid":
-            case "domain-lucene":
-            case "lucene":
-                // this is a dataset so we call the dataset handling function
-                return "data";
-            case "natezza":
-            case "pulse":
-            case "qa":
-            case "sa":
-            case "spend":
-            case "pim":
-            case "datamgt":
-                // this is a database so call the database handling function
-                return "DB";
-            case "moveit-extract":
-            case "moveit-transform":
-                return "app";
-            default:
-                // must be an error if we got here
-                Logger.error("could not parse URN, assuming job: " + urn);
-                return "app";
-        }
     }
 
     private static String getPrefix(String urn) {
@@ -146,12 +121,12 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         return urn.substring(urn.indexOf("://") + 3);
     }
 
-    private static String getType(String urn) {
-        return getProp("type." + getPrefix(urn));
+    private static String getNodeType(String urn) {
+        return getProp("node.type." + getPrefix(urn));
     }
 
-    private static String getColor(String urn, String node_type) {
-        String color = getProp("color." + getPrefix(urn));
+    private static String getNodeColor(String urn, String node_type) {
+        String color = getProp("node.color." + getPrefix(urn));
         if (color == null || color == "default") {
             // color names come from SVG color pallete at http://www.graphviz.org/doc/info/colors.html
             switch (node_type.toLowerCase()) {
@@ -182,7 +157,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         if (Math.abs(currNode.level) <= Math.abs(maxDepth)) {
             // do our thing
             List<String> relatives = getRelatives(currNode.urn, direction);
-            Logger.debug(relatives.toString());
+            Logger.debug("relatives: " + relatives.toString());
             for (String relative : relatives) {
                 LineageNode node = new LineageNode();
                 node.id = nodes.size();
@@ -191,11 +166,17 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
                 node._sort_list = new ArrayList<String>();
                 LineageEdge edge = new LineageEdge();
                 edge.id = edges.size();
-                switch (getType(relative).toLowerCase()) {
+                switch (getNodeType(relative).toLowerCase()) {
                     case "app":
                         // do assignment stuff
                         node.node_type = "app";
-                        assignApp(node);
+
+                        assignGeneral(node);
+                        if (assignPrefs(node) == false) {
+                            assignApp(node);
+                            Logger.debug("using default assigner for " + node.urn);
+                        }
+
                         nodes.add(node);
                         edges.add(edge);
                         getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
@@ -203,15 +184,28 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
                     case "data":
                         // do assignment stuff
                         node.node_type = "data";
-                        assignData(node);
+
+                        assignGeneral(node);
+                        if (assignPrefs(node) == false) {
+                            assignData(node);
+                            Logger.debug("using default assigner for " + node.urn);
+                        }
+                        node.abstracted_path = getPostfix(node.urn);
+
                         nodes.add(node);
                         edges.add(edge);
                         getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
                         break;
-                    case "DB":
+                    case "db":
                         // do assignment stuff
                         node.node_type = "db";
-                        assignDB(node);
+
+                        assignGeneral(node);
+                        if (assignPrefs(node) == false) {
+                            assignDB(node);
+                            Logger.debug("using default assigner for " + node.urn);
+                        }
+
                         nodes.add(node);
                         edges.add(edge);
                         getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
@@ -219,40 +213,22 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
                     default:
                         node.node_type = "general";
                         assignGeneral(node);
+                        assignPrefs(node);
                         nodes.add(node);
                         edges.add(edge);
                         getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
                         Logger.error("parsing failed for relative URN: " + relative);
                 }
-                String target = "";
-                String source = "";
                 if (direction > 0) {
                     edge.target = currNode.id;
-                    target = currNode.node_type;
                     edge.source = node.id;
-                    source = node.node_type;
+                    setEdgeAttr(edge, node, currNode);
                 } else {
                     edge.target = node.id;
-                    target = node.node_type;
                     edge.source = currNode.id;
-                    source = currNode.node_type;
+                    setEdgeAttr(edge, currNode, node);
                 }
-                // TODO: make this more flexible, perhaps another property?
-                if ((source == "data" && target == "data") || (source == "data" && target == "DB") || (source == "DB" && target == "DB") || (source == "DB" && target == "data")) {
-                    edge.label = "source";
-                } else if (source == "data" && target == "app") {
-                    edge.label = "read";
-                } else if (source == "app" && target == "app") {
-                    edge.label = "spawned";
-                    edge.type = "job";
-                } else if ((source == "app" && target == "data") || (source == "app" && target == "DB")) {
-                    edge.label = "created";
-                    edge.type = "job";
-                } else if (source == "DB" && target == "app") {
-                    edge.label = "imported";
-                } else {
-                    edge.label = "influenced";
-                }
+
             }
         }
         // we have reached maximum requested depth, let's peace out
@@ -285,10 +261,121 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         return children;
     }
 
-    /*
-    TODO: assignXXX methods need to be modified to reflect the fact that ds, db, and apps are now all stored in dict_dataset
-    this also means they probably need to parse the properties field to get some of the info
-    */
+    private static void setEdgeAttr(LineageEdge edge, LineageNode source, LineageNode target) {
+        setEdgeLabel(edge, source, target);
+        setEdgeType(edge, source, target);
+        //setEdgeColor(edge, source, target)
+        setEdgeStyle(edge, source, target);
+    }
+
+    private static void setEdgeLabel(LineageEdge edge, LineageNode source, LineageNode target) {
+        List<String> labelqueries = new ArrayList<String>();
+        String label = "";
+        labelqueries.add("edge.label.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
+        labelqueries.add("edge.label.from." + getPrefix(source.urn));
+        labelqueries.add("edge.label.to." + getPrefix(target.urn));
+        labelqueries.add("edge.label.between." + source.node_type + "." + target.node_type);
+        labelqueries.add("edge.label.from." + source.node_type);
+        labelqueries.add("edge.label.to." + target.node_type);
+        for (int i = 0; i < labelqueries.size(); i++) {
+            label = getProp(labelqueries.get(i));
+            if (label != "default") {
+                break;
+            }
+        }
+        if (label != "default") {
+            edge.label = label;
+        } else {
+            edge.label = edgeLabelDefaults(source.node_type, target.node_type);
+        }
+    }
+
+    private static void setEdgeType(LineageEdge edge, LineageNode source, LineageNode target) {
+        List<String> typequeries = new ArrayList<String>();
+        String type = "";
+        typequeries.add("edge.type.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
+        typequeries.add("edge.type.from." + getPrefix(source.urn));
+        typequeries.add("edge.type.to." + getPrefix(target.urn));
+        typequeries.add("edge.type.between." + source.node_type + "." + target.node_type);
+        typequeries.add("edge.type.from." + source.node_type);
+        typequeries.add("edge.type.to." + target.node_type);
+        for (int i = 0; i < typequeries.size(); i++) {
+            type = getProp(typequeries.get(i));
+            Logger.info("type for source " + getPrefix(source.urn) + " is " + type);
+            if (type != "default") {
+                break;
+            }
+        }
+        if (type != "default") {
+            edge.type = type;
+        } else if (source.node_type == "app") {
+            edge.type = "job";
+        } else {
+            edge.type = "default";
+        }
+    }
+
+    private static void setEdgeColor(LineageEdge edge, LineageNode source, LineageNode target) {
+        List<String> colorqueries = new ArrayList<String>();
+        String color = "";
+        colorqueries.add("edge.color.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
+        colorqueries.add("edge.color.from." + getPrefix(source.urn));
+        colorqueries.add("edge.color.to." + getPrefix(target.urn));
+        colorqueries.add("edge.color.between." + source.node_type + "." + target.node_type);
+        colorqueries.add("edge.color.from." + source.node_type);
+        colorqueries.add("edge.color.to." + target.node_type);
+        for (int i = 0; i < colorqueries.size(); i++) {
+            color = getProp(colorqueries.get(i));
+            if (color != "default") {
+                break;
+            }
+        }
+        if (color != "default") {
+            edge.color = color;
+        } else {
+            edge.color = "black";
+        }
+    }
+
+    private static void setEdgeStyle(LineageEdge edge, LineageNode source, LineageNode target) {
+        List<String> stylequeries = new ArrayList<String>();
+        String style = "";
+        stylequeries.add("edge.style.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
+        stylequeries.add("edge.style.from." + getPrefix(source.urn));
+        stylequeries.add("edge.style.to." + getPrefix(target.urn));
+        stylequeries.add("edge.style.between." + source.node_type + "." + target.node_type);
+        stylequeries.add("edge.style.from." + source.node_type);
+        stylequeries.add("edge.style.to." + target.node_type);
+        for (int i = 0; i < stylequeries.size(); i++) {
+            style = getProp(stylequeries.get(i));
+            if (style != "default") {
+                break;
+            }
+        }
+        if (style != "default") {
+            edge.style = style;
+        } else {
+            edge.style = "";
+        }
+    }
+
+    private static String edgeLabelDefaults(String source, String target) {
+        if ((source == "data" && target == "data") || (source == "data" && target == "db") || (source == "db" && target == "db") || (source == "db" && target == "data")) {
+            return "source for";
+        } else if (source == "data" && target == "app") {
+            return "read by";
+        } else if (source == "app" && target == "app") {
+            return "spawned";
+        } else if ((source == "app" && target == "data") || (source == "app" && target == "db")) {
+            return "created";
+        } else if (source == "db" && target == "app") {
+            return "imported by";
+        } else {
+            return "influenced";
+        }
+    }
+
+
     private static void assignApp(LineageNode node) {
         List<Map<String, Object>> rows = null;
         MapSqlParameterSource parameters = new MapSqlParameterSource();
@@ -297,12 +384,10 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
 
         rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
 
-        for (Map row : rows) {
+        for (Map<String, Object> row : rows) {
             // node only knows id, level, and urn, assign all other attributes
 
             // stored in dict_dataset, so has those fields
-            node.name = (String) row.get("name");
-            node.schema = (String) row.get("schema");
             JsonNode prop = Json.parse((String) row.get("properties"));
 
             // properties is a JsonNode, extract what we want out of it
@@ -310,13 +395,11 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             node.app_code = prop.get("app_code").asText();
 
             // check wh_property for a user specified color, use some generic defaults if nothing found
-            node.color = getColor(node.urn, node.node_type);
+            //node.color = getColor(node.urn, node.node_type);
 
             // set things to show up in tooltip
-            node._sort_list.add("urn");
             node._sort_list.add("app_code");
             node._sort_list.add("description");
-            node._sort_list.add("name");
         }
     }
 
@@ -328,10 +411,8 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
 
         rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
 
-        for (Map row : rows) {
+        for (Map<String, Object> row : rows) {
             // node only knows id, level, and urn, assign all other attributes
-            node.name = (String) row.get("name");
-            node.schema = (String) row.get("schema");
             JsonNode prop = Json.parse((String) row.get("properties"));
             node.description = prop.get("description").asText();
             node.source = (String) row.get("source");
@@ -339,23 +420,13 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
             node.dataset_type = (String) row.get("dataset_type");
 
             // check wh_property for a user specified color, use some generic defaults if nothing found
-            node.color = getColor(node.urn, node.node_type);
+            //node.color = getColor(node.urn, node.node_type);
 
-            node.abstracted_path = getPostfix(node.urn);
+            //node.abstracted_path = getPostfix(node.urn);
 
             // set things to show up in tooltip
-            try {
-                node._sort_list.add("abstracted_path");
-                node._sort_list.add("storage_type");
-                node._sort_list.add("urn");
-                node._sort_list.add("name");
-            } catch (NullPointerException e) {
-                if (node == null) {
-                    Logger.debug("it's node");
-                } else if (node._sort_list == null) {
-                    Logger.debug("it's sort list|" + Math.abs(node.level));
-                }
-            }
+            node._sort_list.add("abstracted_path");
+            node._sort_list.add("storage_type");
         }
     }
 
@@ -368,21 +439,17 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
         // node only knows id, level, and urn, assign all other attributes
 
-        for (Map row : rows) {
-            node.name = (String) row.get("name");
-            node.schema = (String) row.get("schema");
+        for (Map<String, Object> row : rows) {
             JsonNode prop = Json.parse((String) row.get("properties"));
             node.description = prop.get("description").asText();
             node.jdbc_url = prop.get("jdbc_url").asText();
             node.db_code = prop.get("db_code").asText();
 
             // check wh_property for a user specified color, use some generic defaults if nothing found
-            node.color = getColor(node.urn, node.node_type);
+            //node.color = getColor(node.urn, node.node_type);
 
             // set things to show up in tooltip
-            node._sort_list.add("urn");
             node._sort_list.add("db_code");
-            node._sort_list.add("name");
             //node._sort_list.add("last_modified");
         }
     }
@@ -395,17 +462,73 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
 
         rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
 
-        for (Map row : rows) {
+        for (Map<String, Object> row : rows) {
             node.name = (String) row.get("name");
             node.schema = (String) row.get("schema");
 
             // check wh_property for a user specified color, use some generic defaults if nothing found
-            node.color = getColor(node.urn, node.node_type);
+            node.color = getNodeColor(node.urn, node.node_type);
 
             // set things to show up in tooltip
             node._sort_list.add("urn");
             node._sort_list.add("name");
         }
+    }
+
+    private static Boolean assignPrefs(LineageNode node) {
+        // first try to get property list
+        String properties = getProp("prop." + getPrefix(node.urn));
+        if (properties == "default") {
+            Logger.info("no properties for " + getPrefix(node.urn));
+            properties = getProp("prop." + node.node_type);
+            if (properties == "default") {
+                Logger.info("no properties for " + node.node_type);
+                return false;
+            }
+        }
+        List<String> propList = Arrays.asList(properties.split(","));
+        Logger.debug("propList: " + propList);
+
+        // now get all the values that dict_dataset has
+        List<Map<String, Object>> rows = null;
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("urn", node.urn);
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
+
+        rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
+
+        for (Map<String, Object> row : rows) {
+            JsonNode prop = Json.parse((String) row.get("properties"));
+            for (String p : propList) {
+                try {
+                    if (p.substring(0, 5) == "prop/" && prop != null) {
+                        node.setStringField(p, (String) prop.get(p.substring(5)).asText());
+                    } else {
+                        node.setStringField(p, (String) row.get(p));
+                    }
+                } catch (NoSuchFieldException fe) {
+                    Logger.error("field " + p + " is non exsistant");
+                } catch (IllegalAccessException e) {
+                    Logger.error("field " + p + " is  private");
+                }
+            }
+        }
+
+        String sortsattr = getProp("prop.sortlist." + getPrefix(node.urn));
+        if (sortsattr == "default") {
+            Logger.info("no sortlist for " + getPrefix(node.urn));
+            sortsattr = getProp("prop.sortlist." + node.node_type);
+            if (sortsattr == "default") {
+                Logger.info("no sortlist for " + node.node_type);
+                return false;
+            }
+        }
+        List<String> sortList = Arrays.asList(sortsattr.split(","));
+        Logger.debug("sortList: " + sortList);
+        for (String sl : sortList) {
+            node._sort_list.add(sl);
+        }
+        return true;
     }
 
     public static ObjectNode getFlowLineage(String application, String project, Long flowId) {

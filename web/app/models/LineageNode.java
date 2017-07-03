@@ -14,6 +14,9 @@
 package models;
 
 import java.util.List;
+import play.Logger;
+import play.Play;
+import java.lang.reflect.Field;
 
 public class LineageNode {
 
@@ -94,5 +97,32 @@ public class LineageNode {
 
     // make coloring more flexible
     public String color;
+
+    // set attribute by given name
+    public void setStringField(String fieldName, String value) throws NoSuchFieldException, IllegalAccessException {
+        if (fieldName != null && value != null) {
+            Field field = getClass().getDeclaredField(fieldName);
+            if (field.toString().toLowerCase().contains("string")) {
+                field.set(this, value);
+            } else {
+                Logger.error("field " + fieldName + " is not a string");
+                throw new NoSuchFieldException();
+            }
+        } else {
+            Logger.error("field name or value is null");
+        }
+    }
+
+    public void setIntField(String fieldName, int value) throws NoSuchFieldException, IllegalAccessException {
+        if (fieldName != null) {
+            Field field = getClass().getDeclaredField(fieldName);
+            if (field.toString().toLowerCase().contains("int")) {
+                field.setInt(this, value);
+            } else {
+                Logger.error("field " + fieldName + " is not an int");
+                throw new NoSuchFieldException();
+            }
+        }
+    }
 
 }
