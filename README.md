@@ -1,4 +1,3 @@
-#IGNORE THIS README FOR NOW
 # WhereHows
 
 WhereHows is a data discovery and lineage tool built at LinkedIn. It integrates with all the major data processing systems and collects both catalog and operational metadata from them. 
