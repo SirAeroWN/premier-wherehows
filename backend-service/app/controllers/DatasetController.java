@@ -331,7 +331,7 @@ public class DatasetController extends Controller {
       resultJson.put("error_message", e.getMessage());
     }
     resultJson.put("return_code", 200);
-    resultJson.put("message", "properties updated")
+    resultJson.put("message", "properties updated");
     return ok(resultJson);
   }
 
@@ -341,7 +341,7 @@ public class DatasetController extends Controller {
     try {
       DatasetDao.updateProperties(validNode);
       resultJson.put("return_code", 200);
-      resultJson.put("message", "validity updated")
+      resultJson.put("message", "validity updated");
       return ok(resultJson);
     } catch (SQLException e) {
       e.printStackTrace();
