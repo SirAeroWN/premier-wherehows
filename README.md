@@ -72,9 +72,11 @@ First, please get Play Framework in place.
 ## Documentation
 <a href="#new-backend-api">New Backend API</a>
 
-<a name="new-backend-api" />
+<a href="#preferences">Preferences</a>
 
-###New Backend API
+
+
+###<a name="new-backend-api">New Backend API</a>
 1. <a href="#latest-get">Latest GET</a>
 2. <a href="#latest-after-get">Latest After GET</a>
 3. <a href="#latest-before-get">Latest Before GET</a>
@@ -1411,3 +1413,81 @@ POST {"scheme":"between.prospector.druid", "type":"job"} /property/edge/type
 PUT {"scheme":"between.prospector.druid", "type":"job"} /property/edge/type
 ```
 
+###<a name="preferences">Preferences</a>
+1. <a href="#node-color">Node Color</a>
+2. <a href="#node-type">Node Type</a>
+3. <a href="#node-assignments">Node Assignments</a>
+4. <a href="#node-tool-tip">Node Tool Tip</a>
+5. <a href="#edge-style">Edge Style</a>
+6. <a href="#edge-type">Edge Type</a>
+7. <a href="#edge-label">Edge Label</a>
+
+
+
+
+<a name="edge-label">Node Color</a>
+
+
+| Internal Prefix | Passed Prefix | Name | Value |
+| --------------- | ------------- | ---- | ----- |
+| node.color. | | scheme or type | [SVG color](http://www.graphviz.org/doc/info/colors.html#svg) or hex color
+
+
+
+<a name="edge-label">Node Type</a>
+
+
+| Internal Prefix | Passed Prefix | Name | Value |
+| --------------- | ------------- | ---- | ----- |
+| node.type. | | scheme | type |
+
+
+
+<a name="edge-label">Node Assignments</a>
+
+
+| Internal Prefix | Passed Prefix | Name | Value |
+| --------------- | ------------- | ---- | ----- |
+| prop. | | scheme or type | list of node attributes where prop/ references values in the properties field |
+
+
+
+<a name="edge-label">Node Tool Tip</a>
+
+
+| Internal Prefix | Passed Prefix | Name | Value |
+| --------------- | ------------- | ---- | ----- |
+| prop.sortlist | | scheme or type | list of node attributes to display in the tool tip; must be a subset of scheme or type's attributes |
+
+
+
+<a name="edge-label">Edge Style</a>
+
+
+| Internal Prefix | Passed Prefix | Name | Value |
+| --------------- | ------------- | ---- | ----- |
+| edge.style. | between. | scheme or name.scheme or name | Style strings are the same as used by [Dagre-D3](https://github.com/cpettitt/dagre-d3) |
+| edge.style. | from. | scheme or name | Style strings are the same as used by [Dagre-D3](https://github.com/cpettitt/dagre-d3) |
+| edge.style. | to. | scheme or name | Style strings are the same as used by [Dagre-D3](https://github.com/cpettitt/dagre-d3) |
+
+
+
+<a name="edge-label">Edge Type</a>
+
+
+| Internal Prefix | Passed Prefix | Name | Value |
+| --------------- | ------------- | ---- | ----- |
+| edge.type. | between. | scheme or name.scheme or name | data or app or db |
+| edge.type. | from. | scheme or name | data or app or db |
+| edge.type. | to. | scheme or name | data or app or db |
+
+
+
+<a name="edge-label">Edge Label</a>
+
+
+| Internal Prefix | Passed Prefix | Name | Value |
+| --------------- | ------------- | ---- | ----- |
+| edge.type. | between. | scheme or name.scheme or name | a string |
+| edge.type. | from. | scheme or name | a string |
+| edge.type. | to. | scheme or name | a string |
