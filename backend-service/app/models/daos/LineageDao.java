@@ -167,96 +167,96 @@ public class LineageDao {
   // all parents in parents array are parents of every child in the children array
   public static void insertLineage(JsonNode lineage) throws Exception {
 	if (true) { // use premier's system, this has got to change
-  List<LineageRecord> records = new ArrayList<LineageRecord>();
-      JsonNode parents = lineage.findPath("parent_urn");
-      JsonNode children = lineage.findPath("child_urn");
-
-      if (parents.isArray() && children.isArray()) {
+      List<LineageRecord> records = new ArrayList<LineageRecord>();
+        JsonNode parents = lineage.findPath("parent_urn");
+        JsonNode children = lineage.findPath("child_urn");
+  
+        if (parents.isArray() && children.isArray()) {
           for (JsonNode parent : parents) {
-              for (JsonNode child : children) {
-                  LineageRecord record = new LineageRecord(parent.textValue(), child.textValue());
-                  records.add(record);
-              }
+            for (JsonNode child : children) {
+              LineageRecord record = new LineageRecord(parent.textValue(), child.textValue());
+              records.add(record);
+            }
           }
-      }
-
-    DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "family");
-    try {
-      for (LineageRecord record : records) {
-        dw.append(record);
-      }
-        boolean temp = dw.insert("parent_urn, child_urn"); // overload to use slightly better version of insert function
-    } catch (IOException | SQLException e) {
-      e.printStackTrace();
-    } finally {
-      try {
-        dw.close();
-      } catch (SQLException e) {
-        e.printStackTrace();
-      }
-    }
-} else {
-(??)    TreeMap<String, LineageRecord> records = new TreeMap<>();
-(??)    Map<String, String> refSourceMap = new HashMap<>();
-(??)    Integer appId = lineage.findPath("app_id").asInt();
-(??)    String appName = lineage.findPath("app_name").asText();
-(??)    // Set application id if app id is not set or equals to 0
-(??)    if (appId == 0) {
-(??)      appId = (Integer) CfgDao.getAppByName(appName).get("id");
-(??)    }
-
-(??)    Long flowExecId = lineage.findPath("flow_exec_id").asLong();
-(??)    Long jobExecId = lineage.findPath("job_exec_id").asLong();
-(??)    String jobExecUuid = lineage.findPath("job_exec_uuid").asText();
-(??)    String jobName = lineage.findPath("job_name").asText();
-(??)    Integer jobStartTime = lineage.findPath("job_start_unixtime").asInt();
-(??)    Integer jobEndTime = lineage.findPath("job_end_unixtime").asInt();
-(??)    String flowPath = lineage.findPath("flow_path").asText();
-(??)
-(??)    JsonNode nodes = lineage.findPath("lineages");
-(??)    if (nodes.isArray()) {
-(??)      PartitionPatternMatcher ppm = null;
-(??)      for (JsonNode node : nodes) {
-(??)        Integer databaseId = node.findPath("db_id").asInt();
-(??)        String databaseName = node.findPath("database_name").asText();
-(??)        // Set application id if app id is not set or equals to 0
-(??)        if (databaseId == 0) {
-(??)          databaseId = (Integer) CfgDao.getDbByName(databaseName).get("id");
-(??)        }
-(??)
-(??)        String abstractedObjectName = node.findPath("abstracted_object_name").asText();
-(??)        String fullObjectName = node.findPath("full_object_name").asText();
-(??)        String storageType = node.findPath("storage_type").asText();
-(??)        String partitionStart = node.findPath("partition_start").asText();
-(??)        String partitionEnd = node.findPath("partition_end").asText();
-(??)        String partitionType = node.findPath("partition_type").asText();
-(??)        Integer layoutId = node.findPath("layout_id").asInt();
-(??)        // Get layout id if layout id is not set or equals to 0
-(??)        if (layoutId == 0) {
-(??)          if (ppm == null) {
-(??)            ppm = new PartitionPatternMatcher(PartitionLayoutDao.getPartitionLayouts());
+        }
+    
+        DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "family");
+        try {
+          for (LineageRecord record : records) {
+            dw.append(record);
           }
+            boolean temp = dw.insert("parent_urn, child_urn"); // overload to use slightly better version of insert function
+        } catch (IOException | SQLException e) {
+          e.printStackTrace();
+        } finally {
+          try {
+            dw.close();
+          } catch (SQLException e) {
+            e.printStackTrace();
+          }
+        }
+    } else {
+      TreeMap<String, LineageRecord> records = new TreeMap<>();
+      Map<String, String> refSourceMap = new HashMap<>();
+      Integer appId = lineage.findPath("app_id").asInt();
+      String appName = lineage.findPath("app_name").asText();
+      // Set application id if app id is not set or equals to 0
+      if (appId == 0) {
+        appId = (Integer) CfgDao.getAppByName(appName).get("id");
       }
 
-    DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "family");
-    try {
-      for (LineageRecord record : records) {
-        dw.append(record);
-      }
-        boolean temp = dw.insert("parent_urn, child_urn"); // overload to use slightly better version of insert function
-    } catch (IOException | SQLException e) {
-      e.printStackTrace();
-    } finally {
-      try {
-        dw.close();
-      } catch (SQLException e) {
-        e.printStackTrace();
+      Long flowExecId = lineage.findPath("flow_exec_id").asLong();
+      Long jobExecId = lineage.findPath("job_exec_id").asLong();
+      String jobExecUuid = lineage.findPath("job_exec_uuid").asText();
+      String jobName = lineage.findPath("job_name").asText();
+      Integer jobStartTime = lineage.findPath("job_start_unixtime").asInt();
+      Integer jobEndTime = lineage.findPath("job_end_unixtime").asInt();
+      String flowPath = lineage.findPath("flow_path").asText();
+
+      JsonNode nodes = lineage.findPath("lineages");
+      if (nodes.isArray()) {
+        PartitionPatternMatcher ppm = null;
+        for (JsonNode node : nodes) {
+          Integer databaseId = node.findPath("db_id").asInt();
+          String databaseName = node.findPath("database_name").asText();
+          // Set application id if app id is not set or equals to 0
+          if (databaseId == 0) {
+            databaseId = (Integer) CfgDao.getDbByName(databaseName).get("id");
+          }
+
+          String abstractedObjectName = node.findPath("abstracted_object_name").asText();
+          String fullObjectName = node.findPath("full_object_name").asText();
+          String storageType = node.findPath("storage_type").asText();
+          String partitionStart = node.findPath("partition_start").asText();
+          String partitionEnd = node.findPath("partition_end").asText();
+          String partitionType = node.findPath("partition_type").asText();
+          Integer layoutId = node.findPath("layout_id").asInt();
+          // Get layout id if layout id is not set or equals to 0
+          if (layoutId == 0) {
+            if (ppm == null) {
+              ppm = new PartitionPatternMatcher(PartitionLayoutDao.getPartitionLayouts());
+            }
+          }
+
+          DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "job_execution_data_lineage");
+          try {
+            for (LineageRecord record : records.values()) {
+              dw.append(record);
+            }
+            dw.flush();
+          } catch (IOException | SQLException e) {
+            e.printStackTrace();
+          } finally {
+            try {
+              dw.close();
+            } catch (SQLException e) {
+              e.printStackTrace();
+            }
+          }
+        }
       }
     }
   }
-}
-}
-}
 
   public static void updateJobExecutionLineage(JsonNode root)
       throws Exception {
