@@ -102,6 +102,10 @@ First, please get Play Framework in place.
 24. <a href="#edge-type-get">Edge Type GET</a>
 25. <a href="#edge-type-post">Edge Type POST</a>
 26. <a href="#edge-type-put">Edge Type PUT</a>
+27. <a href="#edge-label-get">Edge Label GET</a>
+28. <a href="#edge-label-post">Edge Label POST</a>
+29. <a href="#edge-label-put">Edge Label PUT</a>
+30. <a href="#common-parents-get">Common Parents GET</a>
 
 
 
@@ -1411,6 +1415,199 @@ POST {"scheme":"between.prospector.druid", "type":"job"} /property/edge/type
 ```
 PUT {"scheme":"between.prospector.druid", "type":"job"} /property/edge/type
 ```
+
+
+####<a name="edge-label-get">Edge Label GET</a>
+* **URL**
+
+	/property/edge/label/:name
+
+* **Method:**
+
+	`GET`
+
+* **Data Params**
+
+| Param Names | Description | Default | Required |
+| ----------- | ----------- | ------- |:--------:|
+| name | urn scheme | | Y |
+
+
+* **Success Response:**
+
+```json
+{
+	"property_name": "edge.label." + name,
+	"property_value": "an_edge_label"
+}
+```
+
+* **Error Response:**
+
+```json
+{
+	"return_code": 400,
+	"error_message": /*java error message*/
+}
+```
+
+```json
+{
+	"property_name": "edge.label." + name,
+	"property_value": "default"
+}
+```
+
+
+* **Sample Call**
+
+```
+GET /property/edge/label/raw-parquet
+```
+
+
+
+
+####<a name="edge-label-post">Edge Label POST</a>
+* **URL**
+
+	/property/edge/label
+
+* **Method:**
+
+	`POST`
+
+* **Data Params**
+
+```json
+{
+	"scheme": "raw-parquet",
+	"label": "a label string"
+}
+```
+
+* **Success Response:**
+
+```json
+{
+	"return_code": 200,
+	"message": "Edge Label inserted!"
+}
+```
+
+* **Error Response:**
+
+```json
+{
+	"return_code": 400,
+	"error_message" /*java error message*/
+}
+```
+
+
+* **Sample Call**
+
+```
+POST {"scheme":"between.prospector.druid", "label":"generated"} /property/edge/label
+```
+
+
+
+
+####<a name="edge-label-put">Edge Label PUT</a>
+* **URL**
+
+	/property/edge/label
+
+* **Method:**
+
+	`PUT`
+
+* **Data Params**
+
+```json
+{
+	"scheme": "raw-parquet",
+	"label": "a label string"
+}
+```
+
+* **Success Response:**
+
+```json
+{
+	"return_code": 200,
+	"message": "Edge Label inserted!"
+}
+```
+
+* **Error Response:**
+
+```json
+{
+	"return_code": 400,
+	"error_message" /*java error message*/
+}
+```
+
+
+* **Sample Call**
+
+```
+PUT {"scheme":"between.prospector.druid", "label":"generated"} /property/edge/label
+```
+
+
+
+<a name="common-parents-get">Common Parents GET</a>
+* **URL**
+
+	/dataset/common/parent
+
+* **Method:**
+
+	`PUT`
+
+* **Data Params**
+
+| Param Names | Description | Default | Required |
+| ----------- | ----------- | ------- |:--------:|
+| urnOne | urn | | Y |
+| urnTwo | urn | | Y |
+
+* **Success Response:**
+
+```json
+{
+	"return_code": 200,
+	"message": "[urn:///a/urn, urn:///another/urn]"
+}
+```
+
+* **Error Response:**
+
+```json
+{
+	"return_code": 400,
+	"error_message" /*java error message*/
+}
+```
+
+```json
+{
+	"return_code", 404,
+    "error_message", "No common parents found"
+}
+```
+
+
+* **Sample Call**
+
+```
+GET /dataset/common/parent?urnOne=domain-parquet:///share/domain/parquet&urnTwo=match-parquet:///share/match/parquet
+```
+
+
 
 ###<a name="preferences">Preferences</a>
 1. <a href="#node-color">Node Color</a>
