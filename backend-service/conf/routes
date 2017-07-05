@@ -51,6 +51,9 @@ PUT         /dataset/properties           controllers.DatasetController.updatePr
 # set a dataset's (or other's) validity
 PUT         /dataset/valid                controllers.DatasetController.setValidity()
 
+# get common parents for two urns
+GET         /dataset/common/parents       controllers.DatasetController.getCommonParents()
+
 
 # get/post/put display property values
 GET         /property/assigns/:name       controllers.PropertyController.getAssignProp(name: String)
@@ -93,6 +96,13 @@ GET         /property/edge/type/:name       controllers.PropertyController.getEd
 POST        /property/edge/type             controllers.PropertyController.addEdgeType()
 
 PUT         /property/edge/type             controllers.PropertyController.updateEdgeType()
+
+# edge type get/set
+GET         /property/edge/label/:name       controllers.PropertyController.getEdgeLabel(name: String)
+
+POST        /property/edge/label             controllers.PropertyController.addEdgeLabel()
+
+PUT         /property/edge/label             controllers.PropertyController.updateEdgeLabel()
 
 
 # Insert a new dataset
