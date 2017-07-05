@@ -16,6 +16,8 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 --
 
+-- inserts a bunch of default values, most of which are exclusive to premier
+
 INSERT INTO `wh_property` (`property_name`, `property_value`, `is_encrypted`, `group_name`)
 VALUES
 	('color.datamgt', 'wheat', 'N', NULL),

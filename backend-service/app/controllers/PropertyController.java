@@ -31,8 +31,11 @@ import play.mvc.Result;
 /**
  * Created by norv on 06/26/17.
  */
+
+// This is the controller for setting, changing, and getting preferences from `wh_property`
 public class PropertyController extends Controller {
 
+    // These conroller functions are for working with the properties field
     @BodyParser.Of(BodyParser.Json.class)
     public static Result addAssignProp() {
         JsonNode props = request().body().asJson();
@@ -87,6 +90,7 @@ public class PropertyController extends Controller {
 
 
 
+    // These controller functions are for working with the list of values which show up in the tooltips for nodes
     @BodyParser.Of(BodyParser.Json.class)
     public static Result addSortListProp() {
         JsonNode props = request().body().asJson();
@@ -141,6 +145,7 @@ public class PropertyController extends Controller {
 
 
 
+    // These controller functions are for working with node's colors
     @BodyParser.Of(BodyParser.Json.class)
     public static Result addNodeColor() {
         JsonNode prop = request().body().asJson();
@@ -194,6 +199,7 @@ public class PropertyController extends Controller {
 
 
 
+    // These controller functions are for working with node types, intended for setting a scheme as either data, app, or db but could also add new types which would require additional handling
     @BodyParser.Of(BodyParser.Json.class)
     public static Result addNodeType() {
         JsonNode prop = request().body().asJson();
@@ -300,6 +306,7 @@ public class PropertyController extends Controller {
 
 
 
+    // These controller functions are for working with edge types, currently "job" is the only type that effects anything
     @BodyParser.Of(BodyParser.Json.class)
     public static Result addEdgeType() {
         JsonNode prop = request().body().asJson();
@@ -353,6 +360,7 @@ public class PropertyController extends Controller {
 
 
 
+    // These controller functions are for working with edge styles, this can be used to set the color as well
     @BodyParser.Of(BodyParser.Json.class)
     public static Result addEdgeStyle() {
         JsonNode prop = request().body().asJson();
@@ -392,6 +400,60 @@ public class PropertyController extends Controller {
         try {
             if (name != null) {
                 ObjectNode result = PropertyDao.getEdgeStyle(name);
+                resultJson.put("return_code", 200);
+                resultJson.put("Style", result);
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultJson.put("return_code", 400);
+            resultJson.put("error_message", e.getMessage());
+        }
+
+        return ok(resultJson);
+    }
+
+
+
+    // These controller functions are for working with edge labels, the intent is that the label describes the source node's relationship to the target node
+    @BodyParser.Of(BodyParser.Json.class)
+    public static Result addEdgeLabel() {
+        JsonNode prop = request().body().asJson();
+        ObjectNode resultJson = Json.newObject();
+        try {
+            PropertyDao.addEdgeLabel(prop);
+            resultJson.put("return_code", 200);
+            resultJson.put("message", "Edge Label inserted!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultJson.put("return_code", 400);
+            resultJson.put("error_message", e.getMessage());
+        }
+
+        return ok(resultJson);
+    }
+
+    @BodyParser.Of(BodyParser.Json.class)
+    public static Result updateEdgeLabel() {
+        JsonNode prop = request().body().asJson();
+        ObjectNode resultJson = Json.newObject();
+        try {
+            PropertyDao.updateEdgeLabel(prop);
+            resultJson.put("return_code", 200);
+            resultJson.put("message", "Edge Style updated!");
+        } catch (Exception e) {
+            e.printStackTrace();
+            resultJson.put("return_code", 404);
+            resultJson.put("error_message", e.getMessage());
+        }
+
+        return ok(resultJson);
+    }
+
+    public static Result getEdgeLabel(String name) throws SQLException {
+        ObjectNode resultJson = Json.newObject();
+        try {
+            if (name != null) {
+                ObjectNode result = PropertyDao.getEdgeLabel(name);
                 resultJson.put("return_code", 200);
                 resultJson.put("Style", result);
             }

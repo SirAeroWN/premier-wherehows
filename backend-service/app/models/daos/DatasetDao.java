@@ -27,6 +27,7 @@ import java.util.Map.Entry;
 import java.util.Iterator;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.dao.EmptyResultDataAccessException;
+import play.Logger;
 import play.libs.Json;
 import play.Logger;
 import utils.JdbcUtil;
@@ -52,6 +53,9 @@ public class DatasetDao {
   public static final String DALIDS_PREFIX_WITH_3_SLASH = "dalids:///";
   public static final String HIVE_PREFIX_WITH_2_SLASH = "hive://";
   public static final String DALIDS_PREFIX_WITH_2_SLASH = "dalids://";
+
+
+  private final static String GET_PARENTS = "SELECT parent_urn FROM family WHERE child_urn = :urn";
 
   public static final String GET_DATASET_ID_IN_MAP_TABLE_WITH_TYPE_AND_CLUSTER = "SELECT " +
           "c.object_dataset_id as dataset_id, d.urn, d.dataset_type, " +
@@ -85,10 +89,13 @@ public class DatasetDao {
           "WHERE c.mapped_object_type = ? and " +
           "(c.mapped_object_name = ? or c.mapped_object_name like ?)";
 
+  // sql string prefix for getting datasets, makes a check for validity
   public static final String GET_LATEST_PREFIX = "SELECT urn from dict_dataset WHERE (dataset_type=:type OR urn LIKE :type ) AND (properties LIKE '%\"valid\": \"true\"%' OR properties LIKE '%\"valid\":\"true\"%') "; // room for ANDs
 
+  // sql string suffix for getting datasets, adds the part that gets the latest value
   public static final String GET_LATEST_SUFFIX = "ORDER BY source_modified_time DESC LIMIT 1"; // any middle section needs to end in a space
 
+  // sql string morphemes which introduce the variance between the deifferent getLatest functions
   public static final String GET_LATEST_AFTER_MORPHEME = "AND source_modified_time > :time ";
 
   public static final String GET_LATEST_BEFORE_MORPHEME = "AND source_modified_time < :time ";
@@ -470,6 +477,7 @@ public class DatasetDao {
      return null;
    }
 
+   // implimentation of getting latest entity of a type
    public static ObjectNode getLatestOfType(String type) throws SQLException {
      ObjectNode result = Json.newObject();
      if (StringUtils.isNotBlank(type)) {
@@ -486,6 +494,7 @@ public class DatasetDao {
      return result;
    }
 
+   // implimentation of getting latest entitiy of type after a time
    public static ObjectNode getLatestAfter(String type, long time) throws SQLException {
      ObjectNode result = Json.newObject();
      if (StringUtils.isNotBlank(type)) {
@@ -503,6 +512,7 @@ public class DatasetDao {
      return result;
    }
 
+   // implimentation of getting latest entitiy of type before a time
    public static ObjectNode getLatestBefore(String type, long time) throws SQLException {
      ObjectNode result = Json.newObject();
      if (StringUtils.isNotBlank(type)) {
@@ -520,6 +530,7 @@ public class DatasetDao {
      return result;
    }
 
+   // implimentation of getting latest entitiy of type between two times
    public static ObjectNode getLatestBetween(String type, long firsttime, long secondtime) throws SQLException {
      ObjectNode result = Json.newObject();
      if (StringUtils.isNotBlank(type)) {
@@ -538,6 +549,7 @@ public class DatasetDao {
      return result;
    }
 
+   // implimentation of getting latest entitiy of type at a specific time and only that time
   public static ObjectNode getAtTime(String type, long time) throws SQLException {
     ObjectNode result = Json.newObject();
     if (StringUtils.isNotBlank(type)) {
@@ -555,6 +567,7 @@ public class DatasetDao {
     return result;
   }
 
+  // implimentation of updating properties
   public static void updateProperties(JsonNode propChanges) throws Exception, SQLException, IOException {
     String urn = propChanges.get("urn").textValue();
     Map<String, Object> row = null;
@@ -570,6 +583,7 @@ public class DatasetDao {
       String updateProps = editProps(oldProps, youngProps);
       Logger.info("updateProps: " + updateProps);
       row.put("properties", updateProps);
+      // need to remove these properties because they don't like being updated
       row.remove("created_time");
       row.remove("modified_time");
       row.remove("wh_etl_exec_id");
@@ -582,6 +596,7 @@ public class DatasetDao {
     }
   }
 
+  // function that actually edits the properties, takes in and returns strings so it can be more easily replaced if necessary
   public static String editProps(String ogPropString, String ygPropString) throws IOException {
     JsonNode ogPropNode = Json.parse(ogPropString);
     JsonNode ygPropNode = Json.parse(ygPropString);
@@ -595,6 +610,60 @@ public class DatasetDao {
       }
     }
     return ogPropNode.toString();
+  }
+
+  // gets list of parent urns, helper for getCommonParents
+  private static List<String> getParents(String urn) {
+
+    Map<String, Object> row = null;
+    List<Map<String, Object>> rows = null;
+
+    Map<String, Object> params = new HashMap<>();
+    params.put("urn", urn);
+
+    rows = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(GET_PARENTS, params);
+
+    Logger.debug(rows.toString());
+
+    List<String> parents = new ArrayList<>();
+
+    if (rows.size() > 0) {
+      Logger.debug(rows.get(0).toString());
+      Logger.debug(rows.get(0).get("parent_urn").getClass().getName());
+      for (Map<String, Object> r : rows) {
+        parents.add((String) r.get("parent_urn"));
+      }
+    }
+
+
+    if (parents == null || parents.size() == 0) {
+      Logger.error("couldn't find any parents for URN: " + urn);
+    }
+    return parents;
+  }
+
+  // function that actually finds common parents
+  public static ObjectNode getCommonParents(String urnOne, String urnTwo) {
+    ObjectNode result = Json.newObject();
+
+    // get lists of parents for both urns
+    List<String> oneParents = getParents(urnOne);
+    List<String> twoParents = getParents(urnOne);
+
+    // create a list to hold just the common parents
+    List<String> commonParents = new ArrayList<>(oneParents);
+
+    // retainAll() leaves commonParents with just the values in both lists
+    commonParents.retainAll(twoParents);
+    if (commonParents != null && commonParents.size() > 0) {
+      result.put("return_code", 200);
+      result.put("common_parents", commonParents.toString());
+    } else {
+      result.put("return_code", 404);
+      result.put("error_message", "No common parents found");
+    }
+
+    return result;
   }
 
 }

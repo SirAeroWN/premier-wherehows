@@ -12,4 +12,6 @@
 -- WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 --
 
+-- setup family table for storing simple parent-child relationships
+
 CREATE TABLE `family` ( `id` int(11) unsigned NOT NULL AUTO_INCREMENT, `parent_urn` varchar(200) NOT NULL DEFAULT '', `child_urn` varchar(200) NOT NULL DEFAULT '', PRIMARY KEY (`id`)) ENGINE=InnoDB DEFAULT CHARSET=utf8;

@@ -144,23 +144,16 @@ public class LineageDao {
     return datasets;
   }
 
+  // insert relationships between give nodes into family table
+  // all parents in parents array are parents of every child in the children array
   public static void insertLineage(JsonNode lineage) throws Exception {
       List<LineageRecord> records = new ArrayList<LineageRecord>();
       JsonNode parents = lineage.findPath("parent_urn");
       JsonNode children = lineage.findPath("child_urn");
-      /*if (parents == null) {
-          Logger.error("No parent urn");
-      }
-      if (children == null) {
-          Logger.error("No child urn");
-      }*/
-      //Logger.debug(parents.toString());
-      //Logger.debug(children.toString());
+
       if (parents.isArray() && children.isArray()) {
           for (JsonNode parent : parents) {
               for (JsonNode child : children) {
-                  //Logger.debug(parent.textValue());
-                  //Logger.debug(child.textValue());
                   LineageRecord record = new LineageRecord(parent.textValue(), child.textValue());
                   records.add(record);
               }
@@ -172,7 +165,7 @@ public class LineageDao {
       for (LineageRecord record : records) {
         dw.append(record);
       }
-        boolean temp = dw.insert("parent_urn, child_urn");
+        boolean temp = dw.insert("parent_urn, child_urn"); // overload to use slightly better version of insert function
     } catch (IOException | SQLException e) {
       e.printStackTrace();
     } finally {
