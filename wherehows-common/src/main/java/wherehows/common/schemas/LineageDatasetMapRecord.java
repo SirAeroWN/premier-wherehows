@@ -16,32 +16,32 @@ package wherehows.common.schemas;
 import java.util.List;
 
 
-public class DatasetEntityRecord extends AbstractRecord {
+public class LineageDatasetMapRecord extends AbstractRecord {
 
-  String identifierType;
-  String identifierField;
+  String mapDirectionType;
+  List<LineageFieldRecord> fieldLineage;
 
   @Override
   public List<Object> fillAllFields() {
     return null;
   }
 
-  public DatasetEntityRecord() {
+  public LineageDatasetMapRecord() {
   }
 
-  public String getIdentifierType() {
-    return identifierType;
+  public String getMapDirectionType() {
+    return mapDirectionType;
   }
 
-  public void setIdentifierType(String identifierType) {
-    this.identifierType = identifierType;
+  public void setMapDirectionType(String mapDirectionType) {
+    this.mapDirectionType = mapDirectionType;
   }
 
-  public String getIdentifierField() {
-    return identifierField;
+  public List<LineageFieldRecord> getFieldLineage() {
+    return fieldLineage;
   }
 
-  public void setIdentifierField(String identifierField) {
-    this.identifierField = identifierField;
+  public void setFieldLineage(List<LineageFieldRecord> fieldLineage) {
+    this.fieldLineage = fieldLineage;
   }
 }

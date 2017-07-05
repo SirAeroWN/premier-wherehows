@@ -14,18 +14,26 @@
 package models.daos;
 
 import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.io.IOException;
 import java.sql.SQLException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
-import java.util.ArrayList;
+import org.springframework.dao.DataAccessException;
+import play.Logger;
 import utils.Urn;
 import utils.JdbcUtil;
-import play.Logger;
+import wherehows.common.DatasetPath;
+import wherehows.common.LineageCombiner;
+import wherehows.common.schemas.ApplicationRecord;
+import wherehows.common.schemas.JobExecutionRecord;
+import wherehows.common.schemas.LineageDatasetRecord;
 import wherehows.common.schemas.LineageRecord;
 import wherehows.common.utils.PartitionPatternMatcher;
+import wherehows.common.utils.PreparedStatementUtil;
 import wherehows.common.writers.DatabaseWriter;
 
 
@@ -35,6 +43,16 @@ import wherehows.common.writers.DatabaseWriter;
  * Modified by zechen on 10/12/15.
  */
 public class LineageDao {
+
+  private static final String JOB_EXECUTION_TABLE = "job_execution";
+  private static final String JOB_EXECUTION_DATA_LINEAGE_TABLE = "job_execution_data_lineage";
+
+  private static final DatabaseWriter JOB_EXECUTION_WRITER =
+      new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, JOB_EXECUTION_TABLE);
+
+  private static final DatabaseWriter JOB_EXECUTION_DATA_LINEAGE_WRITER =
+      new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, JOB_EXECUTION_DATA_LINEAGE_TABLE);
+
   public static final String FIND_JOBS_BY_DATASET =
     " select distinct ca.short_connection_string, jedl.job_name, jedl.flow_path "
     + " from job_execution_data_lineage jedl "
@@ -59,7 +77,6 @@ public class LineageDao {
       + " where jedl.source_target_type = :source_target_type "
       + " and ca.short_connection_string like :instance ";
 
-
   public static final String FIND_DATASETS_BY_FLOW_EXEC =
     " select distinct jedl.abstracted_object_name, jedl.db_id, jedl.partition_start, jedl.partition_end, "
       + " jedl.storage_type, jedl.record_count, jedl.insert_count, jedl.update_count, jedl.delete_count "
@@ -70,7 +87,6 @@ public class LineageDao {
       + " and jedl.source_target_type = :source_target_type "
       + " and ca.short_connection_string like :instance ";
 
-
   public static final String FIND_DATASETS_BY_JOB_EXEC =
     " select distinct jedl.abstracted_object_name, jedl.db_id, jedl.partition_start, jedl.partition_end, "
       + " jedl.storage_type, jedl.record_count, jedl.insert_count, jedl.update_count, jedl.delete_count "
@@ -80,6 +96,13 @@ public class LineageDao {
       + " and jedl.source_target_type = :source_target_type "
       + " and ca.short_connection_string like :instance ";
 
+  public static final String INSERT_JOB_EXECUTION_RECORD =
+      PreparedStatementUtil.prepareInsertTemplateWithColumn("REPLACE", JOB_EXECUTION_TABLE,
+          JobExecutionRecord.dbColumns());
+
+  public static final String INSERT_JOB_EXECUTION_DATA_LINEAGE_RECORD =
+      PreparedStatementUtil.prepareInsertTemplateWithColumn("REPLACE", JOB_EXECUTION_DATA_LINEAGE_TABLE,
+          LineageRecord.dbColumns());
 
   public static List<Map<String, Object>> getJobsByDataset(String urn, String period, String cluster, String instance, String sourceTargetType)
     throws SQLException {
@@ -99,8 +122,7 @@ public class LineageDao {
     } else {
       params.put("instance", instance);
     }
-    List<Map<String, Object>> jobs = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(FIND_JOBS_BY_DATASET, params);
-    return jobs;
+    return JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(FIND_JOBS_BY_DATASET, params);
   }
 
   public static List<Map<String, Object>> getDatasetsByJob(String flowPath, String jobName, String instance, String sourceTargetType) {
@@ -113,8 +135,7 @@ public class LineageDao {
     } else {
       params.put("instance", instance);
     }
-    List<Map<String, Object>> datasets = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(FIND_DATASETS_BY_JOB, params);
-    return datasets;
+    return JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(FIND_DATASETS_BY_JOB, params);
   }
 
   public static List<Map<String, Object>> getDatasetsByFlowExec(Long flowExecId, String jobName, String instance, String sourceTargetType) {
@@ -127,8 +148,7 @@ public class LineageDao {
     } else {
       params.put("instance", instance);
     }
-    List<Map<String, Object>> datasets = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(FIND_DATASETS_BY_FLOW_EXEC, params);
-    return datasets;
+    return JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(FIND_DATASETS_BY_FLOW_EXEC, params);
   }
 
   public static List<Map<String, Object>> getDatasetsByJobExec(Long jobExecId, String instance, String sourceTargetType) {
@@ -140,14 +160,14 @@ public class LineageDao {
     } else {
       params.put("instance", instance);
     }
-    List<Map<String, Object>> datasets = JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(FIND_DATASETS_BY_JOB_EXEC, params);
-    return datasets;
+    return JdbcUtil.wherehowsNamedJdbcTemplate.queryForList(FIND_DATASETS_BY_JOB_EXEC, params);
   }
 
   // insert relationships between give nodes into family table
   // all parents in parents array are parents of every child in the children array
   public static void insertLineage(JsonNode lineage) throws Exception {
-      List<LineageRecord> records = new ArrayList<LineageRecord>();
+	if (true) { // use premier's system, this has got to change
+  List<LineageRecord> records = new ArrayList<LineageRecord>();
       JsonNode parents = lineage.findPath("parent_urn");
       JsonNode children = lineage.findPath("child_urn");
 
@@ -175,6 +195,184 @@ public class LineageDao {
         e.printStackTrace();
       }
     }
+} else {
+(??)    TreeMap<String, LineageRecord> records = new TreeMap<>();
+(??)    Map<String, String> refSourceMap = new HashMap<>();
+(??)    Integer appId = lineage.findPath("app_id").asInt();
+(??)    String appName = lineage.findPath("app_name").asText();
+(??)    // Set application id if app id is not set or equals to 0
+(??)    if (appId == 0) {
+(??)      appId = (Integer) CfgDao.getAppByName(appName).get("id");
+(??)    }
 
+(??)    Long flowExecId = lineage.findPath("flow_exec_id").asLong();
+(??)    Long jobExecId = lineage.findPath("job_exec_id").asLong();
+(??)    String jobExecUuid = lineage.findPath("job_exec_uuid").asText();
+(??)    String jobName = lineage.findPath("job_name").asText();
+(??)    Integer jobStartTime = lineage.findPath("job_start_unixtime").asInt();
+(??)    Integer jobEndTime = lineage.findPath("job_end_unixtime").asInt();
+(??)    String flowPath = lineage.findPath("flow_path").asText();
+(??)
+(??)    JsonNode nodes = lineage.findPath("lineages");
+(??)    if (nodes.isArray()) {
+(??)      PartitionPatternMatcher ppm = null;
+(??)      for (JsonNode node : nodes) {
+(??)        Integer databaseId = node.findPath("db_id").asInt();
+(??)        String databaseName = node.findPath("database_name").asText();
+(??)        // Set application id if app id is not set or equals to 0
+(??)        if (databaseId == 0) {
+(??)          databaseId = (Integer) CfgDao.getDbByName(databaseName).get("id");
+(??)        }
+(??)
+(??)        String abstractedObjectName = node.findPath("abstracted_object_name").asText();
+(??)        String fullObjectName = node.findPath("full_object_name").asText();
+(??)        String storageType = node.findPath("storage_type").asText();
+(??)        String partitionStart = node.findPath("partition_start").asText();
+(??)        String partitionEnd = node.findPath("partition_end").asText();
+(??)        String partitionType = node.findPath("partition_type").asText();
+(??)        Integer layoutId = node.findPath("layout_id").asInt();
+(??)        // Get layout id if layout id is not set or equals to 0
+(??)        if (layoutId == 0) {
+(??)          if (ppm == null) {
+(??)            ppm = new PartitionPatternMatcher(PartitionLayoutDao.getPartitionLayouts());
+          }
+      }
+
+    DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "family");
+    try {
+      for (LineageRecord record : records) {
+        dw.append(record);
+      }
+        boolean temp = dw.insert("parent_urn, child_urn"); // overload to use slightly better version of insert function
+    } catch (IOException | SQLException e) {
+      e.printStackTrace();
+    } finally {
+      try {
+        dw.close();
+      } catch (SQLException e) {
+        e.printStackTrace();
+      }
+    }
+  }
+}
+}
+}
+
+  public static void updateJobExecutionLineage(JsonNode root)
+      throws Exception {
+    final ObjectMapper om = new ObjectMapper();
+    // get Application
+    final JsonNode application = root.path("application");
+    final JsonNode jobExecution = root.path("jobExecution");
+    final JsonNode inputDatasetList = root.path("inputDatasetList");
+    final JsonNode outputDatasetList = root.path("outputDatasetList");
+    if (application.isMissingNode() || jobExecution.isMissingNode() || !inputDatasetList.isArray()
+        || !outputDatasetList.isArray()) {
+      throw new IllegalArgumentException(
+          "Job Execution Lineage info update error, missing necessary fields: " + root.toString());
+    }
+
+    ApplicationRecord appRecord = om.convertValue(application, ApplicationRecord.class);
+    // match app id from cfg_application
+    Integer appId;
+    try {
+      appId = (Integer) CfgDao.getAppByAppCode(appRecord.getName()).get("app_id");
+    } catch (Exception ex) {
+      Logger.error("Can't find application by app_code: " + application.toString(), ex);
+      throw ex;
+    }
+
+    // process job execution info
+    JobExecutionRecord jobExecRecord = om.convertValue(jobExecution, JobExecutionRecord.class);
+    // TODO generate flow_id, job_id if not provided
+    jobExecRecord.setAppId(appId);
+    jobExecRecord.setLogTime(System.currentTimeMillis());
+
+    JOB_EXECUTION_WRITER.execute(INSERT_JOB_EXECUTION_RECORD, jobExecRecord.dbValues());
+
+    // process job data lineage info
+    final List<LineageRecord> lineageRecords = new ArrayList<>();
+
+    for (final JsonNode inputDataset : inputDatasetList) {
+      LineageDatasetRecord lineageDataset = om.convertValue(inputDataset, LineageDatasetRecord.class);
+      lineageDataset.setSourceTargetType("source");
+
+      LineageRecord record = convertLineageDataset(lineageDataset, jobExecRecord);
+      if (record != null) {
+        lineageRecords.add(record);
+      }
+    }
+
+    for (final JsonNode outputDataset : outputDatasetList) {
+      LineageDatasetRecord lineageDataset = om.convertValue(outputDataset, LineageDatasetRecord.class);
+      lineageDataset.setSourceTargetType("target");
+
+      LineageRecord record = convertLineageDataset(lineageDataset, jobExecRecord);
+      if (record != null) {
+        lineageRecords.add(record);
+      }
+    }
+
+    // combine partitions
+    final LineageCombiner lineageCombiner = new LineageCombiner(null);
+    List<LineageRecord> combinedLineageRecords;
+    try {
+      lineageCombiner.addAllWoPartitionUpdate(lineageRecords);
+      combinedLineageRecords = lineageCombiner.getCombinedLineage();
+    } catch (Exception ex) {
+      Logger.error("Lineage records combine error: ", ex);
+      throw ex;
+    }
+
+    // generate srl_no
+    int srlNumber = 0;
+    for (LineageRecord record : combinedLineageRecords) {
+      record.setSrlNo(srlNumber);
+      srlNumber++;
+    }
+
+    // store data lineage info
+    for (LineageRecord record : combinedLineageRecords) {
+      try {
+        JOB_EXECUTION_DATA_LINEAGE_WRITER.execute(INSERT_JOB_EXECUTION_DATA_LINEAGE_RECORD, record.dbValues());
+      } catch (DataAccessException ex) {
+        Logger.error("Data Lineage input error: ", ex);
+      }
+    }
+  }
+
+  // convert LineageDatasetRecord and JobExecutionRecord into LineageRecord
+  private static LineageRecord convertLineageDataset(LineageDatasetRecord lineageDataset, JobExecutionRecord jobExec)
+      throws Exception {
+    final LineageRecord record = new LineageRecord(jobExec.getAppId(), jobExec.getFlowExecutionId(), jobExec.getName(),
+        jobExec.getExecutionId());
+
+    record.setFlowPath(jobExec.getTopLevelFlowName());
+    record.setJobExecUUID(jobExec.getExecutionGuid());
+    record.setSourceTargetType(lineageDataset.getSourceTargetType());
+    record.setOperation(lineageDataset.getOperation());
+    record.setJobStartTime((int) (jobExec.getStartTime() / 1000));
+    record.setJobEndTime((int) (jobExec.getEndTime() / 1000));
+
+    if (lineageDataset.getPartition() != null) {
+      record.setPartitionStart(lineageDataset.getPartition().getMinPartitionValue());
+      record.setPartitionEnd(lineageDataset.getPartition().getMaxPartitionValue());
+      record.setPartitionType(lineageDataset.getPartition().getPartitionType());
+    }
+
+    if (lineageDataset.getDatasetUrn() != null) {
+      record.setFullObjectName(lineageDataset.getDatasetUrn());
+    } else if (lineageDataset.getDatasetProperties() != null
+        && lineageDataset.getDatasetProperties().getUri() != null) {
+      record.setFullObjectName(lineageDataset.getDatasetProperties().getUri());
+    }
+    if (record.getFullObjectName() != null) {
+      List<String> abstractPaths = DatasetPath.separatedDataset(record.getFullObjectName());
+      if (abstractPaths.size() > 0) {
+        record.setAbstractObjectName(abstractPaths.get(0));
+      }
+    }
+
+    return record;
   }
 }
