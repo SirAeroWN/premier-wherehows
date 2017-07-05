@@ -135,8 +135,8 @@ public class LineageRecord implements Record, Comparable<LineageRecord> {
     allFields.add(child_urn);
 
     // add the created_date and wh_etl_exec_id
-    allFields.add(System.currentTimeMillis() / 1000);
-    allFields.add(null);
+    //allFields.add(System.currentTimeMillis() / 1000);
+    //allFields.add(null);
     StringBuilder sb = new StringBuilder();
     for (Object o : allFields) {
       sb.append(StringUtil.toDbString(o));
