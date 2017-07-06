@@ -32,6 +32,7 @@ import wherehows.common.schemas.ApplicationRecord;
 import wherehows.common.schemas.JobExecutionRecord;
 import wherehows.common.schemas.LineageDatasetRecord;
 import wherehows.common.schemas.LineageRecord;
+import wherehows.common.schemas.LineageRecordLite;
 import wherehows.common.utils.PartitionPatternMatcher;
 import wherehows.common.utils.PreparedStatementUtil;
 import wherehows.common.writers.DatabaseWriter;
@@ -167,14 +168,14 @@ public class LineageDao {
   // all parents in parents array are parents of every child in the children array
   public static void insertLineage(JsonNode lineage) throws Exception {
 	if (true) { // use premier's system, this has got to change
-      List<LineageRecord> records = new ArrayList<LineageRecord>();
+      List<LineageRecordLite> records = new ArrayList<LineageRecordLite>();
         JsonNode parents = lineage.findPath("parent_urn");
         JsonNode children = lineage.findPath("child_urn");
   
         if (parents.isArray() && children.isArray()) {
           for (JsonNode parent : parents) {
             for (JsonNode child : children) {
-              LineageRecord record = new LineageRecord(parent.textValue(), child.textValue());
+              LineageRecordLite record = new LineageRecordLite(parent.textValue(), child.textValue());
               records.add(record);
             }
           }
@@ -182,7 +183,7 @@ public class LineageDao {
     
         DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "family");
         try {
-          for (LineageRecord record : records) {
+          for (LineageRecordLite record : records) {
             dw.append(record);
           }
             boolean temp = dw.insert("parent_urn, child_urn"); // overload to use slightly better version of insert function
