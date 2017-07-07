@@ -13,7 +13,7 @@
  */
 package models;
 
-public class LineageEdge {
+public class LineageEdgeLite {
 
     public int id;
     public int source;

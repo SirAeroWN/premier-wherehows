@@ -18,7 +18,7 @@ import play.Logger;
 import play.Play;
 import java.lang.reflect.Field;
 
-public class LineageNode {
+public class LineageNodeLite {
 
     public int id;
     public String node_type;

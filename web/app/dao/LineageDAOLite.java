@@ -34,7 +34,7 @@ import play.Play;
 import play.libs.Json;
 import utils.Lineage;
 
-public class LineageDAO extends AbstractMySQLOpenSourceDAO {
+public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
 
     private final static String GET_PARENTS = "SELECT parent_urn FROM family WHERE child_urn = ?";
 
@@ -55,15 +55,15 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         int level = 0; // level goes up for parents, down for children
 
         // lists of nodes and edges
-        List<LineageNode> nodes = new ArrayList<LineageNode>();
-        List<LineageEdge> edges = new ArrayList<LineageEdge>();
+        List<LineageNodeLite> nodes = new ArrayList<LineageNodeLite>();
+        List<LineageEdgeLite> edges = new ArrayList<LineageEdgeLite>();
 
         // create jsonNode
         ObjectNode resultNode = Json.newObject();
 
         // create a single node and add it to list of nodes
         // dislike that this code is repeated in the function...
-        LineageNode node = new LineageNode();
+        LineageNodeLite node = new LineageNodeLite();
         node.id = nodes.size();
         node.level = level;
         node.urn = urn;
@@ -154,19 +154,19 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         return props.get(0);
     }
 
-    private static void getRelativeGraph(List<LineageNode> nodes, List<LineageEdge> edges, int maxDepth, int direction, LineageNode currNode) {
-        //LineageNode currNode = nodes.get(nodes.size() - 1);
+    private static void getRelativeGraph(List<LineageNodeLite> nodes, List<LineageEdgeLite> edges, int maxDepth, int direction, LineageNodeLite currNode) {
+        //LineageNodeLite currNode = nodes.get(nodes.size() - 1);
         if (Math.abs(currNode.level) <= Math.abs(maxDepth)) {
             // do our thing
             List<String> relatives = getRelatives(currNode.urn, direction);
             Logger.debug("relatives: " + relatives.toString());
             for (String relative : relatives) {
-                LineageNode node = new LineageNode();
+                LineageNodeLite node = new LineageNodeLite();
                 node.id = nodes.size();
                 node.level = currNode.level + direction;
                 node.urn = relative;
                 node._sort_list = new ArrayList<String>();
-                LineageEdge edge = new LineageEdge();
+                LineageEdgeLite edge = new LineageEdgeLite();
                 edge.id = edges.size();
                 switch (getNodeType(relative).toLowerCase()) {
                     case "app":
@@ -263,14 +263,14 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         return children;
     }
 
-    private static void setEdgeAttr(LineageEdge edge, LineageNode source, LineageNode target) {
+    private static void setEdgeAttr(LineageEdgeLite edge, LineageNodeLite source, LineageNodeLite target) {
         setEdgeLabel(edge, source, target);
         setEdgeType(edge, source, target);
         //setEdgeColor(edge, source, target)
         setEdgeStyle(edge, source, target);
     }
 
-    private static void setEdgeLabel(LineageEdge edge, LineageNode source, LineageNode target) {
+    private static void setEdgeLabel(LineageEdgeLite edge, LineageNodeLite source, LineageNodeLite target) {
         List<String> labelqueries = new ArrayList<String>();
         String label = "";
         labelqueries.add("edge.label.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
@@ -292,7 +292,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         }
     }
 
-    private static void setEdgeType(LineageEdge edge, LineageNode source, LineageNode target) {
+    private static void setEdgeType(LineageEdgeLite edge, LineageNodeLite source, LineageNodeLite target) {
         List<String> typequeries = new ArrayList<String>();
         String type = "";
         typequeries.add("edge.type.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
@@ -317,7 +317,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         }
     }
 
-    private static void setEdgeColor(LineageEdge edge, LineageNode source, LineageNode target) {
+    private static void setEdgeColor(LineageEdgeLite edge, LineageNodeLite source, LineageNodeLite target) {
         List<String> colorqueries = new ArrayList<String>();
         String color = "";
         colorqueries.add("edge.color.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
@@ -339,7 +339,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         }
     }
 
-    private static void setEdgeStyle(LineageEdge edge, LineageNode source, LineageNode target) {
+    private static void setEdgeStyle(LineageEdgeLite edge, LineageNodeLite source, LineageNodeLite target) {
         List<String> stylequeries = new ArrayList<String>();
         String style = "";
         stylequeries.add("edge.style.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
@@ -378,7 +378,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
     }
 
 
-    private static void assignApp(LineageNode node) {
+    private static void assignApp(LineageNodeLite node) {
         List<Map<String, Object>> rows = null;
         MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("urn", node.urn);
@@ -405,7 +405,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         }
     }
 
-    private static void assignData(LineageNode node) {
+    private static void assignData(LineageNodeLite node) {
         List<Map<String, Object>> rows = null;
         MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("urn", node.urn);
@@ -432,7 +432,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         }
     }
 
-    private static void assignDB(LineageNode node) {
+    private static void assignDB(LineageNodeLite node) {
         List<Map<String, Object>> rows = null;
         MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("urn", node.urn);
@@ -456,7 +456,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         }
     }
 
-    private static void assignGeneral(LineageNode node) {
+    private static void assignGeneral(LineageNodeLite node) {
         List<Map<String, Object>> rows = null;
         MapSqlParameterSource parameters = new MapSqlParameterSource();
         parameters.addValue("urn", node.urn);
@@ -477,7 +477,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         }
     }
 
-    private static Boolean assignPrefs(LineageNode node) {
+    private static Boolean assignPrefs(LineageNodeLite node) {
         // first try to get property list
         String properties = getProp("prop." + getPrefix(node.urn));
         if (properties == "default") {

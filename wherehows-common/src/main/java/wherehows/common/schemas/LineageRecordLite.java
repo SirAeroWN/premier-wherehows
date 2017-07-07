@@ -62,16 +62,16 @@ public class LineageRecordLite implements Record, Comparable<LineageRecord> {
 
     char SEPR = 0x001A;
     List<Object> allFields;
-    private static final Logger logger = LoggerFactory.getLogger(LineageRecord.class);
+    private static final Logger logger = LoggerFactory.getLogger(LineageRecordLite.class);
 
-    public LineageRecord(Integer appId, Long flowExecId, String jobName, Long jobExecId) {
+    public LineageRecordLite(Integer appId, Long flowExecId, String jobName, Long jobExecId) {
         this.appId = appId;
         this.flowExecId = flowExecId;
         this.jobName = jobName;
         this.jobExecId = jobExecId;
     }
 
-    public LineageRecord(String parent_urn, String child_urn) {
+    public LineageRecordLite(String parent_urn, String child_urn) {
         this.parent_urn = parent_urn;
         this.child_urn = child_urn;
     }
