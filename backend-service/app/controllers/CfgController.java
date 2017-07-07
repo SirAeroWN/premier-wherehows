@@ -19,6 +19,8 @@ import models.daos.CfgDao;
 import play.libs.Json;
 import play.mvc.Controller;
 import play.mvc.Result;
+import play.Play;
+import play.Logger;
 
 import java.util.List;
 import java.util.Map;
@@ -30,6 +32,15 @@ import java.util.Map;
 public class CfgController extends Controller {
 
   public static Result getAllApps() {
+    // diet wherehows doesn't have an implimentation for this, so error
+    if (Play.application().configuration().getString("diet").equals("true")) {
+      Logger.error("Trying to run a function not implimented in diet wherehows");
+      ObjectNode resultJson = Json.newObject();
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", "Diet WhereHows does not impliment this call");
+      return ok(resultJson);
+    }
+
     ObjectNode resultJson = Json.newObject();
     try {
       List<Map<String, Object>> apps = CfgDao.getAllApps();
@@ -45,6 +56,15 @@ public class CfgController extends Controller {
   }
 
   public static Result getAllDbs() {
+    // diet wherehows doesn't have an implimentation for this, so error
+    if (Play.application().configuration().getString("diet").equals("true")) {
+      Logger.error("Trying to run a function not implimented in diet wherehows");
+      ObjectNode resultJson = Json.newObject();
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", "Diet WhereHows does not impliment this call");
+      return ok(resultJson);
+    }
+
     ObjectNode resultJson = Json.newObject();
     try {
       List<Map<String, Object>> dbs = CfgDao.getAllDbs();
@@ -60,6 +80,15 @@ public class CfgController extends Controller {
   }
 
   public static Result getAppById(int id) {
+    // diet wherehows doesn't have an implimentation for this, so error
+    if (Play.application().configuration().getString("diet").equals("true")) {
+      Logger.error("Trying to run a function not implimented in diet wherehows");
+      ObjectNode resultJson = Json.newObject();
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", "Diet WhereHows does not impliment this call");
+      return ok(resultJson);
+    }
+
     ObjectNode resultJson = Json.newObject();
     try {
       Map<String, Object> app = CfgDao.getAppById(id);
@@ -75,6 +104,15 @@ public class CfgController extends Controller {
   }
 
   public static Result getAppByName(String name) {
+    // diet wherehows doesn't have an implimentation for this, so error
+    if (Play.application().configuration().getString("diet").equals("true")) {
+      Logger.error("Trying to run a function not implimented in diet wherehows");
+      ObjectNode resultJson = Json.newObject();
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", "Diet WhereHows does not impliment this call");
+      return ok(resultJson);
+    }
+
     ObjectNode resultJson = Json.newObject();
     try {
       Map<String, Object> app = CfgDao.getAppByName(name);
@@ -90,6 +128,15 @@ public class CfgController extends Controller {
   }
 
   public static Result getDbById(int id) {
+    // diet wherehows doesn't have an implimentation for this, so error
+    if (Play.application().configuration().getString("diet").equals("true")) {
+      Logger.error("Trying to run a function not implimented in diet wherehows");
+      ObjectNode resultJson = Json.newObject();
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", "Diet WhereHows does not impliment this call");
+      return ok(resultJson);
+    }
+
     ObjectNode resultJson = Json.newObject();
     try {
       Map<String, Object> db = CfgDao.getDbById(id);
@@ -105,6 +152,15 @@ public class CfgController extends Controller {
   }
 
   public static Result getDbByName(String name) {
+    // diet wherehows doesn't have an implimentation for this, so error
+    if (Play.application().configuration().getString("diet").equals("true")) {
+      Logger.error("Trying to run a function not implimented in diet wherehows");
+      ObjectNode resultJson = Json.newObject();
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", "Diet WhereHows does not impliment this call");
+      return ok(resultJson);
+    }
+
     ObjectNode resultJson = Json.newObject();
     try {
       Map<String, Object> db = CfgDao.getDbByName(name);
@@ -120,6 +176,15 @@ public class CfgController extends Controller {
   }
 
   public static Result addApp() {
+    // diet wherehows doesn't have an implimentation for this, so error
+    if (Play.application().configuration().getString("diet").equals("true")) {
+      Logger.error("Trying to run a function not implimented in diet wherehows");
+      ObjectNode resultJson = Json.newObject();
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", "Diet WhereHows does not impliment this call");
+      return ok(resultJson);
+    }
+
     JsonNode app = request().body().asJson();
     ObjectNode resultJson = Json.newObject();
     try {
@@ -136,6 +201,15 @@ public class CfgController extends Controller {
   }
 
   public static Result addDb() {
+    // diet wherehows doesn't have an implimentation for this, so error
+    if (Play.application().configuration().getString("diet").equals("true")) {
+      Logger.error("Trying to run a function not implimented in diet wherehows");
+      ObjectNode resultJson = Json.newObject();
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", "Diet WhereHows does not impliment this call");
+      return ok(resultJson);
+    }
+
     JsonNode db = request().body().asJson();
     ObjectNode resultJson = Json.newObject();
     try {
@@ -152,6 +226,15 @@ public class CfgController extends Controller {
   }
 
   public static Result updateApp() {
+    // diet wherehows doesn't have an implimentation for this, so error
+    if (Play.application().configuration().getString("diet").equals("true")) {
+      Logger.error("Trying to run a function not implimented in diet wherehows");
+      ObjectNode resultJson = Json.newObject();
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", "Diet WhereHows does not impliment this call");
+      return ok(resultJson);
+    }
+
     JsonNode app = request().body().asJson();
     ObjectNode resultJson = Json.newObject();
     try {
@@ -168,6 +251,15 @@ public class CfgController extends Controller {
   }
 
   public static Result updateDb() {
+    // diet wherehows doesn't have an implimentation for this, so error
+    if (Play.application().configuration().getString("diet").equals("true")) {
+      Logger.error("Trying to run a function not implimented in diet wherehows");
+      ObjectNode resultJson = Json.newObject();
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", "Diet WhereHows does not impliment this call");
+      return ok(resultJson);
+    }
+
     JsonNode db = request().body().asJson();
     ObjectNode resultJson = Json.newObject();
     try {

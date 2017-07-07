@@ -23,6 +23,7 @@ import models.daos.UserDao;
 import utils.Urn;
 import org.springframework.dao.EmptyResultDataAccessException;
 import play.Logger;
+import play.Play;
 import play.libs.Json;
 import play.mvc.BodyParser;
 import play.mvc.Controller;
@@ -366,6 +367,15 @@ public class DatasetController extends Controller {
 
   // returns json with either error message, error message + empty, or common parent(s)
   public static Result getCommonParents() {
+    // Li wherehows does not have an implimentation for this, so error
+    if (Play.application().configuration().getString("diet").equals("true")) {
+      Logger.error("Trying to run a function not implimented in LinkedIn wherehows");
+      ObjectNode resultJson = Json.newObject();
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", "LinkedIn WhereHows does not impliment this call");
+      return ok(resultJson);
+    }
+
     ObjectNode resultJson = Json.newObject();
     String urnOne = request().getQueryString("urnOne");
     String urnTwo = request().getQueryString("urnTwo");
