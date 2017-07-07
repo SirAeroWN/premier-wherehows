@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.TreeMap;
 import org.springframework.dao.DataAccessException;
 import play.Logger;
+import play.Play;
 import utils.Urn;
 import utils.JdbcUtil;
 import wherehows.common.DatasetPath;
@@ -167,7 +168,7 @@ public class LineageDao {
   // insert relationships between give nodes into family table
   // all parents in parents array are parents of every child in the children array
   public static void insertLineage(JsonNode lineage) throws Exception {
-	if (true) { // use premier's system, this has got to change
+	if (Play.application().configuration().getString("diet").equals("true")) { // switch based on application.conf
       List<LineageRecordLite> records = new ArrayList<LineageRecordLite>();
         JsonNode parents = lineage.findPath("parent_urn");
         JsonNode children = lineage.findPath("child_urn");
