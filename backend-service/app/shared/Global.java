@@ -33,7 +33,7 @@ public class Global extends GlobalSettings {
   private static Set<Integer> currentRunningJob;
   @Override
   public void onStart(Application arg0) {
-    Logger.info("on start---===");
+    Logger.info("on start---===" + arg0);
 
     List<Integer> whiteListList = Play.application().configuration().getIntList("scheduler.jobid.whitelist", null);
     if (whiteListList != null) {
