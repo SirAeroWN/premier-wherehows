@@ -49,4 +49,7 @@ public class LineageNode {
     public String full_object_name;
     public String pre_jobs;
     public String post_jobs;
+
+    // adding for flexibility in visualization
+    public String color;
 }
