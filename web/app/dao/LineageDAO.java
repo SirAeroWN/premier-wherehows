@@ -250,6 +250,9 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
                 edge.target = jobNode.id;
                 edge.label = node.operation;
                 edge.chain = "";
+
+                setEdgeColor(edge, node, jobNode);
+
                 edges.add(edge);
             }
         }
@@ -322,6 +325,9 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
                 edge.target = node.id;
                 edge.label = node.operation;
                 edge.chain = "";
+
+                setEdgeColor(edge, jobNode, node);
+
                 edges.add(edge);
             }
         }
@@ -358,6 +364,10 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
             node._sort_list.add("storage_type");
             node._sort_list.add("urn");
             node.urn = urn;
+
+            // set color
+            node.color = getNodeColor(node.urn, node.node_type);
+
             nodes.add(node);
         }
         else
@@ -451,6 +461,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
         resultNode.set("nodes", Json.toJson(nodes));
         resultNode.set("links", Json.toJson(edges));
         resultNode.put("urn", urn);
+        resultNode.put("diet", "false");
         resultNode.put("message", message);
         return resultNode;
 
@@ -594,6 +605,10 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
                 node._sort_list.add("job_start_time");
                 node._sort_list.add("job_end_time");
                 node._sort_list.add("exec_id");
+
+                // set node color
+                node.color = getNodeColor(node.urn. node.node_type);
+
                 addedJobNodes.put(jobExecId, node);
                 List<LineageNode> sourceNodeList = new ArrayList<LineageNode>();
                 List<LineageNode> targetNodeList = new ArrayList<LineageNode>();
@@ -652,6 +667,8 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
                         relatedNode._sort_list.add("abstracted_path");
                         relatedNode._sort_list.add("storage_type");
                         relatedNode._sort_list.add("urn");
+
+                        relatedNode.color = getNodeColor(relatedNode.urn, relatedNode.node_type);
                         if (relatedSourceType.equalsIgnoreCase("source"))
                         {
                             if (node.source_target_type.equalsIgnoreCase("target") ||
@@ -773,6 +790,50 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
                 lookBackTime);
     }
 
+    private static String getPrefix(String urn) {
+        return urn.substring(0, urn.indexOf("://")).toLowerCase();
+    }
+
+    private static String getProp(String propName) {
+        List<String> props = getJdbcTemplate().queryForList(GET_PROPERTY, String.class, propName);
+        if (props == null || props.size() == 0) {
+            Logger.info("Could not find property for property_name: " + propName);
+            return "default";
+        }
+        return props.get(0);
+    }
+
+    private static String getNodeColor(String urn, String node_type) {
+        String color = getProp("node.color." + getPrefix(urn));
+        if (color == null || color == "default") {
+            // color names come from SVG color pallete at http://www.graphviz.org/doc/info/colors.html
+            return "pink";
+        }
+        return color;
+    }
+
+    private static void setEdgeColor(LineageEdge edge, LineageNode source, LineageNode target) {
+        List<String> colorqueries = new ArrayList<String>();
+        String color = "";
+        colorqueries.add("edge.color.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
+        colorqueries.add("edge.color.from." + getPrefix(source.urn));
+        colorqueries.add("edge.color.to." + getPrefix(target.urn));
+        colorqueries.add("edge.color.between." + source.node_type + "." + target.node_type);
+        colorqueries.add("edge.color.from." + source.node_type);
+        colorqueries.add("edge.color.to." + target.node_type);
+        for (int i = 0; i < colorqueries.size(); i++) {
+            color = getProp(colorqueries.get(i));
+            if (color != "default") {
+                break;
+            }
+        }
+        if (color != "default") {
+            edge.color = color;
+        } else {
+            edge.color = "black";
+        }
+    }
+
     public static ObjectNode getFlowLineage(String application, String project, Long flowId)
     {
         ObjectNode resultNode = Json.newObject();
@@ -877,6 +938,10 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
                     node._sort_list.add("partition_start");
                     node._sort_list.add("partition_end");
                     node._sort_list.add("source_target_type");
+
+                    // set node color
+                    node.color = getNodeColor(node.urn, node.node_type);
+
                     List<LineageNode> nodeList = nodeHash.get(jobExecId);
                     if (nodeList != null)
                     {
@@ -925,6 +990,10 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
                     node._sort_list.add("job_type");
                     node._sort_list.add("job_start_time");
                     node._sort_list.add("job_end_time");
+
+                    // set node color
+                    node.color = getNodeColor(node.urn, node.node_type);
+
                     Integer id = addedJobNodes.get(jobExecId);
                     if (id == null)
                     {
@@ -1015,6 +1084,9 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
                                         edge.label = "load";
                                     }
                                     edge.chain = "data";
+
+                                    setEdgeColor(edge, sourceNode, node);
+
                                     edges.add(edge);
                                 }
                             }
@@ -1096,6 +1168,9 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
                                         edge.label = "load";
                                     }
                                     edge.chain = "data";
+
+                                    setEdgeColor(edge, node, targetNode);
+
                                     edges.add(edge);
                                 }
                             }
@@ -1127,6 +1202,9 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
                                             edge.target = node.id;
                                             edge.label = "";
                                             edge.type = "job";
+
+                                            setEdgeColor(edge, sourceNode, node);
+
                                             edges.add(edge);
                                             addedEdges.add(pair);
                                         }
@@ -1158,6 +1236,9 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
                                             edge.target = targetNode.id;
                                             edge.label = "";
                                             edge.type = "job";
+
+                                            setEdgeColor(edge, node, targetNode);
+
                                             edges.add(edge);
                                             addedEdges.add(pair);
                                         }
