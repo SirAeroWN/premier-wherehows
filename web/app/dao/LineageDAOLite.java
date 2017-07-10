@@ -110,6 +110,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
         resultNode.set("nodes", Json.toJson(nodes));
         resultNode.set("links", Json.toJson(edges));
         resultNode.put("urn", urn);
+        resultNode.put("diet", "true");
         resultNode.put("message", "Gee, I hope this works");
         //Logger.debug(resultNode.toString());
         return resultNode;
