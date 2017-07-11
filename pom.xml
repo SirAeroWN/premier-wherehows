@@ -42,7 +42,7 @@
                                     <classifier>minimal</classifier>
                                     <type>zip</type>
                                     <overWrite>false</overWrite>
-                                    <outputDirectory>${activator.home}</outputDirectory>
+                                    <outputDirectory>${activator.dir}</outputDirectory>
                                 </artifactItem>
                             </artifactItems>
                         </configuration>
@@ -58,7 +58,7 @@
                     <gradleVersion>2.14</gradleVersion>
                     <gradleProjectDirectory>${project.basedir}</gradleProjectDirectory>
                     <jvmArgs>
-                        <jvmArg>-DACTIVATOR_HOME=${activator.home}/activator-${activator.version}-minimal</jvmArg>
+                        <jvmArg>-DACTIVATOR_HOME=${activator.dir}/activator-${activator.version}-minimal</jvmArg>
                     </jvmArgs>
                 </configuration>
                 <executions>
