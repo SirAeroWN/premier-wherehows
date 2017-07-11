@@ -57,18 +57,32 @@
                 <configuration>
                     <gradleVersion>2.14</gradleVersion>
                     <gradleProjectDirectory>${project.basedir}</gradleProjectDirectory>
+                    <gradleDistribution>https://code.premierinc.com/artifacts/content/repositories/platform-tools/org/gradle/gradle-bin/2.14/gradle-bin-2.14.zip</gradleDistribution>
                     <jvmArgs>
                         <jvmArg>-DACTIVATOR_HOME=${activator.dir}/activator-${activator.version}-minimal</jvmArg>
                     </jvmArgs>
                 </configuration>
                 <executions>
-                    <!-- This slows things down -->
-                    <!-- <execution>
-                        <id>build</id>
-                        &lt;!&ndash; You can bind this to any phase you like &ndash;&gt;
+                    <execution>
+                        <id>clean</id>
+                        <!-- You can bind this to any phase you like -->
                         <phase>compile</phase>
                         <goals>
-                            &lt;!&ndash; goal must be "invoke" &ndash;&gt;
+                            <!-- goal must be "invoke" -->
+                            <goal>invoke</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <task>clean</task>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                     <execution>
+                        <id>build</id>
+                        <!-- You can bind this to any phase you like -->
+                        <phase>compile</phase>
+                        <goals>
+                            <!-- goal must be "invoke" -->
                             <goal>invoke</goal>
                         </goals>
                         <configuration>
@@ -76,7 +90,7 @@
                                 <task>build</task>
                             </tasks>
                         </configuration>
-                    </execution>-->
+                    </execution>
                     <execution>
                         <id>dist</id>
                         <!-- You can bind this to any phase you like -->
