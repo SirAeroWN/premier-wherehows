@@ -65,7 +65,6 @@
                 <executions>
                     <execution>
                         <id>clean</id>
-                        <!-- You can bind this to any phase you like -->
                         <phase>compile</phase>
                         <goals>
                             <!-- goal must be "invoke" -->
@@ -79,7 +78,6 @@
                     </execution>
                      <execution>
                         <id>build</id>
-                        <!-- You can bind this to any phase you like -->
                         <phase>compile</phase>
                         <goals>
                             <!-- goal must be "invoke" -->
@@ -93,7 +91,6 @@
                     </execution>
                     <execution>
                         <id>dist</id>
-                        <!-- You can bind this to any phase you like -->
                         <phase>package</phase>
                         <goals>
                             <!-- goal must be "invoke" -->
