@@ -15,6 +15,10 @@
 /* wrapper sql to call all individual DDL */
 -- use wherehows;
 
+-- family_setup.sql sets up the family table
+
+-- default_properties.sql inserts some default properties into `wh_property` table
+
 source ETL_DDL/dataset_metadata.sql;
 source ETL_DDL/etl_configure_tables.sql;
 source ETL_DDL/executor_metadata.sql;

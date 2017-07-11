@@ -25,6 +25,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.dao.EmptyResultDataAccessException;
+import org.springframework.dao.DataAccessException;
+import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import play.Logger;
@@ -531,20 +533,86 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         return true;
     }
 
+    // assigns attributes to ImpactDataset instance
+    private static ImpactDataset assignImpactDataset(String idurn) {
+        int level = Integer.parseInt(idurn.substring(0, idurn.indexOf("****")));
+        String urn = idurn.substring(idurn.indexOf("****") + 4);
+        ImpactDataset impD = new ImpactDataset();
+
+        Map<String, Object> row = null;
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("urn", urn);
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
+
+        try {
+            row = namedParameterJdbcTemplate.queryForMap(GET_DATA_ATTR, parameters);
+        } catch (IncorrectResultSizeDataAccessException irsdae) {
+            Logger.error("Incorrect result size ", irsdae);
+        } catch (DataAccessException dae) {
+            Logger.error("SQL query failed ", dae);
+        }
+
+        impD.urn = urn;
+        impD.level = level;
+        impD.name = (String) row.get("name");
+        impD.id = (Long) row.get("id");
+        impD.datasetUrl = "#/datasets/" + impD.id;
+        JsonNode prop = Json.parse((String) row.get("properties"));
+        if ((prop.get("valid").asText()) == "true") {
+            impD.isValidDataset = true;
+        } else {
+            impD.isValidDataset = false;
+        }
+        return impD;
+    }
+
     public static ObjectNode getFlowLineage(String application, String project, Long flowId) {
         ObjectNode resultNode = Json.newObject();
         return resultNode;
     }
 
+    // more or less gets all children which are datasets
+    private static void getImpactDatasets(List<String> searchUrnList, List<ImpactDataset> impactDatasets) {
+        if (searchUrnList != null && searchUrnList.size() > 0) {
+            if (impactDatasets == null) {
+                impactDatasets = new ArrayList<>();
+            }
+
+            int level = 0;
+            Set<String> impactedUrns = new HashSet<>();
+            List<String> nextSearchUrnList = new ArrayList<>();
+
+            while (searchUrnList.size() > 0) {
+                for (String surn : searchUrnList) {
+                    nextSearchUrnList.addAll(getChildren(surn));
+
+                    Logger.info(surn + " is marked as " + getNodeType(surn));
+                    if (getNodeType(surn).equals("data")) {
+                        Logger.debug(surn + " is marked as data");
+                        impactedUrns.add(level + "****" + surn); // the astricks are used to seperate the encoded level for easier decoding
+                    }
+                }
+                searchUrnList = new ArrayList<>(nextSearchUrnList);
+                nextSearchUrnList = new ArrayList<>();
+                level++;
+            }
+
+            for (String idurn: impactedUrns) {
+                impactDatasets.add(assignImpactDataset(idurn));
+            }
+        }
+    }
+
+    // essentially a wrapper for getImpactDatasets
     public static List<ImpactDataset> getImpactDatasetsByUrn(String urn) {
         List<ImpactDataset> impactDatasetList = new ArrayList<ImpactDataset>();
 
-        // if (StringUtils.isNotBlank(urn))
-        // {
-        //     List<String> searchUrnList = new ArrayList<String>();
-        //     searchUrnList.add(urn);
-        //     getImpactDatasets(searchUrnList, 1, impactDatasetList);
-        // }
+         if (StringUtils.isNotBlank(urn))
+         {
+             List<String> searchUrnList = new ArrayList<String>();
+             searchUrnList.add(urn);
+             getImpactDatasets(searchUrnList, impactDatasetList);
+         }
 
         return impactDatasetList;
 

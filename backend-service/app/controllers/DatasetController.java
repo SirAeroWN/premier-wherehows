@@ -203,9 +203,10 @@ public class DatasetController extends Controller {
     return ok(resultJson);
   }
 
+  // get the latest edited dataset (or job or db, but intended fordatasets) based on the scheme passed as type
   public static Result getLatestOfType(String type) {
+    ObjectNode resultJson = Json.newObject();
       try {
-        ObjectNode resultJson = Json.newObject();
         if (type == null) {
           resultJson.put("return_code", 400);
           resultJson.put("error_message", "no type provided");
@@ -220,6 +221,8 @@ public class DatasetController extends Controller {
       return ok("there was a problem");
   }
 
+  // same as getLatestOfType(), but only gets entities who's last modified time was after a specified unix time in seconds
+  // this is a good way to check if the current dataset in use is the newest or not
   public static Result getLatestAfter(String type, long time) {
     ObjectNode resultJson = Json.newObject();
     try {
@@ -238,6 +241,7 @@ public class DatasetController extends Controller {
     return ok(resultJson);
   }
 
+  // same as getLatestOfType(), but only gets entities who's last modified time was before a specified unix time in seconds
   public static Result getLatestBefore(String type, long time) {
     ObjectNode resultJson = Json.newObject();
     try {
@@ -256,6 +260,7 @@ public class DatasetController extends Controller {
     return ok(resultJson);
   }
 
+  // same as getLatestOfType(), but only gets entities who's last modified time was between the two given times, good for replicating a past run
   public static Result getLatestBetween(String type, long firsttime, long secondtime) {
     ObjectNode resultJson = Json.newObject();
     try {
@@ -279,6 +284,7 @@ public class DatasetController extends Controller {
     return ok(resultJson);
   }
 
+  // gets an entity of the given time at the specific time given, if it exists
   public static Result getAtTime(String type, long time) {
     ObjectNode resultJson = Json.newObject();
     try {
@@ -297,6 +303,7 @@ public class DatasetController extends Controller {
     return ok(resultJson);
   }
 
+  // works like getAtTime() but the time is +- the given window
   public static Result getAtTimeWindow(String type, long time, long window) throws SQLException {
     ObjectNode resultJson = Json.newObject();
     try {
@@ -317,6 +324,7 @@ public class DatasetController extends Controller {
     return ok(resultJson);
   }
 
+  // allows for adding or changing vaues in the properties field
   public static Result updateProperties() {
     JsonNode propChanges = request().body().asJson();
     ObjectNode resultJson = Json.newObject();
@@ -335,6 +343,7 @@ public class DatasetController extends Controller {
     return ok(resultJson);
   }
 
+  // allows for setting the validity of an entity as true or false, stored in properties field
   public static Result setValidity() {
     JsonNode validNode = request().body().asJson();
     ObjectNode resultJson = Json.newObject();
@@ -344,10 +353,11 @@ public class DatasetController extends Controller {
       resultJson.put("message", "validity updated");
       return ok(resultJson);
     } catch (SQLException e) {
-      e.printStackTrace();
+      Logger.error("sql exception in setValidity", e);
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", e.getMessage());
     } catch (Exception e) {
-      Logger.error(e.getMessage());
-      e.printStackTrace();
+      Logger.error("sql exception in setValidity", e);
       resultJson.put("return_code", 400);
       resultJson.put("error_message", e.getMessage());
     }
@@ -355,4 +365,24 @@ public class DatasetController extends Controller {
     return ok(resultJson);
   }
 
+  // returns json with either error message, error message + empty, or common parent(s)
+  public static Result getCommonParents() {
+    ObjectNode resultJson = Json.newObject();
+    String urnOne = request().getQueryString("urnOne");
+    String urnTwo = request().getQueryString("urnTwo");
+    if (urnOne != null && urnTwo != null) {
+      try {
+        resultJson = DatasetDao.getCommonParents(urnOne, urnTwo);
+        return ok(resultJson);
+        } catch (Exception e) {
+        Logger.error("sql exception in getCommonParents", e);
+        resultJson.put("return_code", 400);
+        resultJson.put("error_message", e.getMessage());
+        }
+    } else {
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", "not all required arguments passed");
+    }
+    return ok(resultJson);
+  }
 }

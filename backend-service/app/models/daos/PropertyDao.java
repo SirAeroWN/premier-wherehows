@@ -44,10 +44,13 @@ import wherehows.common.schemas.DatasetRecord;
 /**
  * Created by norv on 06/26/17.
  */
+// implimentations to go along with the controllers in PropertyController
 public class PropertyDao {
 
+    // sql query for getting the value of a property
     private final static String GET_PROPERTY = "SELECT property_value FROM wh_property WHERE property_name = :name";
 
+    // function for getting the value of a property, returns "default" if the property does not exist
     private static String getProp(String propName) {
         Map<String, Object> params = new HashMap<>();
         params.put("name", propName);
@@ -62,6 +65,7 @@ public class PropertyDao {
         return "default";
     }
 
+    // function for actuallu setting a preoperty/preference
     private static void setProp(String propName, String propVal) {
         DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "wh_property");
         try {
@@ -81,6 +85,7 @@ public class PropertyDao {
 
 
 
+    // Functions for the implimentation of setting, updating, and getting the properties field
     public static void addAssignProp(JsonNode props) {
         String name = props.get("scheme").asText();
         JsonNode propNode = props.findPath("properties");
@@ -131,6 +136,7 @@ public class PropertyDao {
 
 
 
+    // Functions for the implimentation of setting, updating, and getting the tooltip list
     public static void addSortListProp(JsonNode props) {
         String name = props.get("scheme").asText();
         JsonNode propNode = props.findPath("properties");
@@ -181,6 +187,7 @@ public class PropertyDao {
 
 
 
+    // Functions for the implimentation of setting, updating, and getting node colors
     public static void addNodeColor(JsonNode prop) {
         String name = "node.color." + prop.get("scheme").asText();
         String value = prop.get("color").asText();
@@ -201,6 +208,7 @@ public class PropertyDao {
 
 
 
+    // Functions for the implimentation of setting, updating, and getting node types
     public static void addNodeType(JsonNode prop) {
         String name = "node.type." + prop.get("scheme").asText();
         String value = prop.get("type").asText();
@@ -241,6 +249,7 @@ public class PropertyDao {
 
 
 
+    // Functions for the implimentation of setting, updating, and getting edge type
     public static void addEdgeType(JsonNode prop) {
         String name = "edge.type." + prop.get("scheme").asText();
         String value = prop.get("type").asText();
@@ -261,6 +270,7 @@ public class PropertyDao {
 
 
 
+    // Functions for the implimentation of setting, updating, and getting edge style
     public static void addEdgeStyle(JsonNode prop) {
         String name = "edge.style." + prop.get("scheme").asText();
         String value = prop.get("style").asText();
@@ -273,6 +283,27 @@ public class PropertyDao {
 
     public static ObjectNode getEdgeStyle(String name) {
         name = "edge.style." + name;
+        ObjectNode resultJson = Json.newObject();
+        resultJson.put("property_name", name);
+        resultJson.put("property_value", getProp(name));
+        return resultJson;
+    }
+
+
+
+    // Functions for the implimentation of setting, updating, and getting edge labels
+    public static void addEdgeLabel(JsonNode prop) {
+        String name = "edge.label." + prop.get("scheme").asText();
+        String value = prop.get("label").asText();
+        setProp(name, value);
+    }
+
+    public static void updateEdgeLabel(JsonNode prop) {
+        addEdgeLabel(prop);
+    }
+
+    public static ObjectNode getEdgeLabel(String name) {
+        name = "edge.label." + name;
         ObjectNode resultJson = Json.newObject();
         resultJson.put("property_name", name);
         resultJson.put("property_value", getProp(name));
