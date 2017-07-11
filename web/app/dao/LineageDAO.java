@@ -814,7 +814,7 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO
         return color;
     }
 
-    private static void setEdgeStyle(LineageEdgeLite edge, LineageNodeLite source, LineageNodeLite target) {
+    private static void setEdgeStyle(LineageEdge edge, LineageNode source, LineageNode target) {
         List<String> stylequeries = new ArrayList<String>();
         String style = "";
         stylequeries.add("edge.style.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
