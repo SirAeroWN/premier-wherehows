@@ -90,5 +90,6 @@ VALUES
 	('node.type.spend', 'db', 'N', NULL),
 	('node.type.supply-druid', 'data', 'N', NULL),
 	('node.type.surgical-supply-file', 'data', 'N', NULL),
-	('node.type.work-parquet', 'data', 'N', NULL);
+	('node.type.work-parquet', 'data', 'N', NULL),
+	('node.type.druid-indexer', 'app', 'N', NULL);
 
