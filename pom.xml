@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.premierinc.hgpg</groupId>
+    <artifactId>wherehows</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <parent>
+        <groupId>com.premierinc.hgpg</groupId>
+        <artifactId>sla-parent</artifactId>
+        <version>8</version>
+    </parent>
+
+    <properties>
+        <activator.version>1.3.12</activator.version>
+        <activator.home>${project.basedir}/activator/activator-${activator.version}-minimal</activator.home>
+    </properties>
+
+    <build>
+        <plugins>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.typesafe.activator</groupId>
+                                    <artifactId>typesafe-activator</artifactId>
+                                    <version>${activator.version}</version>
+                                    <classifier>minimal</classifier>
+                                    <type>zip</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${activator.home}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.fortasoft</groupId>
+                <artifactId>gradle-maven-plugin</artifactId>
+                <version>1.0.8</version>
+                <configuration>
+                    <gradleVersion>2.14</gradleVersion>
+                    <gradleProjectDirectory>${project.basedir}</gradleProjectDirectory>
+                    <jvmArgs>
+                        <jvmArg>-DACTIVATOR_HOME=${activator.home}</jvmArg>
+                    </jvmArgs>
+                </configuration>
+                <executions>
+                    <!-- This slows things down -->
+                    <!-- <execution>
+                        <id>build</id>
+                        &lt;!&ndash; You can bind this to any phase you like &ndash;&gt;
+                        <phase>compile</phase>
+                        <goals>
+                            &lt;!&ndash; goal must be "invoke" &ndash;&gt;
+                            <goal>invoke</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <task>build</task>
+                            </tasks>
+                        </configuration>
+                    </execution>-->
+                    <execution>
+                        <id>dist</id>
+                        <!-- You can bind this to any phase you like -->
+                        <phase>package</phase>
+                        <goals>
+                            <!-- goal must be "invoke" -->
+                            <goal>invoke</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <task>dist</task>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-artifacts</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>web/target/universal/wherehows-${project.version}.zip</file>
+                                    <type>zip</type>
+                                    <classifier>web</classifier>
+                                </artifact>
+                                <artifact>
+                                    <file>backend-service/target/universal/backend-service-${project.version}.zip</file>
+                                    <type>zip</type>
+                                    <classifier>backend-service</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>
