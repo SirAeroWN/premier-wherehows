@@ -6,7 +6,7 @@ apply plugin: 'idea'
 apply plugin: 'license'
 ext.licenseFile = file('.license_header.txt')
 
-version = '1.0'
+apply from: 'target/version.gradle'
 
 configurations.all {
   exclude group: 'org.slf4j', module: 'slf4j-log4j12'
