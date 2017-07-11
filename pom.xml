@@ -16,7 +16,7 @@
 
     <properties>
         <activator.version>1.3.12</activator.version>
-        <activator.home>${project.basedir}/activator/activator-${activator.version}-minimal</activator.home>
+        <activator.dir>${project.basedir}/activator</activator.dir>
     </properties>
 
     <build>
@@ -58,7 +58,7 @@
                     <gradleVersion>2.14</gradleVersion>
                     <gradleProjectDirectory>${project.basedir}</gradleProjectDirectory>
                     <jvmArgs>
-                        <jvmArg>-DACTIVATOR_HOME=${activator.home}</jvmArg>
+                        <jvmArg>-DACTIVATOR_HOME=${activator.home}/activator-${activator.version}-minimal</jvmArg>
                     </jvmArgs>
                 </configuration>
                 <executions>
