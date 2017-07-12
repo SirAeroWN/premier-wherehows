@@ -25,4 +25,8 @@ public class Application extends Controller {
     return ok("index");
   }
 
+  public static Result healthcheck() {
+    return ok("{\"healthy\":\"probably\"}");
+  }
+
 }
