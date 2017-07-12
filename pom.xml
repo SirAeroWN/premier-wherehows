@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>com.premierinc.hgpg</groupId>
+    <artifactId>wherehows</artifactId>
+    <version>1.0-SNAPSHOT</version>
+
+    <parent>
+        <groupId>com.premierinc.hgpg</groupId>
+        <artifactId>sla-parent</artifactId>
+        <version>8</version>
+    </parent>
+
+    <properties>
+        <activator.version>1.3.12</activator.version>
+        <activator.dir>${project.basedir}/activator</activator.dir>
+    </properties>
+
+    <build>
+        <plugins>
+
+
+            <plugin>
+                <artifactId>maven-antrun-plugin</artifactId>
+                <version>1.4</version>
+                <executions>
+                    <execution>
+                        <id>create gradle version file</id>
+                        <phase>process-resources</phase>
+                        <configuration>
+                            <tasks>
+                                <echo file="${project.build.directory}/version.gradle">version = '${project.version}'</echo>
+                            </tasks>
+                        </configuration>
+                        <goals>
+                            <goal>run</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-dependency-plugin</artifactId>
+                <version>3.0.1</version>
+                <executions>
+                    <execution>
+                        <id>unpack</id>
+                        <phase>initialize</phase>
+                        <goals>
+                            <goal>unpack</goal>
+                        </goals>
+                        <configuration>
+                            <artifactItems>
+                                <artifactItem>
+                                    <groupId>com.typesafe.activator</groupId>
+                                    <artifactId>typesafe-activator</artifactId>
+                                    <version>${activator.version}</version>
+                                    <classifier>minimal</classifier>
+                                    <type>zip</type>
+                                    <overWrite>false</overWrite>
+                                    <outputDirectory>${activator.dir}</outputDirectory>
+                                </artifactItem>
+                            </artifactItems>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.fortasoft</groupId>
+                <artifactId>gradle-maven-plugin</artifactId>
+                <version>1.0.8</version>
+                <configuration>
+                    <gradleVersion>2.14</gradleVersion>
+                    <gradleProjectDirectory>${project.basedir}</gradleProjectDirectory>
+                    <gradleDistribution>https://code.premierinc.com/artifacts/content/repositories/platform-tools/org/gradle/gradle-bin/2.14/gradle-bin-2.14.zip</gradleDistribution>
+                    <jvmArgs>
+                        <jvmArg>-DACTIVATOR_HOME=${activator.dir}/activator-${activator.version}-minimal</jvmArg>
+                    </jvmArgs>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>clean</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <!-- goal must be "invoke" -->
+                            <goal>invoke</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <task>clean</task>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                     <execution>
+                        <id>build</id>
+                        <phase>compile</phase>
+                        <goals>
+                            <!-- goal must be "invoke" -->
+                            <goal>invoke</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <task>build</task>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>dist</id>
+                        <phase>package</phase>
+                        <goals>
+                            <!-- goal must be "invoke" -->
+                            <goal>invoke</goal>
+                        </goals>
+                        <configuration>
+                            <tasks>
+                                <task>dist</task>
+                            </tasks>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>build-helper-maven-plugin</artifactId>
+                <version>3.0.0</version>
+                <executions>
+                    <execution>
+                        <id>attach-artifacts</id>
+                        <phase>install</phase>
+                        <goals>
+                            <goal>attach-artifact</goal>
+                        </goals>
+                        <configuration>
+                            <artifacts>
+                                <artifact>
+                                    <file>web/target/universal/wherehows-${project.version}.zip</file>
+                                    <type>zip</type>
+                                    <classifier>web</classifier>
+                                </artifact>
+                                <artifact>
+                                    <file>backend-service/target/universal/backend-service-${project.version}.zip</file>
+                                    <type>zip</type>
+                                    <classifier>backend-service</classifier>
+                                </artifact>
+                            </artifacts>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+
+        </plugins>
+    </build>
+
+</project>

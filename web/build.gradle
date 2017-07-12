@@ -2,6 +2,9 @@ apply plugin: 'scala'
 
 def findPlayHome(){
     project.ext.playHome = System.getenv()['ACTIVATOR_HOME']
+    if(null == project.ext.playHome) {
+        project.ext.playHome = System.getProperty('ACTIVATOR_HOME')
+    }
     if (null == project.ext.playHome) {
         throw new GradleException('ACTIVATOR_HOME env variable not set!')
     }
