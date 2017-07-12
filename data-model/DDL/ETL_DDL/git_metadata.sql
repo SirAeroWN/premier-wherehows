@@ -89,7 +89,7 @@ CREATE TABLE `stg_repo_owner` (
   `scm_repo_fullname` VARCHAR(100) NOT NULL,
   `scm_type`        VARCHAR(20) NOT NULL,
   `repo_id`         INT DEFAULT NULL,
-  `dataset_group`   VARCHAR(200) NOT NULL COMMENT 'dataset group name, database name, etc',
+  `dataset_group`   VARCHAR(200) DEFAULT NULL COMMENT 'dataset group name, database name, etc',
   `owner_type`      VARCHAR(50) NOT NULL COMMENT 'which acl file this owner is in',
   `owner_name`      VARCHAR(50) NOT NULL COMMENT 'one owner name',
   `sort_id`         INT UNSIGNED DEFAULT NULL,

@@ -17,6 +17,7 @@ import com.fasterxml.jackson.databind.node.ObjectNode;
 import dao.DatasetsDAO;
 import dao.FlowsDAO;
 import dao.LineageDAO;
+import dao.LineageDAOLite;
 import play.Play;
 import play.libs.Json;
 import play.mvc.Controller;
@@ -108,14 +109,32 @@ public class Lineage extends Controller
           }
         }
 
-        result.put("status", "ok");
-        result.set("data", Json.toJson(LineageDAO.getObjectAdjacnet(dataset.urn, upLevel, downLevel, lookBackTime)));
+        // function implimented in both
+        if (Play.application().configuration().getString("diet").equals("true")) {
+            // diet wherehows calls
+            result.put("status", "ok");
+            result.set("data", Json.toJson(LineageDAOLite.getObjectAdjacnet(dataset.urn, upLevel, downLevel, lookBackTime)));
+        } else {
+            // li wherehows calls
+            result.put("status", "ok");
+            result.set("data", Json.toJson(LineageDAO.getObjectAdjacnet(dataset.urn, upLevel, downLevel, lookBackTime)));
+        }
+
         return ok(result);
     }
 
     public static Result getFlowLineageGraphData(String application, String project, Long flowId)
     {
+        // diet wherehows doesn't have an implimentation for this, so error
+        if (Play.application().configuration().getString("diet").equals("true")) {
+            Logger.error("Trying to run a function not implimented in diet wherehows");
+            ObjectNode resultJson = Json.newObject();
+            resultJson.put("return_code", 400);
+            resultJson.put("error_message", "Diet WhereHows does not impliment this call");
+            return ok(resultJson);
+        }
         ObjectNode result = Json.newObject();
+
 
         result.put("status", "ok");
         result.set("data", Json.toJson(LineageDAO.getFlowLineage(application, project, flowId)));

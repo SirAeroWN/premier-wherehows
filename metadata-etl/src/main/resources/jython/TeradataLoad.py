@@ -12,8 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #
 
-import sys
+import sys, datetime
 from com.ziclix.python.sql import zxJDBC
+from distutils.util import strtobool
 from wherehows.common import Constant
 from org.slf4j import LoggerFactory
 
@@ -23,7 +24,6 @@ class TeradataLoad:
     self.logger = LoggerFactory.getLogger('jython script : ' + self.__class__.__name__)
 
   def load_metadata(self):
-    cursor = self.conn_mysql.cursor()
     load_cmd = '''
         DELETE FROM stg_dict_dataset WHERE db_id = {db_id};
 
@@ -172,14 +172,11 @@ class TeradataLoad:
           ;
         '''.format(source_file=self.input_file, db_id=self.db_id, wh_etl_exec_id=self.wh_etl_exec_id)
 
-    for state in load_cmd.split(";"):
-      self.logger.debug(state)
-      cursor.execute(state)
-      self.conn_mysql.commit()
-    cursor.close()
+    self.executeCommands(load_cmd)
+    self.logger.info("Finish loading metadata")
+
 
   def load_field(self):
-    cursor = self.conn_mysql.cursor()
     load_cmd = '''
         DELETE FROM stg_dict_field_detail where db_id = {db_id};
 
@@ -192,10 +189,9 @@ class TeradataLoad:
          @dummy
         )
         set
-          data_precision=nullif(@precision,'')
-        , data_scale=nullif(@scale,'')
-        , db_id = {db_id}
-        ;
+          data_precision=nullif(@precision,''), 
+          data_scale=nullif(@scale,''), 
+          db_id = {db_id};
 
         analyze table stg_dict_field_detail;
 
@@ -205,38 +201,38 @@ class TeradataLoad:
            and (char_length(trim(description)) = 0
            or description in ('null', 'N/A', 'nothing', 'empty', 'none'));
 
+        -- update stg_dict_field_detail dataset_id
+        update stg_dict_field_detail sf, dict_dataset d
+        set sf.dataset_id = d.id where sf.urn = d.urn
+        and sf.db_id = {db_id};
+        delete from stg_dict_field_detail
+        where db_id = {db_id} and dataset_id is null;  -- remove if not match to dataset
+
         -- delete old record if it does not exist in this load batch anymore (but have the dataset id)
-        create temporary table if not exists t_deleted_fields (primary key (field_id))
-          select x.field_id
-            from stg_dict_field_detail s
-              join dict_dataset i
-                on s.urn = i.urn
-                and s.db_id = {db_id}
-              right join dict_field_detail x
-                on i.id = x.dataset_id
-                and s.field_name = x.field_name
-                and s.parent_path = x.parent_path
-          where s.field_name is null
-            and x.dataset_id in (
-                       select d.id dataset_id
-                       from stg_dict_field_detail k join dict_dataset d
-                         on k.urn = d.urn
-                        and k.db_id = {db_id}
-            )
+        create temporary table if not exists t_deleted_fields (primary key (field_id)) ENGINE=MyISAM
+          SELECT x.field_id
+          FROM (select dataset_id, field_name, parent_path from stg_dict_field_detail where db_id = {db_id}) s
+          RIGHT JOIN
+            ( select dataset_id, field_id, field_name, parent_path from dict_field_detail
+              where dataset_id in (select dataset_id from stg_dict_field_detail where db_id = {db_id})
+            ) x
+            ON s.dataset_id = x.dataset_id
+            AND s.field_name = x.field_name
+            AND s.parent_path <=> x.parent_path
+          WHERE s.field_name is null
         ; -- run time : ~2min
 
         delete from dict_field_detail where field_id in (select field_id from t_deleted_fields);
-    
+
         -- update the old record if some thing changed
         update dict_field_detail t join
         (
           select x.field_id, s.*
-          from stg_dict_field_detail s join dict_dataset d
-            on s.urn = d.urn
+          from stg_dict_field_detail s
                join dict_field_detail x
-           on s.field_name = x.field_name
-          and coalesce(s.parent_path, '*') = coalesce(x.parent_path, '*')
-          and d.id = x.dataset_id
+            on s.dataset_id = x.dataset_id
+            and s.field_name = x.field_name
+            and s.parent_path <=> x.parent_path
           where s.db_id = {db_id}
             and (x.sort_id <> s.sort_id
                 or x.parent_sort_id <> s.parent_sort_id
@@ -273,7 +269,7 @@ class TeradataLoad:
         modified
         )
         select
-          d.id,
+          s.dataset_id,
           0 as fields_layout_id,
           s.sort_id,
           0 parent_sort_id,
@@ -284,29 +280,44 @@ class TeradataLoad:
           s.data_scale,
           s.is_nullable,
           now()
-        from stg_dict_field_detail s join dict_dataset d
-          on s.urn = d.urn
+        from stg_dict_field_detail s
              left join dict_field_detail f
-          on d.id = f.dataset_id
+          on s.dataset_id = f.dataset_id
          and s.field_name = f.field_name
         where db_id = {db_id} and f.field_id is null;
 
         analyze table dict_field_detail;
 
-        -- delete old record in stagging
+        -- delete old record in staging field comment map
         delete from stg_dict_dataset_field_comment where db_id = {db_id};
 
-        -- insert
-        insert into stg_dict_dataset_field_comment
-        select t.field_id field_id, fc.id comment_id,  d.id dataset_id, {db_id}
-                from stg_dict_field_detail sf join dict_dataset d
-                  on sf.urn = d.urn
+        -- insert new field comments
+        insert into field_comments (
+          user_id, comment, created, modified, comment_crc32_checksum
+        )
+        select 0 user_id, description, now() created, now() modified, crc32(description) from
+        (
+          select sf.description
+          from stg_dict_field_detail sf left join field_comments fc
+            on sf.description = fc.comment
+          where sf.description is not null
+            and fc.id is null
+            and sf.db_id = {db_id}
+          group by 1 order by 1
+        ) d;
+
+        analyze table field_comments;
+
+        -- insert field to comment map to staging
+        insert ignore into stg_dict_dataset_field_comment
+        select t.field_id field_id, fc.id comment_id, sf.dataset_id, {db_id}
+                from stg_dict_field_detail sf
                       join field_comments fc
                   on sf.description = fc.comment
                       join dict_field_detail t
-                  on d.id = t.dataset_id
-                 and sf.field_name = t.field_name
-                 and sf.parent_path = t.parent_path
+                  on sf.dataset_id = t.dataset_id
+                  and sf.field_name = t.field_name
+                  and sf.parent_path <=> t.parent_path
         where sf.db_id = {db_id};
 
         -- have default comment, insert it set default to 0
@@ -315,7 +326,6 @@ class TeradataLoad:
           select field_id from dict_dataset_field_comment
           where field_id in (select field_id from stg_dict_dataset_field_comment)
         and is_default = 1 ) and db_id = {db_id};
-
 
         -- doesn't have this comment before, insert into it and set as default
         insert ignore into dict_dataset_field_comment
@@ -327,11 +337,9 @@ class TeradataLoad:
         and sd.db_id = {db_id};
         '''.format(source_file=self.input_field_file, db_id=self.db_id)
 
-    for state in load_cmd.split(";"):
-      self.logger.debug(state)
-      cursor.execute(state)
-      self.conn_mysql.commit()
-    cursor.close()
+    self.executeCommands(load_cmd)
+    self.logger.info("Finish loading fields ")
+
 
   def load_sample(self):
     load_cmd = '''
@@ -342,11 +350,20 @@ class TeradataLoad:
     (urn,ref_urn,data)
     SET db_id = {db_id};
 
-    -- update reference id in stagging table
-    UPDATE  stg_dict_dataset_sample s
-    LEFT JOIN dict_dataset d ON s.ref_urn = d.urn
-    SET s.ref_id = d.id
-    WHERE s.db_id = {db_id};
+    -- update dataset id in staging table
+    UPDATE stg_dict_dataset_sample s
+    JOIN dict_dataset d ON s.db_id = {db_id} and s.urn = d.urn
+    SET s.dataset_id = d.id;
+
+    -- update reference id in staging table
+    UPDATE stg_dict_dataset_sample s
+    JOIN (
+      select dataset_id, id from
+      (select dataset_id, ref_urn from stg_dict_dataset_sample
+      where db_id = 3 and ref_urn > '') st
+      join dict_dataset on urn = ref_urn) d
+    ON s.dataset_id = d.dataset_id
+    SET s.ref_id = d.id;
 
     -- first insert ref_id as 0
     INSERT INTO dict_dataset_sample
@@ -356,27 +373,24 @@ class TeradataLoad:
       `data`,
       created
     )
-    select d.id as dataset_id, s.urn, s.ref_id, s.data, now()
-    from stg_dict_dataset_sample s left join dict_dataset d on d.urn = s.urn
-          where s.db_id = {db_id}
-    on duplicate key update
-      `data`=s.data, modified=now();
-
-
-    -- update reference id in final table
-    UPDATE dict_dataset_sample d
-    RIGHT JOIN stg_dict_dataset_sample s ON d.urn = s.urn
-    SET d.ref_id = s.ref_id
-    WHERE s.db_id = {db_id} AND d.ref_id = 0;
-
+    SELECT * from
+      (select dataset_id, urn, ref_id s_ref_id, `data` s_data, now()
+      from stg_dict_dataset_sample WHERE db_id = {db_id}) s
+    ON DUPLICATE KEY UPDATE
+      ref_id = COALESCE(s_ref_id, ref_id),
+      `data`=s_data,
+      modified=now();
     '''.format(source_file=self.input_sampledata_file, db_id=self.db_id)
 
-    cursor = self.conn_mysql.cursor()
-    for state in load_cmd.split(";"):
-      self.logger.debug(state)
-      cursor.execute(state)
+    self.executeCommands(load_cmd)
+    self.logger.info("Finish loading samples ")
+
+
+  def executeCommands(self, commands):
+    for cmd in commands.split(";"):
+      self.logger.debug(cmd)
+      self.conn_cursor.execute(cmd)
       self.conn_mysql.commit()
-    cursor.close()
 
 
 if __name__ == "__main__":
@@ -394,16 +408,21 @@ if __name__ == "__main__":
   l.input_field_file = args[Constant.TD_FIELD_METADATA_KEY]
   l.input_sampledata_file = args[Constant.TD_SAMPLE_OUTPUT_KEY]
 
-  do_sample = True # default load sample
+  do_sample = False
   if Constant.TD_LOAD_SAMPLE in args:
-    do_sample = bool(args[Constant.TD_LOAD_SAMPLE])
+    do_sample = strtobool(args[Constant.TD_LOAD_SAMPLE])
+
+  if datetime.datetime.now().strftime('%a') not in args[Constant.TD_COLLECT_SAMPLE_DATA_DAYS]:
+    do_sample = False
+
   l.db_id = args[Constant.DB_ID_KEY]
   l.wh_etl_exec_id = args[Constant.WH_EXEC_ID_KEY]
   l.conn_mysql = zxJDBC.connect(JDBC_URL, username, password, JDBC_DRIVER)
+  l.conn_cursor = l.conn_mysql.cursor()
 
   if Constant.INNODB_LOCK_WAIT_TIMEOUT in args:
     lock_wait_time = args[Constant.INNODB_LOCK_WAIT_TIMEOUT]
-    l.conn_mysql.cursor().execute("SET innodb_lock_wait_timeout = %s;" % lock_wait_time)
+    l.conn_cursor.execute("SET innodb_lock_wait_timeout = %s;" % lock_wait_time)
 
   try:
     l.load_metadata()

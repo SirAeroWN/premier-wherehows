@@ -13,9 +13,7 @@
  */
 package dao;
 
-import java.math.BigDecimal;
 import java.math.BigInteger;
-import java.lang.Math.*;
 import java.util.*;
 
 import com.fasterxml.jackson.databind.JsonNode;
@@ -25,124 +23,777 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.lang3.tuple.Pair;
 import org.apache.commons.lang3.tuple.ImmutablePair;
 import org.springframework.dao.EmptyResultDataAccessException;
-import org.springframework.dao.DataAccessException;
-import org.springframework.dao.IncorrectResultSizeDataAccessException;
 import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import play.Logger;
-import play.Play;
 import play.libs.Json;
 import utils.Lineage;
 
-public class LineageDAO extends AbstractMySQLOpenSourceDAO {
 
-    private final static String GET_PARENTS = "SELECT parent_urn FROM family WHERE child_urn = ?";
+public class LineageDAO extends AbstractMySQLOpenSourceDAO
+{
+    private final static String GET_APPLICATION_ID = "SELECT DISTINCT app_id FROM " +
+            "job_execution_data_lineage WHERE abstracted_object_name = ?";
 
-    private final static String GET_CHILDREN = "SELECT child_urn FROM family WHERE parent_urn = ?";
+    private final static String GET_FLOW_NAME = "SELECT flow_name FROM " +
+            "flow WHERE app_id = ? and flow_id = ?";
 
-    private final static String GET_DATA_ATTR = "SELECT * FROM dict_dataset WHERE urn = :urn";
+    private final static String GET_JOB = "SELECT ca.app_id, ca.app_code as cluster, " +
+            "jedl.job_name, fj.job_path, fj.job_type, jedl.flow_path, jedl.storage_type, jedl.source_target_type, " +
+            "jedl.operation, MAX(jedl.source_srl_no), MAX(jedl.srl_no), " +
+            "MAX(jedl.job_exec_id) as job_exec_id FROM job_execution_data_lineage jedl " +
+            "JOIN cfg_application ca on ca.app_id = jedl.app_id " +
+            "LEFT JOIN job_execution je on jedl.app_id = je.app_id " +
+            "and jedl.flow_exec_id = je.flow_exec_id and jedl.job_exec_id = je.job_exec_id " +
+            "LEFT JOIN flow_job fj on je.app_id = fj.app_id and je.flow_id = fj.flow_id and je.job_id = fj.job_id " +
+            "WHERE abstracted_object_name in ( :names ) and " +
+            "jedl.flow_path not REGEXP '^(rent-metrics:|tracking-investigation:)' and " +
+            "FROM_UNIXTIME(job_finished_unixtime) >  CURRENT_DATE - INTERVAL (:days) DAY " +
+            "GROUP BY ca.app_id, cluster, jedl.job_name, fj.job_path, fj.job_type, jedl.flow_path, jedl.source_target_type, " +
+            "jedl.storage_type, jedl.operation " +
+            "ORDER BY jedl.source_target_type DESC, job_exec_id";
 
-    private final static String GET_APP_ATTR = "SELECT * FROM cfg_application WHERE app_id = :urn";
+    private final static String GET_UP_LEVEL_JOB = "SELECT ca.app_id, ca.app_code as cluster, " +
+            "jedl.job_name, fj.job_path, fj.job_type, jedl.flow_path, jedl.storage_type, jedl.source_target_type, " +
+            "jedl.operation, MAX(jedl.source_srl_no), MAX(jedl.srl_no), " +
+            "MAX(jedl.job_exec_id) as job_exec_id FROM job_execution_data_lineage jedl " +
+            "JOIN cfg_application ca on ca.app_id = jedl.app_id " +
+            "LEFT JOIN job_execution je on jedl.app_id = je.app_id " +
+            "and jedl.flow_exec_id = je.flow_exec_id and jedl.job_exec_id = je.job_exec_id " +
+            "LEFT JOIN flow_job fj on je.app_id = fj.app_id and je.flow_id = fj.flow_id and je.job_id = fj.job_id " +
+            "WHERE abstracted_object_name in ( :names ) and jedl.source_target_type = 'target' and " +
+            "jedl.flow_path not REGEXP '^(rent-metrics:|tracking-investigation:)' and " +
+            "FROM_UNIXTIME(job_finished_unixtime) >  CURRENT_DATE - INTERVAL (:days) DAY " +
+            "GROUP BY ca.app_id, cluster, jedl.job_name, fj.job_path, fj.job_type, jedl.flow_path, jedl.source_target_type, " +
+            "jedl.storage_type, jedl.operation " +
+            "ORDER BY jedl.source_target_type DESC, job_exec_id";
 
-    private final static String GET_DB_ATTR = "SELECT * FROM cfg_database WHERE uri = :urn";
+    private final static String GET_JOB_WITH_SOURCE = "SELECT ca.app_id, ca.app_code as cluster, " +
+            "jedl.job_name, fj.job_path, fj.job_type, jedl.flow_path, jedl.storage_type, jedl.source_target_type, " +
+            "jedl.operation, MAX(jedl.source_srl_no), MAX(jedl.srl_no), " +
+            "MAX(jedl.job_exec_id) as job_exec_id FROM job_execution_data_lineage jedl " +
+            "JOIN cfg_application ca on ca.app_id = jedl.app_id " +
+            "LEFT JOIN job_execution je on jedl.app_id = je.app_id " +
+            "and jedl.flow_exec_id = je.flow_exec_id and jedl.job_exec_id = je.job_exec_id " +
+            "LEFT JOIN flow_job fj on je.app_id = fj.app_id and je.flow_id = fj.flow_id and je.job_id = fj.job_id " +
+            "WHERE abstracted_object_name in ( :names ) and jedl.source_target_type != (:type) and " +
+            "jedl.flow_path not REGEXP '^(rent-metrics:|tracking-investigation:)' and " +
+            "FROM_UNIXTIME(job_finished_unixtime) >  CURRENT_DATE - INTERVAL (:days) DAY " +
+            "GROUP BY ca.app_id, cluster, jedl.job_name, fj.job_path, fj.job_type, jedl.flow_path, jedl.source_target_type, " +
+            "jedl.storage_type, jedl.operation " +
+            "ORDER BY jedl.source_target_type DESC, job_exec_id";
+
+    private final static String GET_DATA = "SELECT storage_type, operation, " +
+            "abstracted_object_name, source_target_type, job_start_unixtime, job_finished_unixtime, " +
+            "FROM_UNIXTIME(job_start_unixtime) as start_time, " +
+            "FROM_UNIXTIME(job_finished_unixtime) as end_time " +
+            "FROM job_execution_data_lineage WHERE app_id = ? and job_exec_id = ? and " +
+            "flow_path not REGEXP '^(rent-metrics:|tracking-investigation:)' and " +
+            "COALESCE(source_srl_no, srl_no) = srl_no ORDER BY source_target_type DESC";
+
+    private final static String GET_DATA_FILTER_OUT_LASSEN = "SELECT j1.storage_type, j1.operation, " +
+            "j1.abstracted_object_name, j1.source_target_type, j1.job_start_unixtime, j1.job_finished_unixtime, " +
+            "FROM_UNIXTIME(j1.job_start_unixtime) as start_time, " +
+            "FROM_UNIXTIME(j1.job_finished_unixtime) as end_time " +
+            "FROM job_execution_data_lineage j1 " +
+            "JOIN job_execution_data_lineage j2 on j1.app_id = j2.app_id and j1.job_exec_id = j2.job_exec_id " +
+            "and j2.abstracted_object_name in (:names) and j2.source_target_type = 'source' " +
+            "WHERE j1.app_id = (:appid) and j1.job_exec_id = (:execid) and " +
+            "j1.flow_path not REGEXP '^(rent-metrics:|tracking-investigation:)' and " +
+            "COALESCE(j1.source_srl_no, j1.srl_no) = j2.srl_no ORDER BY j1.source_target_type DESC";
+
+
+    private final static String GET_APP_ID  = "SELECT app_id FROM cfg_application WHERE LOWER(app_code) = ?";
+
+
+    private final static String GET_FLOW_JOB = "SELECT ca.app_id, ca.app_code, je.flow_id, je.job_id, " +
+            "jedl.job_name, fj.job_path, fj.job_type, jedl.flow_path, jedl.storage_type, " +
+            "jedl.source_target_type, jedl.operation, jedl.job_exec_id, fj.pre_jobs, fj.post_jobs, " +
+            "FROM_UNIXTIME(jedl.job_start_unixtime) as start_time, " +
+            "FROM_UNIXTIME(jedl.job_finished_unixtime) as end_time " +
+            "FROM job_execution_data_lineage jedl " +
+            "JOIN cfg_application ca on ca.app_id = jedl.app_id " +
+            "JOIN job_execution je on jedl.app_id = je.app_id and " +
+            "jedl.flow_exec_id = je.flow_exec_id and jedl.job_exec_id = je.job_exec_id " +
+            "JOIN flow_job fj on je.app_id = fj.app_id and je.flow_id = fj.flow_id and je.job_id = fj.job_id " +
+            "WHERE jedl.app_id = ? and jedl.flow_exec_id = ? and " +
+            "FROM_UNIXTIME(job_finished_unixtime) >  CURRENT_DATE - INTERVAL ? DAY";
+
+    private final static String GET_LATEST_FLOW_EXEC_ID = "SELECT max(flow_exec_id) FROM " +
+            "flow_execution where flow_exec_status in ('SUCCEEDED', 'FINISHED') and app_id = ? and flow_id = ?";
+
+    private final static String GET_FLOW_DATA_LINEAGE = "SELECT ca.app_code, jedl.job_exec_id, jedl.job_name, " +
+            "jedl.storage_type, jedl.abstracted_object_name, jedl.source_target_type, jedl.record_count, " +
+            "jedl.app_id, jedl.partition_type, jedl.operation, jedl.partition_start, " +
+            "jedl.partition_end, jedl.full_object_name, " +
+            "FROM_UNIXTIME(jedl.job_start_unixtime) as start_time, " +
+            "FROM_UNIXTIME(jedl.job_finished_unixtime) as end_time FROM job_execution_data_lineage jedl " +
+            "JOIN cfg_application ca on ca.app_id = jedl.app_id " +
+            "WHERE jedl.app_id = ? and jedl.flow_exec_id = ? ORDER BY jedl.partition_end DESC";
+
+    private final static String GET_ONE_LEVEL_IMPACT_DATABASES = "SELECT DISTINCT j.storage_type, " +
+            "j.abstracted_object_name, d.id FROM job_execution_data_lineage j " +
+            "LEFT JOIN dict_dataset d ON d.urn = concat(j.storage_type, '://', j.abstracted_object_name) " +
+            "WHERE (app_id, job_exec_id) in ( " +
+            "SELECT app_id, job_exec_id FROM job_execution_data_lineage " +
+            "WHERE abstracted_object_name in (:pathlist) and source_target_type = 'source' and " +
+            "FROM_UNIXTIME(job_finished_unixtime) >  CURRENT_DATE - INTERVAL 60 DAY ) and " +
+            "abstracted_object_name not like '/tmp/%' and abstracted_object_name not like '%tmp' " +
+            "and source_target_type = 'target' and " +
+            "FROM_UNIXTIME(job_finished_unixtime) >  CURRENT_DATE - INTERVAL 60 DAY";
+
+    private final static String GET_MAPPED_OBJECT_NAME = "SELECT mapped_object_name " +
+            "FROM cfg_object_name_map WHERE object_name = ?";
+
+    private final static String GET_OBJECT_NAME_BY_MAPPED_NAME = "SELECT object_name " +
+            "FROM cfg_object_name_map WHERE mapped_object_name = ?";
 
     private final static String GET_PROPERTY = "SELECT property_value FROM wh_property WHERE property_name = ?";
 
-    public static JsonNode getObjectAdjacnet(String urn, int upLevel, int downLevel, int lookBackTime) {
-        // lineage is stored in an ajacency table with columns: id | parent_urn | child_urn
-        // ignores look back time
 
-        int level = 0; // level goes up for parents, down for children
-
-        // lists of nodes and edges
+    public static JsonNode getObjectAdjacnet(String urn, int upLevel, int downLevel, int lookBackTime)
+    {
+        int level = 0;
+        LineagePathInfo pathInfo = utils.Lineage.convertFromURN(urn);
         List<LineageNode> nodes = new ArrayList<LineageNode>();
         List<LineageEdge> edges = new ArrayList<LineageEdge>();
+        Map<Long, List<LineageNode>> addedSourceNodes= new HashMap<Long, List<LineageNode>>();
+        Map<Long, List<LineageNode>> addedTargetNodes= new HashMap<Long, List<LineageNode>>();
+        Map<Long, LineageNode> addedJobNodes = new HashMap<Long, LineageNode>();
+        List<LineageNode> allSourceNodes = new ArrayList<LineageNode>();
+        List<LineageNode> allTargetNodes = new ArrayList<LineageNode>();
+        getObjectAdjacentNode(
+                pathInfo,
+                level,
+                upLevel,
+                downLevel,
+                null,
+                allSourceNodes,
+                allTargetNodes,
+                addedSourceNodes,
+                addedTargetNodes,
+                addedJobNodes,
+                lookBackTime);
 
-        // create jsonNode
-        ObjectNode resultNode = Json.newObject();
+        return renderGraph(
+                pathInfo,
+                urn,
+                upLevel,
+                downLevel,
+                allSourceNodes,
+                allTargetNodes,
+                addedSourceNodes,
+                addedTargetNodes,
+                addedJobNodes,
+                nodes,
+                edges);
+    }
 
-        // create a single node and add it to list of nodes
-        // dislike that this code is repeated in the function...
-        LineageNode node = new LineageNode();
-        node.id = nodes.size();
-        node.level = level;
-        node.urn = urn;
-        node._sort_list = new ArrayList<String>();
-        switch (getNodeType(urn).toLowerCase()) {
-            case "app":
-                node.node_type = "app";
-                assignGeneral(node);
-                if (assignPrefs(node) == false) {
-                    assignApp(node);
-                    Logger.debug("using default assigner for " + node.urn);
+    public static void addSourceNode(
+            LineageNode jobNode,
+            Map<Long, List<LineageNode>> addedSourceNodes,
+            Map<String, List<LineageNode>> addedTargetDataNodes,
+            Map<String, LineageNode> addedSourceDataNodes,
+            Map<String, List<LineageNode>> toBeConvertedSourceDataNodes,
+            List<LineageNode> nodes,
+            List<LineageEdge> edges,
+            boolean isUpLevel)
+    {
+        List<LineageNode> sourceNodes = addedSourceNodes.get(jobNode.exec_id);
+        if (sourceNodes != null)
+        {
+            for(LineageNode node : sourceNodes)
+            {
+                List<LineageNode> existTargetNodes = addedTargetDataNodes.get(node.abstracted_path);
+                LineageNode existNode = null;
+                if (existTargetNodes != null)
+                {
+                    Collections.sort(existTargetNodes, new Comparator<LineageNode>(){
+                        public int compare(LineageNode node1, LineageNode node2){
+                            if(node1.job_end_unix_time == node2.job_end_unix_time)
+                                return 0;
+                            return node1.job_end_unix_time > node2.job_end_unix_time ? -1 : 1;
+                        }
+                    });
+                    for(LineageNode target : existTargetNodes)
+                    {
+                        if (node.job_start_unix_time >= target.job_end_unix_time)
+                        {
+                            existNode = target;
+                            break;
+                        }
+                    }
                 }
-                break;
-            case "data":
-                node.node_type = "data";
-                assignGeneral(node);
-                if (assignPrefs(node) == false) {
-                    assignData(node);
-                    Logger.debug("using default assigner for " + node.urn);
+                if (existNode == null)
+                {
+                    existNode = addedSourceDataNodes.get(node.abstracted_path);
                 }
-                node.abstracted_path = getPostfix(node.urn);
-                break;
-            case "db":
-                node.node_type = "db";
-                assignGeneral(node);
-                if (assignPrefs(node) == false) {
-                    assignDB(node);
-                    Logger.debug("using default assigner for " + node.urn);
+                if (existNode != null)
+                {   node.id = existNode.id;
                 }
-                break;
-            default:
-                node.node_type = "general";
-                assignGeneral(node);
-                assignPrefs(node);
-                Logger.error("parsing failed for origin URN: " + urn);
+                else
+                {
+                    node.id = nodes.size();
+                    nodes.add(node);
+                    addedSourceDataNodes.put(node.abstracted_path, node);
+                    if (isUpLevel) {
+                        List<LineageNode> originalSourceNodes = toBeConvertedSourceDataNodes.get(node.abstracted_path);
+                        if (originalSourceNodes == null) {
+                            originalSourceNodes = new ArrayList<LineageNode>();
+                        }
+                        originalSourceNodes.add(node);
+                        toBeConvertedSourceDataNodes.put(node.abstracted_path, originalSourceNodes);
+                    }
+
+                }
+                LineageEdge edge = new LineageEdge();
+                edge.id = edges.size();
+                edge.source = node.id;
+                edge.target = jobNode.id;
+                edge.label = node.operation;
+                edge.chain = "";
+
+                setEdgeStyle(edge, node, jobNode);
+
+                edges.add(edge);
+            }
         }
-        nodes.add(node);
+    }
 
-        // add all ancestors of origin to nodes & edges
-        getRelativeGraph(nodes, edges, upLevel, 1, node);
-        getRelativeGraph(nodes, edges, downLevel, -1, node);
+    public static void addTargetNode(
+            LineageNode jobNode,
+            Map<Long, List<LineageNode>> addedTargetNodes,
+            Map<String, List<LineageNode>> addedTargetDataNodes,
+            Map<String, LineageNode> toBeClearedSourceDataNodes,
+            List<LineageNode> nodes,
+            List<LineageEdge> edges,
+            boolean isUpLevel)
+    {
+        List<LineageNode> targetNodes = addedTargetNodes.get(jobNode.exec_id);
+        if (targetNodes != null)
+        {
+            for(LineageNode node : targetNodes)
+            {
+                List<LineageNode> existTargetNodes = addedTargetDataNodes.get(node.abstracted_path);
+                LineageNode existNode = null;
+                if (existTargetNodes != null)
+                {
+                    for(LineageNode target : existTargetNodes)
+                    {
+                        if (target.partition_end != null)
+                        {
+                            if (target.partition_end.equals(node.partition_end))
+                            {
+                                existNode = target;
+                                break;
+                            }
+                        }
+                        else if(target.job_end_unix_time == node.job_end_unix_time)
+                        {
+                            existNode = target;
+                            break;
+                        }
+                    }
+                }
+                if (isUpLevel) {
+                    if (existNode == null)
+                    {
+                        existNode = toBeClearedSourceDataNodes.get(node.abstracted_path);
+                        if (existNode != null && existNode.job_start_unix_time < node.job_end_unix_time)
+                        {
+                            existNode = null;
+                        }
+                    }
+                }
 
-        // now stick nodes and edges into the JsonNode
+                if (existNode != null)
+                {
+                    node.id = existNode.id;
+                }
+                else
+                {
+                    node.id = nodes.size();
+                    nodes.add(node);
+                    if (existTargetNodes == null)
+                    {
+                        existTargetNodes = new ArrayList<LineageNode>();
+                    }
+                    existTargetNodes.add(node);
+                    addedTargetDataNodes.put(node.abstracted_path, existTargetNodes);
+                }
+                LineageEdge edge = new LineageEdge();
+                edge.id = edges.size();
+                edge.source = jobNode.id;
+                edge.target = node.id;
+                edge.label = node.operation;
+                edge.chain = "";
+
+                setEdgeStyle(edge, jobNode, node);
+
+                edges.add(edge);
+            }
+        }
+    }
+
+    public static JsonNode renderGraph(LineagePathInfo pathInfo,
+                                       String urn,
+                                       int upLevel,
+                                       int downLevel,
+                                       List<LineageNode> allSourceNodes,
+                                       List<LineageNode> allTargetNodes,
+                                       Map<Long, List<LineageNode>> addedSourceNodes,
+                                       Map<Long, List<LineageNode>> addedTargetNodes,
+                                       Map<Long, LineageNode> addedJobNodes,
+                                       List<LineageNode> nodes,
+                                       List<LineageEdge> edges)
+    {
+        ObjectNode resultNode = Json.newObject();
+        String message = null;
+        Map<String, LineageNode> addedSourceDataNodes = new HashMap<String, LineageNode>();
+        Map<String, LineageNode> toBeClearedSourceDataNodes = new HashMap<String, LineageNode>();
+        Map<String, List<LineageNode>> addedTargetDataNodes = new HashMap<String, List<LineageNode>>();
+        Map<String, List<LineageNode>> toBeConvertedSourceDataNodes = new HashMap<String, List<LineageNode>>();
+        message = "No lineage information found for this dataset";
+        if (allSourceNodes.size() == 0 && allTargetNodes.size() == 0)
+        {
+            LineageNode node = new LineageNode();
+            node.id = nodes.size();
+            node._sort_list = new ArrayList<String>();
+            node.node_type = "data";
+            node.abstracted_path = pathInfo.filePath;
+            node.storage_type = pathInfo.storageType;
+            node._sort_list.add("abstracted_path");
+            node._sort_list.add("storage_type");
+            node._sort_list.add("urn");
+            node.urn = urn;
+
+            // set color
+            node.color = getNodeColor(node.urn, node.node_type);
+
+            nodes.add(node);
+        }
+        else
+        {
+            message = "Found lineage information";
+            for(int i = 0; i < Math.max(upLevel, downLevel); i++)
+            {
+                if (i < upLevel)
+                {
+                    if (toBeConvertedSourceDataNodes.size() > 0)
+                    {
+                        for(Map.Entry<String, List<LineageNode> > mapEntry : toBeConvertedSourceDataNodes.entrySet())
+                        {
+                            List<LineageNode> hashedNodes = addedTargetDataNodes.get(mapEntry.getKey());
+                            List<LineageNode> list = mapEntry.getValue();
+                            if (list != null && list.size() > 0)
+                            {
+                                if (hashedNodes == null)
+                                {
+                                    hashedNodes = new ArrayList<LineageNode>();
+                                }
+                                hashedNodes.addAll(list);
+                                addedTargetDataNodes.put(mapEntry.getKey(), hashedNodes);
+                            }
+
+                        }
+                        toBeConvertedSourceDataNodes.clear();
+                    }
+                    if (addedSourceDataNodes.size() > 0)
+                    {
+                        toBeClearedSourceDataNodes.putAll(addedSourceDataNodes);
+                        addedSourceDataNodes.clear();
+                    }
+
+                    for(LineageNode job : addedJobNodes.values())
+                    {
+                        if (job.level != i)
+                        {
+                            continue;
+                        }
+                        job.id = nodes.size();
+                        nodes.add(job);
+                        addTargetNode(job,
+                                addedTargetNodes,
+                                addedTargetDataNodes,
+                                toBeClearedSourceDataNodes,
+                                nodes,
+                                edges,
+                                true);
+
+                        addSourceNode(job,
+                                addedSourceNodes,
+                                addedTargetDataNodes,
+                                addedSourceDataNodes,
+                                toBeConvertedSourceDataNodes,
+                                nodes,
+                                edges,
+                                true);
+                    }
+                }
+                if ((i > 0) && (i < downLevel))
+                {
+                    for(LineageNode job : addedJobNodes.values())
+                    {
+                        if (job.level != -i)
+                        {
+                            continue;
+                        }
+                        job.id = nodes.size();
+                        nodes.add(job);
+                        addTargetNode(job,
+                                addedTargetNodes,
+                                addedTargetDataNodes,
+                                toBeClearedSourceDataNodes,
+                                nodes,
+                                edges,
+                                false);
+
+                        addSourceNode(job,
+                                addedSourceNodes,
+                                addedTargetDataNodes,
+                                addedSourceDataNodes,
+                                toBeConvertedSourceDataNodes,
+                                nodes,
+                                edges,
+                                false);
+                    }
+                }
+            }
+        }
         resultNode.set("nodes", Json.toJson(nodes));
         resultNode.set("links", Json.toJson(edges));
         resultNode.put("urn", urn);
-        resultNode.put("message", "Gee, I hope this works");
-        //Logger.debug(resultNode.toString());
+        resultNode.put("diet", "false");
+        resultNode.put("message", message);
         return resultNode;
+
+    }
+
+    public static List<String> getLiasDatasetNames(String abstractedObjectName)
+    {
+        if (StringUtils.isBlank(abstractedObjectName))
+            return null;
+        List<String> totalNames = new ArrayList<String>();
+        totalNames.add(abstractedObjectName);
+        List<String> mappedNames = getJdbcTemplate().queryForList(GET_MAPPED_OBJECT_NAME, String.class, abstractedObjectName);
+        if (mappedNames != null && mappedNames.size() > 0)
+        {
+            totalNames.addAll(mappedNames);
+            for (String name : mappedNames)
+            {
+                List<String> objNames = getJdbcTemplate().queryForList(
+                        GET_OBJECT_NAME_BY_MAPPED_NAME, String.class, name);
+                {
+                    if (objNames != null)
+                    {
+                        totalNames.addAll(objNames);
+                    }
+                }
+
+            }
+        }
+        else
+        {
+            List<String> objNames = getJdbcTemplate().queryForList(
+                    GET_OBJECT_NAME_BY_MAPPED_NAME, String.class, abstractedObjectName);
+            {
+                if (objNames != null)
+                {
+                    totalNames.addAll(objNames);
+                }
+            }
+
+        }
+        List<String> results = new ArrayList<String>();
+        Set<String> sets = new HashSet<String>();
+        sets.addAll(totalNames);
+        results.addAll(sets);
+        return results;
+    }
+
+    public static void getNodes(
+            LineagePathInfo pathInfo,
+            int level,
+            int upLevel,
+            int downLevel,
+            LineageNode currentNode,
+            List<LineageNode> allSourceNodes,
+            List<LineageNode> allTargetNodes,
+            Map<Long, List<LineageNode>>addedSourceNodes,
+            Map<Long, List<LineageNode>>addedTargetNodes,
+            Map<Long, LineageNode> addedJobNodes,
+            int lookBackTime)
+    {
+        if (upLevel < 1 && downLevel < 1)
+        {
+            return;
+        }
+        if (currentNode != null)
+        {
+            if ( StringUtils.isBlank(currentNode.source_target_type))
+            {
+                Logger.error("Source target type is not available");
+                Logger.error(currentNode.abstracted_path);
+                return;
+            }
+            else if (currentNode.source_target_type.equalsIgnoreCase("target") && downLevel <= 0)
+            {
+                Logger.warn("Dataset " + currentNode.abstracted_path + " downLevel = " + Integer.toString(downLevel));
+                return;
+            }
+            else if (currentNode.source_target_type.equalsIgnoreCase("source") && upLevel <= 0)
+            {
+                Logger.warn("Dataset " + currentNode.abstracted_path + " upLevel = " + Integer.toString(upLevel));
+                return;
+            }
+        }
+        List<String> nameList = getLiasDatasetNames(pathInfo.filePath);
+        List<Map<String, Object>> rows = null;
+        MapSqlParameterSource parameters = new MapSqlParameterSource();
+        parameters.addValue("names", nameList);
+        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new
+                NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
+        parameters.addValue("days", lookBackTime);
+
+        if (currentNode != null)
+        {
+            if (currentNode.source_target_type.equalsIgnoreCase("source"))
+            {
+                rows = namedParameterJdbcTemplate.queryForList(
+                        GET_UP_LEVEL_JOB,
+                        parameters);
+            }
+            else
+            {
+                parameters.addValue("type", currentNode.source_target_type);
+                rows = namedParameterJdbcTemplate.queryForList(
+                        GET_JOB_WITH_SOURCE,
+                        parameters);
+            }
+
+        }
+        else
+        {
+            rows = namedParameterJdbcTemplate.queryForList(
+                    GET_JOB,
+                    parameters);
+        }
+
+        if (rows != null) {
+            for (Map row : rows) {
+                LineageNode node = new LineageNode();
+                Object jobExecIdObject = row.get("job_exec_id");
+                if (jobExecIdObject == null) {
+                    continue;
+                }
+                Long jobExecId = ((BigInteger) jobExecIdObject).longValue();
+                if (addedJobNodes.get(jobExecId) != null) {
+                    continue;
+                }
+                node._sort_list = new ArrayList<String>();
+                node.node_type = "script";
+                node.job_type = (String) row.get("job_type");
+                node.cluster = (String) row.get("cluster");
+                node.job_name = (String) row.get("job_name");
+                node.job_path = (String) row.get("flow_path") + "/" + node.job_name;
+                node.exec_id = jobExecId;
+                node.operation = (String) row.get("operation");
+                node.source_target_type = (String) row.get("source_target_type");
+                node.level = level;
+                node._sort_list.add("cluster");
+                node._sort_list.add("job_path");
+                node._sort_list.add("job_name");
+                node._sort_list.add("job_type");
+                node._sort_list.add("job_start_time");
+                node._sort_list.add("job_end_time");
+                node._sort_list.add("exec_id");
+
+                // set node color
+                node.color = getNodeColor(node.urn, node.node_type);
+
+                addedJobNodes.put(jobExecId, node);
+                List<LineageNode> sourceNodeList = new ArrayList<LineageNode>();
+                List<LineageNode> targetNodeList = new ArrayList<LineageNode>();
+                int applicationID = (int)row.get("app_id");
+                Long jobId = ((BigInteger)row.get("job_exec_id")).longValue();
+                List<Map<String, Object>> relatedDataRows = null;
+
+                if (node.source_target_type.equalsIgnoreCase("source") && node.operation.equalsIgnoreCase("JDBC Read"))
+                {
+                    MapSqlParameterSource lassenParams = new MapSqlParameterSource();
+                    lassenParams.addValue("names", nameList);
+                    lassenParams.addValue("appid", applicationID);
+                    lassenParams.addValue("execid", jobId);
+                    relatedDataRows = namedParameterJdbcTemplate.queryForList(
+                            GET_DATA_FILTER_OUT_LASSEN,
+                            lassenParams);
+                }
+                else
+                {
+                    relatedDataRows = getJdbcTemplate().queryForList(
+                            GET_DATA,
+                            applicationID,
+                            jobId);
+                }
+
+                if (relatedDataRows != null) {
+                    for (Map relatedDataRow : relatedDataRows)
+                    {
+                        String abstractedObjectName = (String)relatedDataRow.get("abstracted_object_name");
+                        if (abstractedObjectName.startsWith("/tmp/"))
+                        {
+                            continue;
+                        }
+                        String relatedSourceType = (String)relatedDataRow.get("source_target_type");
+                        LineageNode relatedNode = new LineageNode();
+                        relatedNode._sort_list = new ArrayList<String>();
+                        relatedNode.node_type = "data";
+                        relatedNode.level = level;
+                        relatedNode.source_target_type = relatedSourceType;
+                        relatedNode.abstracted_path = (String)relatedDataRow.get("abstracted_object_name");
+                        relatedNode.storage_type = ((String)relatedDataRow.get("storage_type")).toLowerCase();
+                        relatedNode.job_start_unix_time = (Long)relatedDataRow.get("job_start_unixtime");
+
+                        relatedNode.job_start_time = relatedDataRow.get("start_time").toString();
+                        relatedNode.job_end_time = relatedDataRow.get("end_time").toString();
+                        relatedNode.job_end_unix_time = (Long)relatedDataRow.get("job_finished_unixtime");
+                        node.job_start_unix_time = relatedNode.job_start_unix_time;
+                        node.job_end_unix_time = relatedNode.job_end_unix_time;
+                        node.job_start_time = relatedNode.job_start_time;
+                        node.job_end_time = relatedNode.job_end_time;
+                        relatedNode.operation = (String)relatedDataRow.get("operation");
+                        LineagePathInfo info = new LineagePathInfo();
+                        info.filePath = relatedNode.abstracted_path;
+                        info.storageType = relatedNode.storage_type;
+                        relatedNode.urn = utils.Lineage.convertToURN(info);
+                        relatedNode._sort_list.add("abstracted_path");
+                        relatedNode._sort_list.add("storage_type");
+                        relatedNode._sort_list.add("urn");
+
+                        relatedNode.color = getNodeColor(relatedNode.urn, relatedNode.node_type);
+                        if (relatedSourceType.equalsIgnoreCase("source"))
+                        {
+                            if (node.source_target_type.equalsIgnoreCase("target") ||
+                                    utils.Lineage.isInList(nameList, relatedNode.abstracted_path))
+                            {
+                                sourceNodeList.add(relatedNode);
+                                allSourceNodes.add(relatedNode);
+                            }
+                        }
+                        else if (relatedSourceType.equalsIgnoreCase("target"))
+                        {
+                            if (node.source_target_type.equalsIgnoreCase("source") ||
+                                    utils.Lineage.isInList(nameList, relatedNode.abstracted_path))
+                            {
+                                targetNodeList.add(relatedNode);
+                                allTargetNodes.add(relatedNode);
+                            }
+                        }
+                    }
+                    if (sourceNodeList.size() > 0)
+                    {
+                        addedSourceNodes.put(jobExecId, sourceNodeList);
+                    }
+                    if (targetNodeList.size() > 0)
+                    {
+                        addedTargetNodes.put(jobExecId, targetNodeList);
+                    }
+                }
+            }
+        }
+        if ((allSourceNodes != null ) && (allSourceNodes.size() > 0) && (upLevel > 1))
+        {
+            List<LineageNode> currentSourceNodes = new ArrayList<LineageNode>();
+            currentSourceNodes.addAll(allSourceNodes);
+            for(LineageNode sourceNode : currentSourceNodes)
+            {
+                LineagePathInfo subPath = new LineagePathInfo();
+                subPath.storageType = sourceNode.storage_type;
+                subPath.filePath = sourceNode.abstracted_path;
+                if (sourceNode.level == level)
+                {
+                    getObjectAdjacentNode(
+                            subPath,
+                            level+1,
+                            upLevel - 1,
+                            0,
+                            sourceNode,
+                            allSourceNodes,
+                            allTargetNodes,
+                            addedSourceNodes,
+                            addedTargetNodes,
+                            addedJobNodes,
+                            lookBackTime);
+                }
+            }
+        }
+        if ((allTargetNodes != null ) && (allTargetNodes.size() > 0) && (downLevel > 1))
+        {
+            List<LineageNode> currentTargetNodes = new ArrayList<LineageNode>();
+            currentTargetNodes.addAll(allTargetNodes);
+            for(LineageNode targetNode : currentTargetNodes)
+            {
+                LineagePathInfo subPath = new LineagePathInfo();
+                subPath.storageType = targetNode.storage_type;
+                subPath.filePath = targetNode.abstracted_path;
+                if (targetNode.level == level)
+                {
+                    getObjectAdjacentNode(
+                            subPath,
+                            level-1,
+                            0,
+                            downLevel - 1,
+                            targetNode,
+                            allSourceNodes,
+                            allTargetNodes,
+                            addedSourceNodes,
+                            addedTargetNodes,
+                            addedJobNodes,
+                            lookBackTime);
+                }
+            }
+        }
+
+    }
+
+    public static void getObjectAdjacentNode(
+            LineagePathInfo pathInfo,
+            int level,
+            int upLevel,
+            int downLevel,
+            LineageNode currentNode,
+            List<LineageNode> allSourceNodes,
+            List<LineageNode> allTargetNodes,
+            Map<Long, List<LineageNode>> addedSourceNodes,
+            Map<Long, List<LineageNode>> addedTargetNodes,
+            Map<Long, LineageNode> addedJobNodes,
+            int lookBackTime)
+    {
+        if (upLevel < 1 && downLevel < 1)
+        {
+            return;
+        }
+
+        if (pathInfo == null || StringUtils.isBlank(pathInfo.filePath))
+        {
+            return;
+        }
+        getNodes(
+                pathInfo,
+                level,
+                upLevel,
+                downLevel,
+                currentNode,
+                allSourceNodes,
+                allTargetNodes,
+                addedSourceNodes,
+                addedTargetNodes,
+                addedJobNodes,
+                lookBackTime);
     }
 
     private static String getPrefix(String urn) {
         return urn.substring(0, urn.indexOf("://")).toLowerCase();
-    }
-
-    private static String getPostfix(String urn) {
-        return urn.substring(urn.indexOf("://") + 3);
-    }
-
-    private static String getNodeType(String urn) {
-        return getProp("node.type." + getPrefix(urn));
-    }
-
-    private static String getNodeColor(String urn, String node_type) {
-        String color = getProp("node.color." + getPrefix(urn));
-        if (color == null || color == "default") {
-            // color names come from SVG color pallete at http://www.graphviz.org/doc/info/colors.html
-            switch (node_type.toLowerCase()) {
-                case "data":
-                    return "thistle";
-                case "db":
-                    return "cyan";
-                case "app":
-                    return "tomato";
-                default:
-                    return "olive";
-            }
-        }
-        return color;
     }
 
     private static String getProp(String propName) {
@@ -154,189 +805,13 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         return props.get(0);
     }
 
-    private static void getRelativeGraph(List<LineageNode> nodes, List<LineageEdge> edges, int maxDepth, int direction, LineageNode currNode) {
-        //LineageNode currNode = nodes.get(nodes.size() - 1);
-        if (Math.abs(currNode.level) <= Math.abs(maxDepth)) {
-            // do our thing
-            List<String> relatives = getRelatives(currNode.urn, direction);
-            Logger.debug("relatives: " + relatives.toString());
-            for (String relative : relatives) {
-                LineageNode node = new LineageNode();
-                node.id = nodes.size();
-                node.level = currNode.level + direction;
-                node.urn = relative;
-                node._sort_list = new ArrayList<String>();
-                LineageEdge edge = new LineageEdge();
-                edge.id = edges.size();
-                switch (getNodeType(relative).toLowerCase()) {
-                    case "app":
-                        // do assignment stuff
-                        node.node_type = "app";
-
-                        assignGeneral(node);
-                        if (assignPrefs(node) == false) {
-                            assignApp(node);
-                            Logger.debug("using default assigner for " + node.urn);
-                        }
-
-                        nodes.add(node);
-                        edges.add(edge);
-                        getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
-                        break;
-                    case "data":
-                        // do assignment stuff
-                        node.node_type = "data";
-
-                        assignGeneral(node);
-                        if (assignPrefs(node) == false) {
-                            assignData(node);
-                            Logger.debug("using default assigner for " + node.urn);
-                        }
-                        node.abstracted_path = getPostfix(node.urn);
-
-                        nodes.add(node);
-                        edges.add(edge);
-                        getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
-                        break;
-                    case "db":
-                        // do assignment stuff
-                        node.node_type = "db";
-
-                        assignGeneral(node);
-                        if (assignPrefs(node) == false) {
-                            assignDB(node);
-                            Logger.debug("using default assigner for " + node.urn);
-                        }
-
-                        nodes.add(node);
-                        edges.add(edge);
-                        getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
-                        break;
-                    default:
-                        node.node_type = "general";
-                        assignGeneral(node);
-                        assignPrefs(node);
-                        nodes.add(node);
-                        edges.add(edge);
-                        getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
-                        Logger.error("parsing failed for relative URN: " + relative);
-                }
-                if (direction > 0) {
-                    edge.target = currNode.id;
-                    edge.source = node.id;
-                    setEdgeAttr(edge, node, currNode);
-                } else {
-                    edge.target = node.id;
-                    edge.source = currNode.id;
-                    setEdgeAttr(edge, currNode, node);
-                }
-
-            }
+    private static String getNodeColor(String urn, String node_type) {
+        String color = getProp("node.color." + getPrefix(urn));
+        if (color == null || color == "default") {
+            // color names come from SVG color pallete at http://www.graphviz.org/doc/info/colors.html
+            return "pink";
         }
-        // we have reached maximum requested depth, let's peace out
-    }
-
-    private static List<String> getRelatives(String urn, int direction) {
-        if (direction > 0) {
-            return getParents(urn);
-        } else if (direction < 0) {
-            return getChildren(urn);
-        } else {
-            Logger.error("Direction cannot equal 0");
-            return null;
-        }
-    }
-
-    private static List<String> getParents(String urn) {
-        List<String> parents = getJdbcTemplate().queryForList(GET_PARENTS, String.class, urn);
-        if (parents == null || parents.size() == 0) {
-            Logger.error("couldn't find any parents for URN: " + urn);
-        }
-        return parents;
-    }
-
-    private static List<String> getChildren(String urn) {
-        List<String> children = getJdbcTemplate().queryForList(GET_CHILDREN, String.class, urn);
-        if (children == null || children.size() == 0) {
-            Logger.error("couldn't find any children for URN: " + urn);
-        }
-        return children;
-    }
-
-    private static void setEdgeAttr(LineageEdge edge, LineageNode source, LineageNode target) {
-        setEdgeLabel(edge, source, target);
-        setEdgeType(edge, source, target);
-        //setEdgeColor(edge, source, target)
-        setEdgeStyle(edge, source, target);
-    }
-
-    private static void setEdgeLabel(LineageEdge edge, LineageNode source, LineageNode target) {
-        List<String> labelqueries = new ArrayList<String>();
-        String label = "";
-        labelqueries.add("edge.label.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
-        labelqueries.add("edge.label.from." + getPrefix(source.urn));
-        labelqueries.add("edge.label.to." + getPrefix(target.urn));
-        labelqueries.add("edge.label.between." + source.node_type + "." + target.node_type);
-        labelqueries.add("edge.label.from." + source.node_type);
-        labelqueries.add("edge.label.to." + target.node_type);
-        for (int i = 0; i < labelqueries.size(); i++) {
-            label = getProp(labelqueries.get(i));
-            if (label != "default") {
-                break;
-            }
-        }
-        if (label != "default") {
-            edge.label = label;
-        } else {
-            edge.label = edgeLabelDefaults(source.node_type, target.node_type);
-        }
-    }
-
-    private static void setEdgeType(LineageEdge edge, LineageNode source, LineageNode target) {
-        List<String> typequeries = new ArrayList<String>();
-        String type = "";
-        typequeries.add("edge.type.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
-        typequeries.add("edge.type.from." + getPrefix(source.urn));
-        typequeries.add("edge.type.to." + getPrefix(target.urn));
-        typequeries.add("edge.type.between." + source.node_type + "." + target.node_type);
-        typequeries.add("edge.type.from." + source.node_type);
-        typequeries.add("edge.type.to." + target.node_type);
-        for (int i = 0; i < typequeries.size(); i++) {
-            type = getProp(typequeries.get(i));
-            Logger.info("type for source " + getPrefix(source.urn) + " is " + type);
-            if (type != "default") {
-                break;
-            }
-        }
-        if (type != "default") {
-            edge.type = type;
-        } else if (source.node_type == "app") {
-            edge.type = "job";
-        } else {
-            edge.type = "default";
-        }
-    }
-
-    private static void setEdgeColor(LineageEdge edge, LineageNode source, LineageNode target) {
-        List<String> colorqueries = new ArrayList<String>();
-        String color = "";
-        colorqueries.add("edge.color.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
-        colorqueries.add("edge.color.from." + getPrefix(source.urn));
-        colorqueries.add("edge.color.to." + getPrefix(target.urn));
-        colorqueries.add("edge.color.between." + source.node_type + "." + target.node_type);
-        colorqueries.add("edge.color.from." + source.node_type);
-        colorqueries.add("edge.color.to." + target.node_type);
-        for (int i = 0; i < colorqueries.size(); i++) {
-            color = getProp(colorqueries.get(i));
-            if (color != "default") {
-                break;
-            }
-        }
-        if (color != "default") {
-            edge.color = color;
-        } else {
-            edge.color = "black";
-        }
+        return color;
     }
 
     private static void setEdgeStyle(LineageEdge edge, LineageNode source, LineageNode target) {
@@ -361,260 +836,497 @@ public class LineageDAO extends AbstractMySQLOpenSourceDAO {
         }
     }
 
-    private static String edgeLabelDefaults(String source, String target) {
-        if ((source == "data" && target == "data") || (source == "data" && target == "db") || (source == "db" && target == "db") || (source == "db" && target == "data")) {
-            return "source for";
-        } else if (source == "data" && target == "app") {
-            return "read by";
-        } else if (source == "app" && target == "app") {
-            return "spawned";
-        } else if ((source == "app" && target == "data") || (source == "app" && target == "db")) {
-            return "created";
-        } else if (source == "db" && target == "app") {
-            return "imported by";
-        } else {
-            return "influenced";
+    public static ObjectNode getFlowLineage(String application, String project, Long flowId)
+    {
+        ObjectNode resultNode = Json.newObject();
+        List<LineageNode> nodes = new ArrayList<LineageNode>();
+        List<LineageEdge> edges = new ArrayList<LineageEdge>();
+        String flowName = null;
+
+        Map<Long, Integer> addedJobNodes = new HashMap<Long, Integer>();
+        Map<Pair, Integer> addedDataNodes = new HashMap<Pair, Integer>();
+
+        if (StringUtils.isBlank(application) || StringUtils.isBlank(project) || (flowId <= 0))
+        {
+            resultNode.set("nodes", Json.toJson(nodes));
+            resultNode.set("links", Json.toJson(edges));
+            return resultNode;
         }
-    }
 
+        String applicationName = application.replace(".", " ");
 
-    private static void assignApp(LineageNode node) {
-        List<Map<String, Object>> rows = null;
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("urn", node.urn);
-        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
-
-        rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
-
-        for (Map<String, Object> row : rows) {
-            // node only knows id, level, and urn, assign all other attributes
-
-            // stored in dict_dataset, so has those fields
-            JsonNode prop = Json.parse((String) row.get("properties"));
-
-            // properties is a JsonNode, extract what we want out of it
-            node.description = prop.get("description").asText();
-            node.app_code = prop.get("app_code").asText();
-
-            // check wh_property for a user specified color, use some generic defaults if nothing found
-            //node.color = getColor(node.urn, node.node_type);
-
-            // set things to show up in tooltip
-            node._sort_list.add("app_code");
-            node._sort_list.add("description");
+        int appID = 0;
+        try
+        {
+            appID = getJdbcTemplate().queryForObject(
+                    GET_APP_ID,
+                    new Object[] {applicationName},
+                    Integer.class);
         }
-    }
-
-    private static void assignData(LineageNode node) {
-        List<Map<String, Object>> rows = null;
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("urn", node.urn);
-        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
-
-        rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
-
-        for (Map<String, Object> row : rows) {
-            // node only knows id, level, and urn, assign all other attributes
-            JsonNode prop = Json.parse((String) row.get("properties"));
-            node.description = prop.get("description").asText();
-            node.source = (String) row.get("source");
-            node.storage_type = (String) row.get("dataset_type"); // what the js calls storage_type, the sql calls dataset_type
-            node.dataset_type = (String) row.get("dataset_type");
-
-            // check wh_property for a user specified color, use some generic defaults if nothing found
-            //node.color = getColor(node.urn, node.node_type);
-
-            //node.abstracted_path = getPostfix(node.urn);
-
-            // set things to show up in tooltip
-            node._sort_list.add("abstracted_path");
-            node._sort_list.add("storage_type");
+        catch(EmptyResultDataAccessException e)
+        {
+            Logger.error("getFlowLineage get application id failed, application name = " + application);
+            Logger.error("Exception = " + e.getMessage());
         }
-    }
 
-    private static void assignDB(LineageNode node) {
-        List<Map<String, Object>> rows = null;
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("urn", node.urn);
-        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
+        Map<Long, List<LineageNode>> nodeHash = new HashMap<Long, List<LineageNode>>();
+        Map<String, List<LineageNode>> partitionedNodeHash = new HashMap<String, List<LineageNode>>();
 
-        rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
-        // node only knows id, level, and urn, assign all other attributes
-
-        for (Map<String, Object> row : rows) {
-            JsonNode prop = Json.parse((String) row.get("properties"));
-            node.description = prop.get("description").asText();
-            node.jdbc_url = prop.get("jdbc_url").asText();
-            node.db_code = prop.get("db_code").asText();
-
-            // check wh_property for a user specified color, use some generic defaults if nothing found
-            //node.color = getColor(node.urn, node.node_type);
-
-            // set things to show up in tooltip
-            node._sort_list.add("db_code");
-            //node._sort_list.add("last_modified");
-        }
-    }
-
-    private static void assignGeneral(LineageNode node) {
-        List<Map<String, Object>> rows = null;
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("urn", node.urn);
-        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
-
-        rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
-
-        for (Map<String, Object> row : rows) {
-            node.name = (String) row.get("name");
-            node.schema = (String) row.get("schema");
-
-            // check wh_property for a user specified color, use some generic defaults if nothing found
-            node.color = getNodeColor(node.urn, node.node_type);
-
-            // set things to show up in tooltip
-            node._sort_list.add("urn");
-            node._sort_list.add("name");
-        }
-    }
-
-    private static Boolean assignPrefs(LineageNode node) {
-        // first try to get property list
-        String properties = getProp("prop." + getPrefix(node.urn));
-        if (properties == "default") {
-            Logger.info("no properties for " + getPrefix(node.urn));
-            properties = getProp("prop." + node.node_type);
-            if (properties == "default") {
-                Logger.info("no properties for " + node.node_type);
-                return false;
+        if (appID != 0)
+        {
+            try
+            {
+                flowName = getJdbcTemplate().queryForObject(
+                        GET_FLOW_NAME,
+                        new Object[] {appID, flowId},
+                        String.class);
             }
-        }
-        List<String> propList = Arrays.asList(properties.split(","));
-        Logger.debug("propList: " + propList);
+            catch(EmptyResultDataAccessException e)
+            {
+                Logger.error("getFlowLineage get flow name failed, application name = " + application +
+                        " flowId " + Long.toString(flowId));
+                Logger.error("Exception = " + e.getMessage());
+            }
 
-        // now get all the values that dict_dataset has
-        List<Map<String, Object>> rows = null;
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("urn", node.urn);
-        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
-
-        rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
-
-        for (Map<String, Object> row : rows) {
-            JsonNode prop = Json.parse((String) row.get("properties"));
-            for (String p : propList) {
-                try {
-                    if (p.substring(0, 5) == "prop/" && prop != null) {
-                        node.setStringField(p, (String) prop.get(p.substring(5)).asText());
-                    } else {
-                        node.setStringField(p, (String) row.get(p));
+            Long flowExecId = 0L;
+            try
+            {
+                flowExecId = getJdbcTemplate().queryForObject(
+                        GET_LATEST_FLOW_EXEC_ID,
+                        new Object[] {appID, flowId},
+                        Long.class);
+            }
+            catch(EmptyResultDataAccessException e)
+            {
+                Logger.error("getFlowLineage get flow execution id failed, application name = " + application +
+                        " flowId " + Long.toString(flowExecId));
+                Logger.error("Exception = " + e.getMessage());
+            }
+            List<Map<String, Object>> rows = null;
+            rows = getJdbcTemplate().queryForList(
+                    GET_FLOW_DATA_LINEAGE,
+                    appID,
+                    flowExecId);
+            if (rows != null)
+            {
+                for (Map row : rows) {
+                    Long jobExecId = ((BigInteger)row.get("job_exec_id")).longValue();
+                    LineageNode node = new LineageNode();
+                    node.abstracted_path = (String)row.get("abstracted_object_name");
+                    node.source_target_type = (String)row.get("source_target_type");
+                    node.exec_id = jobExecId;
+                    Object recordCountObject = row.get("record_count");
+                    if (recordCountObject != null)
+                    {
+                        node.record_count = ((BigInteger)recordCountObject).longValue();
                     }
-                } catch (NoSuchFieldException fe) {
-                    Logger.error("field " + p + " is non exsistant");
-                } catch (IllegalAccessException e) {
-                    Logger.error("field " + p + " is  private");
+
+                    node.application_id = (int)row.get("app_id");
+                    node.cluster = (String)row.get("app_code");
+                    node.partition_type = (String)row.get("partition_type");
+                    node.operation = (String)row.get("operation");
+                    node.partition_start = (String)row.get("partition_start");
+                    node.partition_end = (String)row.get("partition_end");
+                    node.full_object_name = (String)row.get("full_object_name");
+                    node.job_start_time = row.get("start_time").toString();
+                    node.job_end_time = row.get("end_time").toString();
+                    node.storage_type = ((String)row.get("storage_type")).toLowerCase();
+                    node.node_type = "data";
+                    node._sort_list = new ArrayList<String>();
+                    node._sort_list.add("cluster");
+                    node._sort_list.add("abstracted_path");
+                    node._sort_list.add("storage_type");
+                    node._sort_list.add("partition_type");
+                    node._sort_list.add("partition_start");
+                    node._sort_list.add("partition_end");
+                    node._sort_list.add("source_target_type");
+
+                    // set node color
+                    node.color = getNodeColor(node.urn, node.node_type);
+
+                    List<LineageNode> nodeList = nodeHash.get(jobExecId);
+                    if (nodeList != null)
+                    {
+                        nodeList.add(node);
+                    }
+                    else
+                    {
+                        nodeList = new ArrayList<LineageNode>();
+                        nodeList.add(node);
+                        nodeHash.put(jobExecId, nodeList);
+                    }
+                }
+            }
+
+            List<LineageNode> jobNodes = new ArrayList<LineageNode>();
+            List<Map<String, Object>> jobRows = null;
+            jobRows = getJdbcTemplate().queryForList(
+                    GET_FLOW_JOB,
+                    appID,
+                    flowExecId,
+                    30);
+            int index = 0;
+            int edgeIndex = 0;
+            Map<Long, LineageNode> jobNodeMap = new HashMap<Long, LineageNode>();
+            List<Pair> addedEdges = new ArrayList<Pair>();
+            if (rows != null)
+            {
+                for (Map row : jobRows) {
+                    Long jobExecId = ((BigInteger)row.get("job_exec_id")).longValue();
+                    LineageNode node = new LineageNode();
+                    node._sort_list = new ArrayList<String>();
+                    node.node_type = "script";
+                    node.job_type = (String)row.get("job_type");
+                    node.cluster = (String)row.get("app_code");
+                    node.job_path = (String)row.get("job_path");
+                    node.job_name = (String)row.get("job_name");
+                    node.pre_jobs = (String)row.get("pre_jobs");
+                    node.post_jobs = (String)row.get("post_jobs");
+                    node.job_id = (Long)row.get("job_id");
+                    node.job_start_time = row.get("start_time").toString();
+                    node.job_end_time = row.get("end_time").toString();
+                    node.exec_id = jobExecId;
+                    node._sort_list.add("cluster");
+                    node._sort_list.add("job_path");
+                    node._sort_list.add("job_name");
+                    node._sort_list.add("job_type");
+                    node._sort_list.add("job_start_time");
+                    node._sort_list.add("job_end_time");
+
+                    // set node color
+                    node.color = getNodeColor(node.urn, node.node_type);
+
+                    Integer id = addedJobNodes.get(jobExecId);
+                    if (id == null)
+                    {
+                        node.id = index++;
+                        nodes.add(node);
+                        jobNodeMap.put(node.job_id, node);
+                        jobNodes.add(node);
+                        addedJobNodes.put(jobExecId, node.id);
+                    }
+                    else
+                    {
+                        node.id = id;
+                    }
+
+                    String sourceType = (String)row.get("source_target_type");
+                    if (sourceType.equalsIgnoreCase("target"))
+                    {
+                        List<LineageNode> sourceNodeList = nodeHash.get(jobExecId);
+                        if (sourceNodeList != null && sourceNodeList.size() > 0)
+                        {
+                            for(LineageNode sourceNode : sourceNodeList)
+                            {
+                                if (sourceNode.source_target_type.equalsIgnoreCase("source"))
+                                {
+                                    Pair matchedSourcePair = new ImmutablePair<>(
+                                            sourceNode.abstracted_path,
+                                            sourceNode.partition_end);
+                                    Integer nodeId = addedDataNodes.get(matchedSourcePair);
+                                    if (nodeId == null)
+                                    {
+                                        List<LineageNode> nodeList = partitionedNodeHash.get(sourceNode.abstracted_path);
+                                        if (StringUtils.isBlank(sourceNode.partition_end))
+                                        {
+                                            Boolean bFound = false;
+                                            if (nodeList != null)
+                                            {
+                                                for(LineageNode n : nodeList)
+                                                {
+                                                    if (StringUtils.isNotBlank(n.partition_end) &&
+                                                            n.partition_end.compareTo(sourceNode.job_start_time) < 0)
+                                                    {
+                                                        sourceNode.id = n.id;
+                                                        bFound = true;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            if (!bFound)
+                                            {
+                                                sourceNode.id = index++;
+                                                nodes.add(sourceNode);
+                                                Pair sourcePair = new ImmutablePair<>(
+                                                        sourceNode.abstracted_path,
+                                                        sourceNode.partition_end);
+                                                addedDataNodes.put(sourcePair, sourceNode.id);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (nodeList == null)
+                                            {
+                                                nodeList = new ArrayList<LineageNode>();
+                                            }
+                                            nodeList.add(sourceNode);
+                                            partitionedNodeHash.put(sourceNode.abstracted_path, nodeList);
+                                            sourceNode.id = index++;
+                                            nodes.add(sourceNode);
+                                            Pair sourcePair = new ImmutablePair<>(
+                                                    sourceNode.abstracted_path,
+                                                    sourceNode.partition_end);
+                                            addedDataNodes.put(sourcePair, sourceNode.id);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        sourceNode.id = nodeId;
+                                    }
+                                    LineageEdge edge = new LineageEdge();
+                                    edge.id = edgeIndex++;
+                                    edge.source = sourceNode.id;
+                                    edge.target = node.id;
+                                    if (StringUtils.isNotBlank(sourceNode.operation))
+                                    {
+                                        edge.label = sourceNode.operation;
+                                    }
+                                    else
+                                    {
+                                        edge.label = "load";
+                                    }
+                                    edge.chain = "data";
+
+                                    setEdgeStyle(edge, sourceNode, node);
+
+                                    edges.add(edge);
+                                }
+                            }
+                        }
+                    }
+                    else if (sourceType.equalsIgnoreCase("source"))
+                    {
+
+                        List<LineageNode> targetNodeList = nodeHash.get(jobExecId);
+                        if (targetNodeList != null && targetNodeList.size() > 0)
+                        {
+                            for(LineageNode targetNode : targetNodeList)
+                            {
+                                if (targetNode.source_target_type.equalsIgnoreCase("target"))
+                                {
+                                    Pair matchedTargetPair = new ImmutablePair<>(
+                                            targetNode.abstracted_path,
+                                            targetNode.partition_end);
+                                    Integer nodeId = addedDataNodes.get(matchedTargetPair);
+                                    if (nodeId == null)
+                                    {
+                                        List<LineageNode> nodeList = partitionedNodeHash.get(targetNode.abstracted_path);
+                                        if (StringUtils.isBlank(targetNode.partition_end))
+                                        {
+                                            Boolean bFound = false;
+                                            if (nodeList != null)
+                                            {
+                                                for(LineageNode n : nodeList)
+                                                {
+                                                    if (StringUtils.isNotBlank(n.partition_end) &&
+                                                            n.partition_end.compareTo(targetNode.job_start_time) < 0)
+                                                    {
+                                                        targetNode.id = n.id;
+                                                        bFound = true;
+                                                        break;
+                                                    }
+                                                }
+                                            }
+                                            if (!bFound)
+                                            {
+                                                targetNode.id = index++;
+                                                nodes.add(targetNode);
+                                                Pair targetPair = new ImmutablePair<>(
+                                                        targetNode.abstracted_path,
+                                                        targetNode.partition_end);
+                                                addedDataNodes.put(targetPair, targetNode.id);
+                                            }
+                                        }
+                                        else
+                                        {
+                                            if (nodeList == null)
+                                            {
+                                                nodeList = new ArrayList<LineageNode>();
+                                            }
+                                            nodeList.add(targetNode);
+                                            partitionedNodeHash.put(targetNode.abstracted_path, nodeList);
+                                            targetNode.id = index++;
+                                            nodes.add(targetNode);
+                                            Pair targetPair = new ImmutablePair<>(
+                                                    targetNode.abstracted_path,
+                                                    targetNode.partition_end);
+                                            addedDataNodes.put(targetPair, targetNode.id);
+                                        }
+                                    }
+                                    else
+                                    {
+                                        targetNode.id = nodeId;
+                                    }
+                                    LineageEdge edge = new LineageEdge();
+                                    edge.id = edgeIndex++;
+                                    edge.source = node.id;
+                                    edge.target = targetNode.id;
+                                    if (StringUtils.isNotBlank(targetNode.operation))
+                                    {
+                                        edge.label = targetNode.operation;
+                                    }
+                                    else
+                                    {
+                                        edge.label = "load";
+                                    }
+                                    edge.chain = "data";
+
+                                    setEdgeStyle(edge, node, targetNode);
+
+                                    edges.add(edge);
+                                }
+                            }
+                        }
+                    }
+                }
+                for (LineageNode node : jobNodes)
+                {
+                    Long jobId = node.job_id;
+                    if (StringUtils.isNotBlank(node.pre_jobs))
+                    {
+                        String [] prevJobIds = node.pre_jobs.split(",");
+                        if (prevJobIds != null)
+                        {
+                            for(String jobIdString: prevJobIds)
+                            {
+                                if(StringUtils.isNotBlank(jobIdString))
+                                {
+                                    Long id = Long.parseLong(jobIdString);
+                                    LineageNode sourceNode = jobNodeMap.get(id);
+                                    if (sourceNode != null)
+                                    {
+                                        Pair pair = new ImmutablePair<>(sourceNode.id, node.id);
+                                        if (!addedEdges.contains(pair))
+                                        {
+                                            LineageEdge edge = new LineageEdge();
+                                            edge.id = edgeIndex++;
+                                            edge.source = sourceNode.id;
+                                            edge.target = node.id;
+                                            edge.label = "";
+                                            edge.type = "job";
+
+                                            setEdgeStyle(edge, sourceNode, node);
+
+                                            edges.add(edge);
+                                            addedEdges.add(pair);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
+
+                    if (StringUtils.isNotBlank(node.post_jobs))
+                    {
+                        String [] postJobIds = node.post_jobs.split(",");
+                        if (postJobIds != null)
+                        {
+                            for(String jobIdString: postJobIds)
+                            {
+                                if(StringUtils.isNotBlank(jobIdString))
+                                {
+                                    Long id = Long.parseLong(jobIdString);
+                                    LineageNode targetNode = jobNodeMap.get(id);
+                                    if (targetNode != null)
+                                    {
+                                        Pair pair = new ImmutablePair<>(node.id, targetNode.id);
+                                        if (!addedEdges.contains(pair))
+                                        {
+                                            LineageEdge edge = new LineageEdge();
+                                            edge.id = edgeIndex++;
+                                            edge.source = node.id;
+                                            edge.target = targetNode.id;
+                                            edge.label = "";
+                                            edge.type = "job";
+
+                                            setEdgeStyle(edge, node, targetNode);
+
+                                            edges.add(edge);
+                                            addedEdges.add(pair);
+                                        }
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             }
         }
-
-        String sortsattr = getProp("prop.sortlist." + getPrefix(node.urn));
-        if (sortsattr == "default") {
-            Logger.info("no sortlist for " + getPrefix(node.urn));
-            sortsattr = getProp("prop.sortlist." + node.node_type);
-            if (sortsattr == "default") {
-                Logger.info("no sortlist for " + node.node_type);
-                return false;
-            }
-        }
-        List<String> sortList = Arrays.asList(sortsattr.split(","));
-        Logger.debug("sortList: " + sortList);
-        for (String sl : sortList) {
-            node._sort_list.add(sl);
-        }
-        return true;
-    }
-
-    // assigns attributes to ImpactDataset instance
-    private static ImpactDataset assignImpactDataset(String idurn) {
-        int level = Integer.parseInt(idurn.substring(0, idurn.indexOf("****")));
-        String urn = idurn.substring(idurn.indexOf("****") + 4);
-        ImpactDataset impD = new ImpactDataset();
-
-        Map<String, Object> row = null;
-        MapSqlParameterSource parameters = new MapSqlParameterSource();
-        parameters.addValue("urn", urn);
-        NamedParameterJdbcTemplate namedParameterJdbcTemplate = new NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
-
-        try {
-            row = namedParameterJdbcTemplate.queryForMap(GET_DATA_ATTR, parameters);
-        } catch (IncorrectResultSizeDataAccessException irsdae) {
-            Logger.error("Incorrect result size ", irsdae);
-        } catch (DataAccessException dae) {
-            Logger.error("SQL query failed ", dae);
-        }
-
-        impD.urn = urn;
-        impD.level = level;
-        impD.name = (String) row.get("name");
-        impD.id = (Long) row.get("id");
-        impD.datasetUrl = "#/datasets/" + impD.id;
-        JsonNode prop = Json.parse((String) row.get("properties"));
-        if ((prop.get("valid").asText()) == "true") {
-            impD.isValidDataset = true;
-        } else {
-            impD.isValidDataset = false;
-        }
-        return impD;
-    }
-
-    public static ObjectNode getFlowLineage(String application, String project, Long flowId) {
-        ObjectNode resultNode = Json.newObject();
+        resultNode.set("nodes", Json.toJson(nodes));
+        resultNode.set("links", Json.toJson(edges));
+        resultNode.put("flowName", flowName);
         return resultNode;
     }
 
-    // more or less gets all children which are datasets
-    private static void getImpactDatasets(List<String> searchUrnList, List<ImpactDataset> impactDatasets) {
+    public static void getImpactDatasets(
+            List<String> searchUrnList,
+            int level,
+            List<ImpactDataset> impactDatasets)
+    {
         if (searchUrnList != null && searchUrnList.size() > 0) {
-            if (impactDatasets == null) {
-                impactDatasets = new ArrayList<>();
+
+            if (impactDatasets == null)
+            {
+                impactDatasets = new ArrayList<ImpactDataset>();
             }
 
-            int level = 0;
-            Set<String> impactedUrns = new HashSet<>();
-            List<String> nextSearchUrnList = new ArrayList<>();
+            List<String> pathList = new ArrayList<String>();
+            List<String> nextSearchList = new ArrayList<String>();
 
-            while (searchUrnList.size() > 0) {
-                for (String surn : searchUrnList) {
-                    nextSearchUrnList.addAll(getChildren(surn));
-
-                    Logger.info(surn + " is marked as " + getNodeType(surn));
-                    if (getNodeType(surn).equals("data")) {
-                        Logger.debug(surn + " is marked as data");
-                        impactedUrns.add(level + "****" + surn); // the astricks are used to seperate the encoded level for easier decoding
+            for (String urn : searchUrnList)
+            {
+                LineagePathInfo pathInfo = Lineage.convertFromURN(urn);
+                if (pathInfo != null && StringUtils.isNotBlank(pathInfo.filePath))
+                {
+                    if (!pathList.contains(pathInfo.filePath))
+                    {
+                        pathList.add(pathInfo.filePath);
                     }
                 }
-                searchUrnList = new ArrayList<>(nextSearchUrnList);
-                nextSearchUrnList = new ArrayList<>();
-                level++;
             }
 
-            for (String idurn: impactedUrns) {
-                impactDatasets.add(assignImpactDataset(idurn));
+            if (pathList != null && pathList.size() > 0)
+            {
+                Map<String, List> param = Collections.singletonMap("pathlist", pathList);
+                NamedParameterJdbcTemplate namedParameterJdbcTemplate = new
+                        NamedParameterJdbcTemplate(getJdbcTemplate().getDataSource());
+                List<ImpactDataset> impactDatasetList = namedParameterJdbcTemplate.query(
+                        GET_ONE_LEVEL_IMPACT_DATABASES,
+                        param,
+                        new ImpactDatasetRowMapper());
+
+                if (impactDatasetList != null) {
+                    for (ImpactDataset dataset : impactDatasetList) {
+                        dataset.level = level;
+                        if (impactDatasets.stream().filter(o -> o.urn.equals(dataset.urn)).findFirst().isPresent())
+                        {
+                            continue;
+                        }
+                        impactDatasets.add(dataset);
+                        nextSearchList.add(dataset.urn);
+                    }
+                }
+            }
+
+            if (nextSearchList.size() > 0)
+            {
+                getImpactDatasets(nextSearchList, level + 1, impactDatasets);
             }
         }
     }
 
-    // essentially a wrapper for getImpactDatasets
-    public static List<ImpactDataset> getImpactDatasetsByUrn(String urn) {
+    public static List<ImpactDataset> getImpactDatasetsByUrn(String urn)
+    {
         List<ImpactDataset> impactDatasetList = new ArrayList<ImpactDataset>();
 
-         if (StringUtils.isNotBlank(urn))
-         {
-             List<String> searchUrnList = new ArrayList<String>();
-             searchUrnList.add(urn);
-             getImpactDatasets(searchUrnList, impactDatasetList);
-         }
+        if (StringUtils.isNotBlank(urn))
+        {
+            List<String> searchUrnList = new ArrayList<String>();
+            searchUrnList.add(urn);
+            getImpactDatasets(searchUrnList, 1, impactDatasetList);
+        }
 
         return impactDatasetList;
-
     }
+
 }
