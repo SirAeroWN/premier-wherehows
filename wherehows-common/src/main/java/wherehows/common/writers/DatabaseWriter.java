@@ -15,6 +15,8 @@ package wherehows.common.writers;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Map.Entry;
+import java.util.Map;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +61,24 @@ public class DatabaseWriter extends Writer {
     try {
       this.jdbcTemplate.execute(sb.toString());
     } catch (DataAccessException e) {
-      logger.error("UPDATE statement have error : " + sb.toString() + e);
+      logger.error("UPDATE statement have error : " + sb.toString(), e);
+    }
+  }
+
+  // if parameter is a string, needs to be passed as 'val' including the quotes
+  public synchronized void remove(Map<String, String> params) {
+    if (params != null && params.size() > 0) {
+      StringBuilder sb = new StringBuilder();
+      sb.append("DELETE FROM " + this.tableName + " WHERE ");
+      for (Map.Entry<String, String> param : params.entrySet()) {
+        sb.append(" " + param.getKey() + " = " + param.getValue() + " AND");
+      }
+      try {
+        System.out.println("DELETE statement is: " + sb.substring(0, sb.length() - 4));
+        this.jdbcTemplate.execute(sb.substring(0, sb.length() - 4));
+      } catch (DataAccessException e) {
+        logger.error("DELETE statement has error : " + sb.toString() + e);
+      }
     }
   }
 
