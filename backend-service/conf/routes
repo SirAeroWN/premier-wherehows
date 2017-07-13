@@ -54,6 +54,9 @@ PUT         /dataset/valid                controllers.DatasetController.setValid
 # get common parents for two urns
 GET         /dataset/common/parents       controllers.DatasetController.getCommonParents()
 
+# remove a dataset
+PUT         /dataset/remove               controllers.DatasetController.removeDataset()
+
 
 # get/post/put display property values
 GET         /property/assigns/:name       controllers.PropertyController.getAssignProp(name: String)
@@ -103,6 +106,9 @@ GET         /property/edge/label/:name       controllers.PropertyController.getE
 POST        /property/edge/label             controllers.PropertyController.addEdgeLabel()
 
 PUT         /property/edge/label             controllers.PropertyController.updateEdgeLabel()
+
+# remove a property
+PUT         /property/remove                controllers.PropertyController.removeProperty()
 
 
 # Insert a new dataset
