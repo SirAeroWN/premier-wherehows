@@ -799,15 +799,26 @@ var g_downLevel = 1;
                 }
                 else {
                     shape = "ellipse";
-                    if (data.nodes[i]["name"])
-                    {
-                        schema_type = data.nodes[i]["name"];
-                        name = data.nodes[i]["name"];
-                    }
-                    else
-                    {
-                        schema_type = "default";
-                        name = data.nodes[i]["urn"];
+                    if (data.diet == 'true') {
+                        if (data.nodes[i]["name"]) {
+                            schema_type = data.nodes[i]["name"];
+                            name = data.nodes[i]["name"];
+                        }
+                        else {
+                            schema_type = "default";
+                            name = data.nodes[i]["urn"];
+                        }
+                    } else {
+                        if (data.nodes[i]["job_type"])
+                        {
+                            schema_type = data.nodes[i]["job_type"];
+                            name = data.nodes[i]["job_type"];
+                        }
+                        else
+                        {
+                            schema_type = "sql";
+                            name = "sql";
+                        }
                     }
                 }
 

@@ -28,11 +28,11 @@ import org.springframework.transaction.support.TransactionCallback;
 import org.springframework.transaction.support.TransactionTemplate;
 import play.Logger;
 import play.Play;
-import play.libs.F;
+import play.libs.F.Promise;
 import play.libs.Json;
+import play.libs.ws.*;
 import play.cache.Cache;
 import models.*;
-import play.libs.WS;
 
 public class SearchDAO extends AbstractMySQLOpenSourceDAO
 {
@@ -147,15 +147,14 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 			"ORDER BY 2 LIMIT ?, ?;";
 
 	public final static String SEARCH_AUTOCOMPLETE_LIST = "searchSource";
-
-	public final static String GET_METRIC_AUTO_COMPLETE_LIST = "SELECT DISTINCT CASE " +
-			"WHEN parent_path is null or parent_path = '' THEN field_name " +
-			"ELSE CONCAT_WS('.', parent_path,  field_name) END as full_name FROM dict_field_detail";
+	public final static String SEARCH_AUTOCOMPLETE_LIST_DATASET = "searchSourceDataset";
+	public final static String SEARCH_AUTOCOMPLETE_LIST_METRIC = "searchSourceMetric";
+	public final static String SEARCH_AUTOCOMPLETE_LIST_FLOW = "searchSourceFlow";
 
 	public final static String GET_DATASET_AUTO_COMPLETE_LIST = "SELECT DISTINCT name FROM dict_dataset";
+	public final static String GET_METRIC_AUTO_COMPLETE_LIST = "SELECT DISTINCT metric_name FROM dict_business_metric";
 
 	public final static String GET_FLOW_AUTO_COMPLETE_LIST = "SELECT DISTINCT flow_name FROM flow";
-
 	public final static String GET_JOB_AUTO_COMPLETE_LIST = "SELECT DISTINCT job_name FROM flow_job";
 
 	public static List<String> getAutoCompleteList()
@@ -174,8 +173,146 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 			Cache.set(SEARCH_AUTOCOMPLETE_LIST, cachedAutoCompleteList, 60*60);
 		}
 
-
 		return cachedAutoCompleteList;
+	}
+
+	public static List<String> getAutoCompleteListForDataset()
+	{
+		List<String> cachedAutoCompleteListForDataset = (List<String>)Cache.get(SEARCH_AUTOCOMPLETE_LIST_DATASET);
+		if (cachedAutoCompleteListForDataset == null || cachedAutoCompleteListForDataset.size() == 0)
+		{
+			List<String> datasetList = getJdbcTemplate().queryForList(GET_DATASET_AUTO_COMPLETE_LIST, String.class);
+			cachedAutoCompleteListForDataset = datasetList.stream().collect(Collectors.toList());
+			Collections.sort(cachedAutoCompleteListForDataset);
+			Cache.set(SEARCH_AUTOCOMPLETE_LIST_DATASET, cachedAutoCompleteListForDataset, 60*60);
+		}
+
+		return cachedAutoCompleteListForDataset;
+	}
+
+	public static List<String> getAutoCompleteListForMetric()
+	{
+		List<String> cachedAutoCompleteListForMetric = (List<String>)Cache.get(SEARCH_AUTOCOMPLETE_LIST_METRIC);
+		if (cachedAutoCompleteListForMetric == null || cachedAutoCompleteListForMetric.size() == 0)
+		{
+			List<String> metricList = getJdbcTemplate().queryForList(GET_METRIC_AUTO_COMPLETE_LIST, String.class);
+			cachedAutoCompleteListForMetric = metricList.stream().collect(Collectors.toList());
+			Collections.sort(cachedAutoCompleteListForMetric);
+			Cache.set(SEARCH_AUTOCOMPLETE_LIST_METRIC, cachedAutoCompleteListForMetric, 60*60);
+		}
+
+		return cachedAutoCompleteListForMetric;
+	}
+
+	public static List<String> getAutoCompleteListForFlow()
+	{
+		List<String> cachedAutoCompleteListForFlow = (List<String>)Cache.get(SEARCH_AUTOCOMPLETE_LIST_FLOW);
+		if (cachedAutoCompleteListForFlow == null || cachedAutoCompleteListForFlow.size() == 0)
+		{
+			List<String> flowList = getJdbcTemplate().queryForList(GET_FLOW_AUTO_COMPLETE_LIST, String.class);
+			List<String> jobList = getJdbcTemplate().queryForList(GET_JOB_AUTO_COMPLETE_LIST, String.class);
+			cachedAutoCompleteListForFlow =
+							Stream.concat(flowList.stream(), jobList.stream()).collect(Collectors.toList());
+			Collections.sort(cachedAutoCompleteListForFlow);
+			Cache.set(SEARCH_AUTOCOMPLETE_LIST_FLOW, cachedAutoCompleteListForFlow, 60*60);
+		}
+
+		return cachedAutoCompleteListForFlow;
+	}
+
+	public static List<String> getSuggestionList(String category, String searchKeyword)
+	{
+		List<String> SuggestionList = new ArrayList<String>();
+		String elasticSearchType = "dataset";
+		String elasticSearchTypeURLKey = "elasticsearch.dataset.url";
+		String fieldName = "name";
+
+		JsonNode responseNode = null;
+		ObjectNode keywordNode = null;
+
+		try
+		{
+			String lCategory = category.toLowerCase();
+			Logger.info("lCategory is " + category);
+
+			switch (lCategory) {
+				case "dataset":
+					elasticSearchType = "dataset";
+					elasticSearchTypeURLKey = "elasticsearch.dataset.url";
+					fieldName = "name";
+					break;
+				case "metric":
+					elasticSearchType = "metric";
+					elasticSearchTypeURLKey = "elasticsearch.metric.url";
+					fieldName = "metric_name";
+					break;
+				case "flow":
+					elasticSearchType = "flow";
+					elasticSearchTypeURLKey = "elasticsearch.flow.url";
+					fieldName = "flow_name";
+					break;
+				default:
+					break;
+			}
+
+			keywordNode = utils.Search.generateElasticSearchPhraseSuggesterQuery(elasticSearchType, fieldName, searchKeyword);
+		}
+		catch(Exception e)
+		{
+			Logger.error("Elastic search phrase suggester error. Error message :" + e.getMessage());
+		}
+
+		Logger.info("The suggest query sent to Elastic Search is: " + keywordNode.toString());
+
+		Promise<WSResponse> responsePromise = WS.url(Play.application().configuration().getString(
+				elasticSearchTypeURLKey)).post(keywordNode);
+		responseNode = responsePromise.get(1000).asJson();
+
+		// Logger.info("responseNode for getSuggestionList is " + responseNode.toString());
+
+		if (responseNode != null && responseNode.isContainerNode() && responseNode.has("hits"))
+		{
+			JsonNode suggestNode = responseNode.get("suggest");
+			Logger.info("suggestNode is " + suggestNode.toString());
+			if (suggestNode != null && suggestNode.has("simple_phrase"))
+			{
+				JsonNode simplePhraseNode = suggestNode.get("simple_phrase");
+
+				if (simplePhraseNode != null && simplePhraseNode.isArray())
+				{
+					Iterator<JsonNode> arrayIterator = simplePhraseNode.elements();
+					if (arrayIterator != null)
+					{
+						while (arrayIterator.hasNext())
+						{
+							JsonNode node = arrayIterator.next();
+							if (node.isContainerNode() && node.has("options"))
+							{
+								JsonNode optionsNode = node.get("options");
+								if (optionsNode != null && optionsNode.isArray())
+								{
+									Iterator<JsonNode> arrayIteratorOptions = optionsNode.elements();
+									if (arrayIteratorOptions != null)
+									{
+										while (arrayIteratorOptions.hasNext())
+										{
+											JsonNode textNode = arrayIteratorOptions.next();
+											if (textNode != null && textNode.has("text"))
+											{
+												String oneSuggestion = textNode.get("text").asText();
+												Logger.info("oneSuggestion is " + oneSuggestion);
+												SuggestionList.add(oneSuggestion);
+											}
+										}
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+		return SuggestionList;
 	}
 
 	public static JsonNode elasticSearchDatasetByKeyword(
@@ -202,15 +339,35 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 
 		if (keywordNode != null)
 		{
-			queryNode.put("query", keywordNode);
-			F.Promise < WS.Response> responsePromise = WS.url(Play.application().configuration().getString(
+			ObjectNode funcScoreNodes = Json.newObject();
+
+			ObjectNode fieldValueFactorNode = Json.newObject();
+			fieldValueFactorNode.put("field","static_boosting_score");
+			fieldValueFactorNode.put("factor",1);
+			fieldValueFactorNode.put("modifier","square");
+			fieldValueFactorNode.put("missing",1);
+
+			funcScoreNodes.put("query", keywordNode);
+			funcScoreNodes.put("field_value_factor",fieldValueFactorNode);
+
+			ObjectNode funcScoreNodesWrapper = Json.newObject();
+			funcScoreNodesWrapper.put("function_score",funcScoreNodes);
+
+			queryNode.put("query",funcScoreNodesWrapper);
+
+			Logger.info(" === elasticSearchDatasetByKeyword === The query sent to Elastic Search is: " + queryNode.toString());
+
+			Promise<WSResponse> responsePromise = WS.url(Play.application().configuration().getString(
 					SearchDAO.ELASTICSEARCH_DATASET_URL_KEY)).post(queryNode);
-			responseNode = responsePromise.get().asJson();
+			responseNode = responsePromise.get(1000).asJson();
+
+			// Logger.debug("The responseNode from Elastic Search is: " + responseNode.toString());
+
 		}
 
 		ObjectNode resultNode = Json.newObject();
 		Long count = 0L;
-		List<Dataset> pagedDatasets = new ArrayList<Dataset>();
+		List<Dataset> pagedDatasets = new ArrayList<>();
 		resultNode.put("page", page);
 		resultNode.put("category", category);
 		resultNode.put("source", source);
@@ -303,15 +460,18 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 
 		if (keywordNode != null)
 		{
-			queryNode.put("query", keywordNode);
-			F.Promise < WS.Response> responsePromise = WS.url(Play.application().configuration().getString(
+			queryNode.set("query", keywordNode);
+
+			Logger.info(" === elasticSearchMetricByKeyword === The query sent to Elastic Search is: " + queryNode.toString());
+
+			Promise<WSResponse> responsePromise = WS.url(Play.application().configuration().getString(
 					SearchDAO.ELASTICSEARCH_METRIC_URL_KEY)).post(queryNode);
-			responseNode = responsePromise.get().asJson();
+			responseNode = responsePromise.get(1000).asJson();
 		}
 
 		ObjectNode resultNode = Json.newObject();
 		Long count = 0L;
-		List<Metric> pagedMetrics = new ArrayList<Metric>();
+		List<Metric> pagedMetrics = new ArrayList<>();
 		resultNode.put("page", page);
 		resultNode.put("category", category);
 		resultNode.put("isMetrics", true);
@@ -413,15 +573,18 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 
 		if (keywordNode != null)
 		{
-			queryNode.put("query", keywordNode);
-			F.Promise < WS.Response> responsePromise = WS.url(Play.application().configuration().getString(
+			queryNode.set("query", keywordNode);
+
+			Logger.info(" === elasticSearchFlowByKeyword === The query sent to Elastic Search is: " + queryNode.toString());
+
+			Promise<WSResponse> responsePromise = WS.url(Play.application().configuration().getString(
 					SearchDAO.ELASTICSEARCH_FLOW_URL_KEY)).post(queryNode);
-			responseNode = responsePromise.get().asJson();
+			responseNode = responsePromise.get(1000).asJson();
 		}
 
 		ObjectNode resultNode = Json.newObject();
 		Long count = 0L;
-		List<FlowJob> pagedFlowJobs = new ArrayList<FlowJob>();
+		List<FlowJob> pagedFlowJobs = new ArrayList<>();
 		resultNode.put("page", page);
 		resultNode.put("category", category);
 		resultNode.put("isFlowJob", true);

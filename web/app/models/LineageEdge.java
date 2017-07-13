@@ -21,6 +21,7 @@ public class LineageEdge {
     public String label;
     public String chain;
     public String type;
-    public String color;
+
+    // adding for flexibility in visualization
     public String style;
 }

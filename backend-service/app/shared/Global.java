@@ -1,4 +1,4 @@
-package shared; /**
+/**
  * Copyright 2015 LinkedIn Corp. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
@@ -11,6 +11,8 @@ package shared; /**
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  */
+package shared;
+
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -31,7 +33,7 @@ public class Global extends GlobalSettings {
   private static Set<Integer> currentRunningJob;
   @Override
   public void onStart(Application arg0) {
-    Logger.info("on start---===");
+    Logger.info("on start---===" + arg0);
 
     List<Integer> whiteListList = Play.application().configuration().getIntList("scheduler.jobid.whitelist", null);
     if (whiteListList != null) {

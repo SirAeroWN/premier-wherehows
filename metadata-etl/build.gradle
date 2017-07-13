@@ -1,5 +1,4 @@
 apply plugin: 'application'
-version = '1.0'
 mainClassName = 'metadata.etl.Launcher'
 
 
@@ -11,7 +10,7 @@ configurations {
   all*.exclude group: 'org.slf4j', module: 'slf4j-log4j12'
   all*.exclude group: 'log4j'
 
-  all*.resolutionStrategy { 
+  all*.resolutionStrategy {
       dependencySubstitution {
           substitute module('org.slf4j:slf4j-log4j12') with module('ch.qos.logback:logback-classic:1.1.7')
           //prefer 'log4j-over-slf4j' over 'log4j'
@@ -34,8 +33,10 @@ dependencies {
   compile externalDependency.slf4j_api
   compile externalDependency.slf4j_log4j
   compile externalDependency.hive_exec
+  compile externalDependency.hadoop_hdfs
   compile externalDependency.jython
   compile externalDependency.mysql
+  compile externalDependency.htrace
   compile files("extralibs/mysql-connector-java-5.1.*.jar") // externalDependency.mysql
   compile files("extralibs/jython-standalone-2.7.0.jar") // externalDependency.jython
   compile fileTree(dir: 'extralibs', include: ['*.jar']) // externalDependency.oracle/teradata/gsp

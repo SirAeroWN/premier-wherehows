@@ -14,9 +14,6 @@
 package models;
 
 import java.util.List;
-import play.Logger;
-import play.Play;
-import java.lang.reflect.Field;
 
 public class LineageNode {
 
@@ -53,76 +50,6 @@ public class LineageNode {
     public String pre_jobs;
     public String post_jobs;
 
-    public Boolean isTarget;
-
-    // stuff added to extend datasets
-    public String name;
-    public String properties;
-    public String schema;
-    public String source;
-    public String dataset_type;
-    public String source_created_time; // this is the time it was created by the job/app that created it
-    public String source_modified_time;
-    public String created_time; // this is the time it was created in WhereHows
-    public String modified_time;
-
-    // stuff added for databases
-    public int db_id;
-    public String db_code;
-    public String primary_dataset_type;
-    public String description;
-    public String is_logical;
-    public String deployment_tier;
-    public String data_center;
-    public int associated_dc_num;
-    public int cluster_size;
-    public String extra_deployment_tag1;
-    public String extra_deployment_tag2;
-    public String extra_deployment_tag3;
-    public String replication_role;
-    public String jdbc_url;
-
-    // stuff added for applications
-    public int app_id;
-    public String app_code;
-    public int tech_matrix_id;
-    public String doc_url;
-    public int parent_app_id;
-    public String app_status;
-    public String last_modified;
-    public String uri_type;
-    public String uri;
-    public String lifecycle_layer_id;
-    public String short_connection_string;
-
-    // make coloring more flexible
+    // adding for flexibility in visualization
     public String color;
-
-    // set attribute by given name
-    public void setStringField(String fieldName, String value) throws NoSuchFieldException, IllegalAccessException {
-        if (fieldName != null && value != null) {
-            Field field = getClass().getDeclaredField(fieldName);
-            if (field.toString().toLowerCase().contains("string")) {
-                field.set(this, value);
-            } else {
-                Logger.error("field " + fieldName + " is not a string");
-                throw new NoSuchFieldException();
-            }
-        } else {
-            Logger.error("field name or value is null");
-        }
-    }
-
-    public void setIntField(String fieldName, int value) throws NoSuchFieldException, IllegalAccessException {
-        if (fieldName != null) {
-            Field field = getClass().getDeclaredField(fieldName);
-            if (field.toString().toLowerCase().contains("int")) {
-                field.setInt(this, value);
-            } else {
-                Logger.error("field " + fieldName + " is not an int");
-                throw new NoSuchFieldException();
-            }
-        }
-    }
-
 }
