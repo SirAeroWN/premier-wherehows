@@ -465,4 +465,23 @@ public class PropertyController extends Controller {
 
         return ok(resultJson);
     }
+
+
+
+    // remove a preference
+    @BodyParser.Of(BodyParser.Json.class)
+    public static Result removeProperty() {
+        JsonNode prop = request().body().asJson();
+        ObjectNode resultJson = Json.newObject();
+        try {
+            PropertyDao.removeProperty(prop);
+            resultJson.put("return_code", 200);
+            resultJson.put("message", "property removed");
+        } catch (Exception e) {
+            Logger.error("exception when trying to remove property:", e);
+            resultJson.put("return_code", 400);
+            resultJson.put("error_message", e.getMessage());
+        }
+        return ok(resultJson);
+    }
 }
