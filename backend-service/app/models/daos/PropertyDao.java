@@ -65,7 +65,7 @@ public class PropertyDao {
         return "default";
     }
 
-    // function for actuallu setting a preoperty/preference
+    // function for actuallu setting a property/preference
     private static void setProp(String propName, String propVal) {
         DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "wh_property");
         try {
@@ -80,6 +80,18 @@ public class PropertyDao {
             } catch (SQLException e) {
                 e.printStackTrace();
             }
+        }
+    }
+
+    // function for actually removing a  property/preference
+    private static void remProp(String propName) {
+        DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "wh_property");
+        try {
+            Map<String, String> params = new HashMap();
+            params.put("property_name", "'" + propName + "'");
+            dw.remove(params);
+        } catch (Exception e) {
+            Logger.error("Exeption trying to remove property " + propName + ": ", e);
         }
     }
 
@@ -308,5 +320,13 @@ public class PropertyDao {
         resultJson.put("property_name", name);
         resultJson.put("property_value", getProp(name));
         return resultJson;
+    }
+
+
+
+    // Function to remove a preference
+    public static void removeProperty(JsonNode prop) {
+        String name = prop.get("name").asText();
+        remProp(name);
     }
 }
