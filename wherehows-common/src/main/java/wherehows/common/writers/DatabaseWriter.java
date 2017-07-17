@@ -65,6 +65,20 @@ public class DatabaseWriter extends Writer {
     }
   }
 
+  // a generalized version of update
+  public synchronized void generalUpdate(String setValues, String selCol, String selVal) {
+
+    StringBuilder sb = new StringBuilder();
+    sb.append("UPDATE " + this.tableName + " SET " + setValues + " WHERE " + selCol + " = '" + selVal + "'");
+    //System.out.println(sb.toString());
+    try {
+      this.jdbcTemplate.execute(sb.toString());
+    } catch (DataAccessException e) {
+      //System.out.println(sb.toString() + e.getMessage());
+      logger.error("UPDATE statement have error : " + sb.toString(), e);
+    }
+  }
+
   // if parameter is a string, needs to be passed as 'val' including the quotes
   public synchronized void remove(Map<String, String> params) {
     if (params != null && params.size() > 0) {
@@ -109,8 +123,7 @@ public class DatabaseWriter extends Writer {
     return false;
   }
 
-  public synchronized boolean insert(String commaDelimitedNames)
-          throws SQLException {
+  public synchronized boolean insert(String commaDelimitedNames) throws SQLException, DataAccessException {
     if (records.size() == 0) {
       return false;
     }
@@ -125,13 +138,7 @@ public class DatabaseWriter extends Writer {
     String statement = sb.toString();
     logger.debug("In databaseWriter : " + statement);
 
-    try {
-      this.jdbcTemplate.execute(statement);
-    } catch (DataAccessException e) {
-      logger.error("This statement has an error : " + statement, e);
-      this.records.clear(); // need to recover the records.
-      return false;
-    }
+    this.jdbcTemplate.execute(statement);
     this.records.clear();
     return true;
   }
