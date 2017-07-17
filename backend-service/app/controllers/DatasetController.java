@@ -97,6 +97,7 @@ public class DatasetController extends Controller {
       DatasetDao.setDatasetRecord(dataset);
       resultJson.put("return_code", 200);
       resultJson.put("message", "Dataset inserted!");
+      Logger.info("dataset inserted");
     } catch (Exception e) {
       e.printStackTrace();
       resultJson.put("return_code", 404);

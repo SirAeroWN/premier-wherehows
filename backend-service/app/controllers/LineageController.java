@@ -180,6 +180,7 @@ public class LineageController extends Controller {
         LineageDaoLite.insertLineage(lineage);
         resultJson.put("return_code", 200);
         resultJson.put("message", "Lineage inserted!");
+        Logger.info("lineage inserted");
       } catch (IOException ioe) {
         Logger.error("caught exception", ioe);
         resultJson.put("return_code", 404);
