@@ -15,6 +15,8 @@ package wherehows.common.writers;
 
 import java.sql.SQLException;
 import java.util.Arrays;
+import java.util.Map.Entry;
+import java.util.Map;
 import javax.sql.DataSource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -59,7 +61,38 @@ public class DatabaseWriter extends Writer {
     try {
       this.jdbcTemplate.execute(sb.toString());
     } catch (DataAccessException e) {
-      logger.error("UPDATE statement have error : " + sb.toString() + e);
+      logger.error("UPDATE statement have error : " + sb.toString(), e);
+    }
+  }
+
+  // a generalized version of update
+  public synchronized void generalUpdate(String setValues, String selCol, String selVal) {
+
+    StringBuilder sb = new StringBuilder();
+    sb.append("UPDATE " + this.tableName + " SET " + setValues + " WHERE " + selCol + " = '" + selVal + "'");
+    //System.out.println(sb.toString());
+    try {
+      this.jdbcTemplate.execute(sb.toString());
+    } catch (DataAccessException e) {
+      //System.out.println(sb.toString() + e.getMessage());
+      logger.error("UPDATE statement have error : " + sb.toString(), e);
+    }
+  }
+
+  // if parameter is a string, needs to be passed as 'val' including the quotes
+  public synchronized void remove(Map<String, String> params) {
+    if (params != null && params.size() > 0) {
+      StringBuilder sb = new StringBuilder();
+      sb.append("DELETE FROM " + this.tableName + " WHERE ");
+      for (Map.Entry<String, String> param : params.entrySet()) {
+        sb.append(" " + param.getKey() + " = " + param.getValue() + " AND");
+      }
+      try {
+        System.out.println("DELETE statement is: " + sb.substring(0, sb.length() - 4));
+        this.jdbcTemplate.execute(sb.substring(0, sb.length() - 4));
+      } catch (DataAccessException e) {
+        logger.error("DELETE statement has error : " + sb.toString() + e);
+      }
     }
   }
 
@@ -90,8 +123,7 @@ public class DatabaseWriter extends Writer {
     return false;
   }
 
-  public synchronized boolean insert(String commaDelimitedNames)
-          throws SQLException {
+  public synchronized boolean insert(String commaDelimitedNames) throws SQLException, DataAccessException {
     if (records.size() == 0) {
       return false;
     }
@@ -106,13 +138,7 @@ public class DatabaseWriter extends Writer {
     String statement = sb.toString();
     logger.debug("In databaseWriter : " + statement);
 
-    try {
-      this.jdbcTemplate.execute(statement);
-    } catch (DataAccessException e) {
-      logger.error("This statement has an error : " + statement, e);
-      this.records.clear(); // need to recover the records.
-      return false;
-    }
+    this.jdbcTemplate.execute(statement);
     this.records.clear();
     return true;
   }

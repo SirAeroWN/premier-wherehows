@@ -666,4 +666,17 @@ public class DatasetDao {
     return result;
   }
 
+  // function to remove a dataset
+  public static void removeDataset(JsonNode dataset) {
+    String urn = dataset.get("urn").asText();
+    DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "dict_dataset");
+    try {
+      Map<String, String> params = new HashMap();
+      params.put("urn", "'" + urn + "'");
+      dw.remove(params);
+    } catch (Exception e) {
+      Logger.error("Exeption trying to remove dataset with urn " + urn + ": ", e);
+    }
+  }
+
 }

@@ -35,15 +35,19 @@ public class Global extends GlobalSettings {
   public void onStart(Application arg0) {
     Logger.info("on start---===" + arg0);
 
-    List<Integer> whiteListList = Play.application().configuration().getIntList("scheduler.jobid.whitelist", null);
-    if (whiteListList != null) {
-      whiteList = new HashSet<>(whiteListList);
+    if (Play.application().configuration().getString("diet").equals("true")) {
+      Logger.info("running in diet mode");
     } else {
-      whiteList = null;
-    }
-    SchedulerUtil.start();
+      List<Integer> whiteListList = Play.application().configuration().getIntList("scheduler.jobid.whitelist", null);
+      if (whiteListList != null) {
+        whiteList = new HashSet<>(whiteListList);
+      } else {
+        whiteList = null;
+      }
+      SchedulerUtil.start();
 
-    currentRunningJob = new HashSet<>();
+      currentRunningJob = new HashSet<>();
+    }
   }
 
   public static Set<Integer> getWhiteList() {

@@ -97,6 +97,7 @@ public class DatasetController extends Controller {
       DatasetDao.setDatasetRecord(dataset);
       resultJson.put("return_code", 200);
       resultJson.put("message", "Dataset inserted!");
+      Logger.info("dataset inserted");
     } catch (Exception e) {
       e.printStackTrace();
       resultJson.put("return_code", 404);
@@ -394,4 +395,22 @@ public class DatasetController extends Controller {
     }
     return ok(resultJson);
   }
+
+  // remove a dataset by urn
+  @BodyParser.Of(BodyParser.Json.class)
+  public static Result removeDataset() {
+    JsonNode dataset = request().body().asJson();
+    ObjectNode resultJson = Json.newObject();
+    try {
+      DatasetDao.removeDataset(dataset);
+      resultJson.put("return_code", 200);
+      resultJson.put("message", "dataset removed");
+    } catch (Exception e) {
+      Logger.error("exception when trying to remove dataset:", e);
+      resultJson.put("return_code", 400);
+      resultJson.put("error_message", e.getMessage());
+    }
+    return ok(resultJson);
+  }
+
 }
