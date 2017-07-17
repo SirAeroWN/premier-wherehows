@@ -16,6 +16,7 @@ package models.daos;
 import com.fasterxml.jackson.databind.JsonNode;
 import java.io.IOException;
 import java.sql.SQLException;
+import org.springframework.dao.DataAccessException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -66,39 +67,31 @@ public class PropertyDao {
     }
 
     // function for actuallu setting a property/preference
-    private static void setProp(String propName, String propVal) {
+    private static void setProp(String propName, String propVal) throws IOException, SQLException, DataAccessException {
         DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "wh_property");
-        try {
-            PropertyRecord record = new PropertyRecord(propName, propVal, "N");
-            dw.append(record);
-            boolean temp = dw.insert("property_name, property_value, is_encrypted");
-        } catch (IOException | SQLException e) {
-            e.printStackTrace();
-        } finally {
-            try {
-                dw.close();
-            } catch (SQLException e) {
-                e.printStackTrace();
-            }
-        }
+        PropertyRecord record = new PropertyRecord(propName, propVal, "N");
+        dw.append(record);
+        boolean temp = dw.insert("property_name, property_value, is_encrypted");
+        dw.close();
     }
 
     // function for actually removing a  property/preference
-    private static void remProp(String propName) {
+    private static void remProp(String propName) throws IOException, SQLException, DataAccessException {
         DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "wh_property");
-        try {
-            Map<String, String> params = new HashMap();
-            params.put("property_name", "'" + propName + "'");
-            dw.remove(params);
-        } catch (Exception e) {
-            Logger.error("Exeption trying to remove property " + propName + ": ", e);
-        }
+        Map<String, String> params = new HashMap();
+        params.put("property_name", "'" + propName + "'");
+        dw.remove(params);
+    }
+
+    // function for updating property/preference
+    private static void chngProp(String propName, String propVal) throws IOException, SQLException, DataAccessException {
+        DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "wh_property");
+        dw.generalUpdate("property_value = '" + propVal + "'", "property_name", propName);
     }
 
 
-
     // Functions for the implimentation of setting, updating, and getting the properties field
-    public static void addAssignProp(JsonNode props) {
+    public static void addAssignProp(JsonNode props) throws IOException, SQLException, DataAccessException {
         String name = props.get("scheme").asText();
         JsonNode propNode = props.findPath("properties");
         String propString = "";
@@ -116,7 +109,7 @@ public class PropertyDao {
         setProp("prop." + name, propString);
     }
 
-    public static void updateAssignProp(JsonNode props) {
+    public static void updateAssignProp(JsonNode props) throws IOException, SQLException, DataAccessException {
         String name = props.get("scheme").asText();
         JsonNode propNode = props.findPath("properties");
         String propString = getProp("prop." + name) + ",";
@@ -131,7 +124,7 @@ public class PropertyDao {
             Logger.error("passed property neither a list or array");
             throw new IllegalArgumentException();
         }
-        setProp("prop." + name, propString);
+        chngProp("prop." + name, propString);
     }
 
     public static ObjectNode getAssignProp(String prop) {
@@ -149,7 +142,7 @@ public class PropertyDao {
 
 
     // Functions for the implimentation of setting, updating, and getting the tooltip list
-    public static void addSortListProp(JsonNode props) {
+    public static void addSortListProp(JsonNode props) throws IOException, SQLException, DataAccessException {
         String name = props.get("scheme").asText();
         JsonNode propNode = props.findPath("properties");
         String propString = "";
@@ -167,7 +160,7 @@ public class PropertyDao {
         setProp("prop.sortlist." + name, propString);
     }
 
-    public static void updateSortListProp(JsonNode props) {
+    public static void updateSortListProp(JsonNode props) throws IOException, SQLException, DataAccessException {
         String name = props.get("scheme").asText();
         JsonNode propNode = props.findPath("properties");
         String propString = getProp("prop.sortlist." + name) + ",";
@@ -182,7 +175,7 @@ public class PropertyDao {
             Logger.error("passed property neither a list or array");
             throw new IllegalArgumentException();
         }
-        setProp("prop.sortlist." + name, propString);
+        chngProp("prop.sortlist." + name, propString);
     }
 
     public static ObjectNode getSortListProp(String prop) {
@@ -200,14 +193,16 @@ public class PropertyDao {
 
 
     // Functions for the implimentation of setting, updating, and getting node colors
-    public static void addNodeColor(JsonNode prop) {
+    public static void addNodeColor(JsonNode prop) throws IOException, SQLException, DataAccessException {
         String name = "node.color." + prop.get("scheme").asText();
         String value = prop.get("color").asText();
         setProp(name, value);
     }
 
-    public static void updateNodeColor(JsonNode prop) {
-        addNodeColor(prop);
+    public static void updateNodeColor(JsonNode prop) throws IOException, SQLException, DataAccessException {
+        String name = "node.color." + prop.get("scheme").asText();
+        String value = prop.get("color").asText();
+        chngProp(name, value);
     }
 
     public static ObjectNode getNodeColor(String name) {
@@ -221,14 +216,16 @@ public class PropertyDao {
 
 
     // Functions for the implimentation of setting, updating, and getting node types
-    public static void addNodeType(JsonNode prop) {
+    public static void addNodeType(JsonNode prop) throws IOException, SQLException, DataAccessException {
         String name = "node.type." + prop.get("scheme").asText();
         String value = prop.get("type").asText();
         setProp(name, value);
     }
 
-    public static void updateNodeType(JsonNode prop) {
-        addNodeType(prop);
+    public static void updateNodeType(JsonNode prop) throws IOException, SQLException, DataAccessException {
+        String name = "node.type." + prop.get("scheme").asText();
+        String value = prop.get("type").asText();
+        chngProp(name, value);
     }
 
     public static ObjectNode getNodeType(String name) {
@@ -243,11 +240,11 @@ public class PropertyDao {
 
 
     // Edge color is not currently used, but may be in the future
-    public static void addEdgeColor(JsonNode prop) {
+    public static void addEdgeColor(JsonNode prop) throws IOException, SQLException, DataAccessException {
 
     }
 
-    public static void updateEdgeColor(JsonNode prop) {
+    public static void updateEdgeColor(JsonNode prop) throws IOException, SQLException, DataAccessException {
 
     }
 
@@ -262,13 +259,13 @@ public class PropertyDao {
 
 
     // Functions for the implimentation of setting, updating, and getting edge type
-    public static void addEdgeType(JsonNode prop) {
+    public static void addEdgeType(JsonNode prop) throws IOException, SQLException, DataAccessException {
         String name = "edge.type." + prop.get("scheme").asText();
         String value = prop.get("type").asText();
         setProp(name, value);
     }
 
-    public static void updateEdgeType(JsonNode prop) {
+    public static void updateEdgeType(JsonNode prop) throws IOException, SQLException, DataAccessException {
         addEdgeType(prop);
     }
 
@@ -283,14 +280,16 @@ public class PropertyDao {
 
 
     // Functions for the implimentation of setting, updating, and getting edge style
-    public static void addEdgeStyle(JsonNode prop) {
+    public static void addEdgeStyle(JsonNode prop) throws IOException, SQLException, DataAccessException {
         String name = "edge.style." + prop.get("scheme").asText();
         String value = prop.get("style").asText();
         setProp(name, value);
     }
 
-    public static void updateEdgeStyle(JsonNode prop) {
-        addEdgeStyle(prop);
+    public static void updateEdgeStyle(JsonNode prop) throws IOException, SQLException, DataAccessException {
+        String name = "edge.style." + prop.get("scheme").asText();
+        String value = prop.get("style").asText();
+        chngProp(name, value);
     }
 
     public static ObjectNode getEdgeStyle(String name) {
@@ -304,14 +303,16 @@ public class PropertyDao {
 
 
     // Functions for the implimentation of setting, updating, and getting edge labels
-    public static void addEdgeLabel(JsonNode prop) {
+    public static void addEdgeLabel(JsonNode prop) throws IOException, SQLException, DataAccessException {
         String name = "edge.label." + prop.get("scheme").asText();
         String value = prop.get("label").asText();
         setProp(name, value);
     }
 
-    public static void updateEdgeLabel(JsonNode prop) {
-        addEdgeLabel(prop);
+    public static void updateEdgeLabel(JsonNode prop) throws IOException, SQLException, DataAccessException {
+        String name = "edge.label." + prop.get("scheme").asText();
+        String value = prop.get("label").asText();
+        chngProp(name, value);
     }
 
     public static ObjectNode getEdgeLabel(String name) {
@@ -325,7 +326,7 @@ public class PropertyDao {
 
 
     // Function to remove a preference
-    public static void removeProperty(JsonNode prop) {
+    public static void removeProperty(JsonNode prop) throws IOException, SQLException, DataAccessException {
         String name = prop.get("name").asText();
         remProp(name);
     }
