@@ -53,45 +53,36 @@ CREATE TABLE `stg_dict_dataset` (
 
 -- dataset table
 CREATE TABLE `dict_dataset` (
-  `id`                          INT(11) UNSIGNED NOT NULL                                                                   AUTO_INCREMENT,
-  `name`                        VARCHAR(200) CHARACTER SET utf8                                                             NOT NULL,
-  `schema`                      MEDIUMTEXT CHARACTER SET utf8,
-  `schema_type`                 VARCHAR(50)                                                                                 DEFAULT 'JSON'
-  COMMENT 'JSON, Hive, DDL, XML, CSV',
-  `properties`                  TEXT CHARACTER SET utf8,
-  `fields`                      MEDIUMTEXT CHARACTER SET utf8,
-  `urn`                         VARCHAR(200) CHARACTER SET utf8                                                             NOT NULL,
-  `source`                      VARCHAR(50)                                                                                 NULL
-  COMMENT 'The original data source type (for dataset in data warehouse). Oracle, Kafka ...',
-  `location_prefix`             VARCHAR(200)                                                                                NULL,
-  `parent_name`                 VARCHAR(200)                                                                                NULL
-  COMMENT 'Schema Name for RDBMS, Group Name for Jobs/Projects/Tracking Datasets on HDFS ',
-  `storage_type`                ENUM('Table', 'View', 'Avro', 'ORC', 'RC', 'Sequence', 'Flat File', 'JSON', 'XML', 'Thrift', 'Parquet', 'Protobuff') NULL,
-  `ref_dataset_id`              INT(11) UNSIGNED                                                                            NULL
-  COMMENT 'Refer to Master/Main dataset for Views/ExternalTables',
-  `status_id`                   SMALLINT(6) UNSIGNED                                                                        NULL
-  COMMENT 'Reserve for dataset status',
-  `dataset_type`                VARCHAR(30)                                                                                 NULL
-  COMMENT 'hdfs, hive, kafka, teradata, mysql, sqlserver, file, nfs, pinot, salesforce, oracle, db2, netezza, cassandra, hbase, qfs, zfs',
-  `hive_serdes_class`           VARCHAR(300)                                                                                NULL,
-  `is_partitioned`              CHAR(1)                                                                                     NULL,
-  `partition_layout_pattern_id` SMALLINT(6)                                                                                 NULL,
-  `sample_partition_full_path`  VARCHAR(256)
-  COMMENT 'sample partition full path of the dataset',
-  `source_created_time`         INT UNSIGNED                                                                                NULL
-  COMMENT 'source created time of the flow',
-  `source_modified_time`        INT UNSIGNED                                                                                NULL
-  COMMENT 'latest source modified time of the flow',
-  `created_time`                INT UNSIGNED COMMENT 'wherehows created time',
-  `modified_time`               INT UNSIGNED COMMENT 'latest wherehows modified',
-  `wh_etl_exec_id`              BIGINT COMMENT 'wherehows etl execution id that modified this record',
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
+  `name` varchar(200) CHARACTER SET utf8 NOT NULL,
+  `schema` mediumtext CHARACTER SET utf8,
+  `schema_type` varchar(50) DEFAULT 'JSON' COMMENT 'JSON, Hive, DDL, XML, CSV',
+  `properties` text CHARACTER SET utf8,
+  `fields` mediumtext CHARACTER SET utf8,
+  `urn` varchar(200) CHARACTER SET utf8 NOT NULL,
+  `source` varchar(50) DEFAULT NULL COMMENT 'The original data source type (for dataset in data warehouse). Oracle, Kafka ...',
+  `location_prefix` varchar(200) DEFAULT NULL,
+  `parent_name` varchar(200) DEFAULT NULL COMMENT 'Schema Name for RDBMS, Group Name for Jobs/Projects/Tracking Datasets on HDFS ',
+  `storage_type` enum('data','app','db') DEFAULT NULL,
+  `ref_dataset_id` int(11) unsigned DEFAULT NULL COMMENT 'Refer to Master/Main dataset for Views/ExternalTables',
+  `status_id` smallint(6) unsigned DEFAULT NULL COMMENT 'Reserve for dataset status',
+  `dataset_type` varchar(30) DEFAULT NULL COMMENT 'hdfs, hive, kafka, teradata, mysql, sqlserver, file, nfs, pinot, salesforce, oracle, db2, netezza, cassandra, hbase, qfs, zfs',
+  `hive_serdes_class` varchar(300) DEFAULT NULL,
+  `is_partitioned` char(1) DEFAULT NULL,
+  `partition_layout_pattern_id` smallint(6) DEFAULT NULL,
+  `sample_partition_full_path` varchar(256) DEFAULT NULL COMMENT 'sample partition full path of the dataset',
+  `source_created_time` int(10) unsigned DEFAULT NULL COMMENT 'source created time of the flow',
+  `source_modified_time` int(10) unsigned DEFAULT NULL COMMENT 'latest source modified time of the flow',
+  `created_time` int(10) unsigned DEFAULT NULL COMMENT 'wherehows created time',
+  `modified_time` int(10) unsigned DEFAULT NULL COMMENT 'latest wherehows modified',
+  `wh_etl_exec_id` bigint(20) DEFAULT NULL COMMENT 'wherehows etl execution id that modified this record',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_dataset_urn` (`urn`),
-  FULLTEXT KEY `fti_datasets_all` (`name`, `schema`, `properties`, `urn`)
+  FULLTEXT KEY `fti_datasets_all` (`name`,`schema`,`properties`,`urn`)
 )
-  ENGINE = InnoDB
-  AUTO_INCREMENT = 0
-  DEFAULT CHARSET = latin1;
+  ENGINE=InnoDB
+  AUTO_INCREMENT=16
+  DEFAULT CHARSET=latin1;
 
 -- stagging table for sample data
 CREATE TABLE `stg_dict_dataset_sample` (
