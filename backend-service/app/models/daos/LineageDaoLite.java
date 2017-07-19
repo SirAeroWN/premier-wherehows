@@ -37,6 +37,7 @@ import wherehows.common.schemas.LineageRecordLite;
 import wherehows.common.utils.PartitionPatternMatcher;
 import wherehows.common.utils.PreparedStatementUtil;
 import wherehows.common.writers.DatabaseWriter;
+import wherehows.common.exceptions.IncompleteJsonException;
 
 
 /**
@@ -72,26 +73,36 @@ public class LineageDaoLite {
 
     // insert relationships between give nodes into family table
     // all parents in parents array are parents of every child in the children array
-    public static void insertLineage(JsonNode lineage) throws Exception, IOException, SQLException {
+    public static void insertLineage(JsonNode lineage) throws Exception, IOException, SQLException, IncompleteJsonException {
         List<LineageRecordLite> records = new ArrayList<LineageRecordLite>();
-        JsonNode parents = lineage.findPath("parent_urn");
-        JsonNode children = lineage.findPath("child_urn");
 
-        if (parents.isArray() && children.isArray()) {
-            for (JsonNode parent : parents) {
-                for (JsonNode child : children) {
-                    LineageRecordLite record = new LineageRecordLite(parent.textValue(), child.textValue());
-                    records.add(record);
+        // check that both parent_urn and child_urn are present, if not, then error out
+        if (lineage.has("parent_urn") && lineage.has("child_urn")) {
+            JsonNode parents = lineage.findPath("parent_urn");
+            JsonNode children = lineage.findPath("child_urn");
+
+            if (parents.isArray() && children.isArray()) {
+                for (JsonNode parent : parents) {
+                    for (JsonNode child : children) {
+                        LineageRecordLite record = new LineageRecordLite(parent.textValue(), child.textValue());
+                        records.add(record);
+                    }
                 }
             }
-        }
 
-        DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "family");
-        for (LineageRecordLite record : records) {
-            dw.append(record);
+            DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "family");
+            for (LineageRecordLite record : records) {
+                dw.append(record);
+            }
+            dw.insert("parent_urn, child_urn"); // overload to use slightly better version of insert function
+            dw.close();
+        } else if (lineage.has("parent_urn") && !lineage.has("child_urn")) {
+            throw new IncompleteJsonException("Missing `child_urn` field");
+        } else if (!lineage.has("parent_urn") && lineage.has("child_urn")) {
+            throw new IncompleteJsonException("Missing `parent_urn` field");
+        } else if (!lineage.has("parent_urn") && !lineage.has("child_urn")) {
+            throw new IncompleteJsonException("Missing `parent_urn` and `child_urn` fields");
         }
-        dw.insert("parent_urn, child_urn"); // overload to use slightly better version of insert function
-        dw.close();
     }
 
     public static void updateJobExecutionLineage(JsonNode root)
