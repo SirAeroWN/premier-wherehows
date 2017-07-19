@@ -20,7 +20,6 @@ import play.Application;
 import play.GlobalSettings;
 import play.Logger;
 import play.Play;
-import utils.SchedulerUtil;
 
 
 /**
@@ -37,16 +36,6 @@ public class Global extends GlobalSettings {
 
     if (Play.application().configuration().getString("diet").equals("true")) {
       Logger.info("running in diet mode");
-    } else {
-      List<Integer> whiteListList = Play.application().configuration().getIntList("scheduler.jobid.whitelist", null);
-      if (whiteListList != null) {
-        whiteList = new HashSet<>(whiteListList);
-      } else {
-        whiteList = null;
-      }
-      SchedulerUtil.start();
-
-      currentRunningJob = new HashSet<>();
     }
   }
 
