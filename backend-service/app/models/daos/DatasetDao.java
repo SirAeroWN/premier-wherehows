@@ -104,6 +104,7 @@ public class DatasetDao {
 
   public static final String GET_AT_TIME_MORPHEME = "AND source_modified_time = :time ";
 
+
   public static Map<String, Object> getDatasetById(int datasetId)
     throws SQLException {
     Map<String, Object> params = new HashMap<>();
@@ -124,6 +125,7 @@ public class DatasetDao {
     ObjectMapper om = new ObjectMapper();
     om.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
     DatasetRecord record = om.convertValue(dataset, DatasetRecord.class);
+
     if (record.getRefDatasetUrn() != null) {
       Map<String, Object> refDataset = getDatasetByUrn(record.getRefDatasetUrn());
       // Find ref dataset id
