@@ -33,6 +33,7 @@ import play.Logger;
 import play.Play;
 import play.libs.Json;
 import utils.Lineage;
+import utils.Property;
 
 public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
 
@@ -117,11 +118,11 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
     }
 
     private static String getPrefix(String urn) {
-        return urn.substring(0, urn.indexOf("://")).toLowerCase();
+        return Property.getPrefix(urn);
     }
 
     private static String getPostfix(String urn) {
-        return urn.substring(urn.indexOf("://") + 3);
+        return Property.getPostfix(urn);
     }
 
     private static String getNodeType(String urn) {
@@ -147,12 +148,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
     }
 
     private static String getProp(String propName) {
-        List<String> props = getJdbcTemplate().queryForList(GET_PROPERTY, String.class, propName);
-        if (props == null || props.size() == 0) {
-            Logger.info("Could not find property for property_name: " + propName);
-            return "default";
-        }
-        return props.get(0);
+        return Property.getProp(propName);
     }
 
     private static void getRelativeGraph(List<LineageNodeLite> nodes, List<LineageEdgeLite> edges, int maxDepth, int direction, LineageNodeLite currNode) {
@@ -394,8 +390,8 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
             JsonNode prop = Json.parse((String) row.get("properties"));
 
             // properties is a JsonNode, extract what we want out of it
-            node.description = prop.get("description").asText();
-            node.app_code = prop.get("app_code").asText();
+            node.description = (prop.has("description")) ? prop.get("description").asText() : "null";
+            node.app_code = (prop.has("app_code")) ? prop.get("app_code").asText() : "null";
 
             // check wh_property for a user specified color, use some generic defaults if nothing found
             //node.color = getColor(node.urn, node.node_type);
@@ -417,7 +413,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
         for (Map<String, Object> row : rows) {
             // node only knows id, level, and urn, assign all other attributes
             JsonNode prop = Json.parse((String) row.get("properties"));
-            node.description = prop.get("description").asText();
+            node.description = (prop.has("description")) ? prop.get("description").asText() : "null";
             node.source = (String) row.get("source");
             node.storage_type = (String) row.get("dataset_type"); // what the js calls storage_type, the sql calls dataset_type
             node.dataset_type = (String) row.get("dataset_type");
@@ -444,9 +440,9 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
 
         for (Map<String, Object> row : rows) {
             JsonNode prop = Json.parse((String) row.get("properties"));
-            node.description = prop.get("description").asText();
-            node.jdbc_url = prop.get("jdbc_url").asText();
-            node.db_code = prop.get("db_code").asText();
+            node.description = (prop.has("description")) ? prop.get("description").asText() : "null";
+            node.jdbc_url = (prop.has("jdbc_url")) ? prop.get("jdbc_url").asText() : "null";
+            node.db_code = (prop.has("db_code")) ? prop.get("db_code").asText() : "null";
 
             // check wh_property for a user specified color, use some generic defaults if nothing found
             //node.color = getColor(node.urn, node.node_type);
