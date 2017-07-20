@@ -1541,6 +1541,7 @@ PUT {"scheme":"between.prospector.druid", "label":"generated"} /property/edge/la
 
 
 <a name="common-parents-get">Common Parents GET</a>
+
 * **URL**
 
 	/dataset/common/parents
@@ -1561,7 +1562,7 @@ PUT {"scheme":"between.prospector.druid", "label":"generated"} /property/edge/la
 ```json
 {
 	"return_code": 200,
-	"message": "[urn:///a/urn, urn:///another/urn]"
+	"message": "[scheme:///a/urn, scheme:///another/urn]"
 }
 ```
 
