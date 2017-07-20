@@ -117,6 +117,12 @@ PUT         /property/remove                controllers.PropertyController.remov
 # Insert a new dataset
 POST        /dataset                      controllers.DatasetController.addDataset()
 
+# Insert a new database
+POST        /database                      controllers.DatasetController.addDataset()
+
+# insert a new job
+POST        /job                      controllers.DatasetController.addDataset()
+
 # For recent x day, which job use the target dataset as a source, or which job produce this datasets.
 GET         /lineage/dataset              controllers.LineageController.getJobsByDataset(urn: String)
 
