@@ -21,6 +21,7 @@ import java.util.List;
 import models.daos.DatasetDao;
 import models.daos.UserDao;
 import utils.Urn;
+import utils.ContrUtil;
 import org.springframework.dao.EmptyResultDataAccessException;
 import play.Logger;
 import play.Play;
@@ -35,8 +36,8 @@ import play.mvc.Result;
  */
 public class DatasetController extends Controller {
 
-  public static Result getDatasetWatchers(String datasetName)
-      throws SQLException {
+
+  public static Result getDatasetWatchers(String datasetName) throws SQLException {
     ObjectNode resultJson = Json.newObject();
     if (datasetName != null) {
       ObjectNode result = UserDao.getWatchers(datasetName);
@@ -57,9 +58,8 @@ public class DatasetController extends Controller {
         resultJson.put("return_code", 200);
         resultJson.set("dataset", Json.toJson(dataset));
       } catch (EmptyResultDataAccessException e) {
-        e.printStackTrace();
-        resultJson.put("return_code", 404);
-        resultJson.put("error_message", "dataset can not find!");
+          ContrUtil.failure(resultJson, 404, "dataset can not be found!");
+          Logger.error(e.getMessage());
       }
       return ok(resultJson);
     }
@@ -67,8 +67,7 @@ public class DatasetController extends Controller {
     String urn = request().getQueryString("urn");
     if (urn != null) {
       if (!Urn.validateUrn(urn)) {
-        resultJson.put("return_code", 400);
-        resultJson.put("error_message", "Urn format wrong!");
+        ContrUtil.failure(resultJson, "Urn format wrong!");
         return ok(resultJson);
       }
       try {
@@ -76,16 +75,14 @@ public class DatasetController extends Controller {
         resultJson.put("return_code", 200);
         resultJson.set("dataset", Json.toJson(dataset));
       } catch (EmptyResultDataAccessException e) {
-        e.printStackTrace();
-        resultJson.put("return_code", 404);
-        resultJson.put("error_message", "dataset can not find!");
+          ContrUtil.failure(resultJson, 404, "dataset can not be found!");
+          Logger.error(e.getMessage());
       }
       return ok(resultJson);
     }
 
     // if no parameter, return an error message
-    resultJson.put("return_code", 400);
-    resultJson.put("error_message", "No parameter provided");
+    ContrUtil.failure(resultJson, "No parameter provided");
     return ok(resultJson);
   }
 
@@ -99,9 +96,8 @@ public class DatasetController extends Controller {
       resultJson.put("message", "Dataset inserted!");
       Logger.info("dataset inserted");
     } catch (Exception e) {
-      e.printStackTrace();
-      resultJson.put("return_code", 404);
-      resultJson.put("error_message", e.getMessage());
+        ContrUtil.failure(resultJson, 404, e.getMessage());
+        Logger.error(e.getMessage());
     }
 
     return ok(resultJson);
@@ -116,16 +112,14 @@ public class DatasetController extends Controller {
     try {
       resultJson = DatasetDao.getDatasetDependency(input);
     } catch (Exception e) {
-      Logger.error(e.getMessage());
-      resultJson.put("return_code", 404);
-      resultJson.put("error_message", e.getMessage());
+        ContrUtil.failure(resultJson, 404, e.getMessage());
+        Logger.error(e.getMessage());
     }
 
     return ok(resultJson);
   }
 
-  public static Result getDatasetUrns(String propertiesLike)
-      throws SQLException {
+  public static Result getDatasetUrns(String propertiesLike) throws SQLException {
     ObjectNode resultJson = Json.newObject();
     try {
       if (propertiesLike != null) {
@@ -134,16 +128,14 @@ public class DatasetController extends Controller {
         resultJson.set("dataset_urns", result);
       }
     } catch (Exception e) {
-      e.printStackTrace();
-      resultJson.put("return_code", 404);
-      resultJson.put("error_message", e.getMessage());
+        ContrUtil.failure(resultJson, 404, e.getMessage());
+        Logger.error(e.getMessage());
     }
 
     return ok(resultJson);
   }
 
-  public static Result getDatasetDependentsById(Long datasetId)
-      throws SQLException {
+  public static Result getDatasetDependentsById(Long datasetId) throws SQLException {
     ObjectNode resultJson = Json.newObject();
     if (datasetId > 0) {
       try {
@@ -151,20 +143,17 @@ public class DatasetController extends Controller {
         resultJson.put("return_code", 200);
         resultJson.set("dependents", Json.toJson(dependents));
       } catch (EmptyResultDataAccessException e) {
-        e.printStackTrace();
-        resultJson.put("return_code", 404);
-        resultJson.put("error_message", "no dependent datasets can be found!");
+        ContrUtil.failure(resultJson, 404, "no dependent datasets can be found!");
+        Logger.error(e.getMessage());
       }
       return ok(resultJson);
     }
     // if no parameter, return an error message
-    resultJson.put("return_code", 400);
-    resultJson.put("error_message", "Dataset Id is not provided or invalid");
+    ContrUtil.failure(resultJson, "Dataset Id is not provided or invalid");
     return ok(resultJson);
   }
 
-  public static Result getDatasetDependentsByUri(String datasetUri)
-      throws SQLException {
+  public static Result getDatasetDependentsByUri(String datasetUri) throws SQLException {
     /* expect
      * hive:///db_name.table_name
      * hive:///db_name/table_name
@@ -192,9 +181,8 @@ public class DatasetController extends Controller {
         resultJson.put("return_code", 200);
         resultJson.set("dependents", Json.toJson(dependents));
       } catch (EmptyResultDataAccessException e) {
-        e.printStackTrace();
-        resultJson.put("return_code", 404);
-        resultJson.put("error_message", "No dependent dataset can be found!");
+        ContrUtil.failure(resultJson, 404, "no dependent datasets can be found!");
+        Logger.error(e.getMessage());
       }
       return ok(resultJson);
     }
@@ -209,17 +197,16 @@ public class DatasetController extends Controller {
     ObjectNode resultJson = Json.newObject();
       try {
         if (type == null) {
-          resultJson.put("return_code", 400);
-          resultJson.put("error_message", "no type provided");
-          return ok(resultJson);
+          ContrUtil.failure(resultJson, "no type provided");
+          Logger.error("no type provided");
         } else {
           resultJson = DatasetDao.getLatestOfType(type);
-          return ok(resultJson);
         }
       } catch (SQLException e) {
-        e.printStackTrace();
+        ContrUtil.failure(resultJson, e.getMessage());
+        Logger.error(e.getMessage());
       }
-      return ok("there was a problem");
+      return ok(resultJson);
   }
 
   // same as getLatestOfType(), but only gets entities who's last modified time was after a specified unix time in seconds
@@ -228,17 +215,15 @@ public class DatasetController extends Controller {
     ObjectNode resultJson = Json.newObject();
     try {
       if (type == null) {
-        resultJson.put("return_code", 400);
-        resultJson.put("error_message", "type not provided");
-        return ok(resultJson);
+        ContrUtil.failure(resultJson, "no type provided");
+        Logger.error("no type provided");
       } else {
         resultJson = DatasetDao.getLatestAfter(type, time);
-        return ok(resultJson);
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      ContrUtil.failure(resultJson, e.getMessage());
+      Logger.error(e.getMessage());
     }
-    resultJson.put("message", "there was a problem");
     return ok(resultJson);
   }
 
@@ -247,17 +232,15 @@ public class DatasetController extends Controller {
     ObjectNode resultJson = Json.newObject();
     try {
       if (type == null) {
-        resultJson.put("return_code", 400);
-        resultJson.put("error_message", "type not provided");
-        return ok(resultJson);
+        ContrUtil.failure(resultJson, "no type provided");
+        Logger.error("no type provided");
       } else {
         resultJson = DatasetDao.getLatestBefore(type, time);
-        return ok(resultJson);
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      ContrUtil.failure(resultJson, e.getMessage());
+      Logger.error(e.getMessage());
     }
-    resultJson.put("message", "there was a problem");
     return ok(resultJson);
   }
 
@@ -266,9 +249,8 @@ public class DatasetController extends Controller {
     ObjectNode resultJson = Json.newObject();
     try {
       if (type == null) {
-        resultJson.put("return_code", 400);
-        resultJson.put("error_message", "type not provided");
-        return ok(resultJson);
+        ContrUtil.failure(resultJson, "no type provided");
+        Logger.error("no type provided");
       } else {
         if (firsttime > secondtime) {
           long temp = secondtime;
@@ -276,12 +258,11 @@ public class DatasetController extends Controller {
           firsttime = temp;
         }
         resultJson = DatasetDao.getLatestBetween(type, firsttime, secondtime);
-        return ok(resultJson);
       }
     } catch (SQLException e) {
-        e.printStackTrace();
+      ContrUtil.failure(resultJson, e.getMessage());
+      Logger.error(e.getMessage());
     }
-    resultJson.put("message", "there was a problem");
     return ok(resultJson);
   }
 
@@ -290,17 +271,15 @@ public class DatasetController extends Controller {
     ObjectNode resultJson = Json.newObject();
     try {
       if (type == null) {
-        resultJson.put("return_code", 400);
-        resultJson.put("error_message", "type not provided");
-        return ok(resultJson);
+        ContrUtil.failure(resultJson, "no type provided");
+        Logger.error("no type provided");
       } else {
         resultJson = DatasetDao.getAtTime(type, time);
-        return ok(resultJson);
       }
     } catch (SQLException e) {
-      e.printStackTrace();
+      ContrUtil.failure(resultJson, e.getMessage());
+      Logger.error(e.getMessage());
     }
-    resultJson.put("message", "there was a problem");
     return ok(resultJson);
   }
 
@@ -309,19 +288,17 @@ public class DatasetController extends Controller {
     ObjectNode resultJson = Json.newObject();
     try {
       if (type == null) {
-        resultJson.put("return_code", 400);
-        resultJson.put("error_message", "type not provided");
-        return ok(resultJson);
+        ContrUtil.failure(resultJson, "no type provided");
+        Logger.error("no type provided");
       } else {
         long firsttime = time - window;
         long secondtime = time + window;
         resultJson = DatasetDao.getLatestBetween(type, firsttime, secondtime);
-        return ok(resultJson);
       }
     } catch (SQLException e) {
-      Logger.error("Exception getting latest of type " + type, e);
+      ContrUtil.failure(resultJson, e.getMessage());
+      Logger.error(e.getMessage());
     }
-    resultJson.put("message", "there was a problem");
     return ok(resultJson);
   }
 
@@ -333,11 +310,9 @@ public class DatasetController extends Controller {
     try {
       DatasetDao.updateProperties(propChanges);
     } catch (Exception e) {
+      ContrUtil.failure(resultJson, e.getMessage());
       Logger.error(e.getMessage());
-      e.printStackTrace();
       Logger.error(propChanges.toString());
-      resultJson.put("return_code", 400);
-      resultJson.put("error_message", e.getMessage());
     }
     resultJson.put("return_code", 200);
     resultJson.put("message", "properties updated");
@@ -352,46 +327,31 @@ public class DatasetController extends Controller {
       DatasetDao.updateProperties(validNode);
       resultJson.put("return_code", 200);
       resultJson.put("message", "validity updated");
-      return ok(resultJson);
     } catch (SQLException e) {
+      ContrUtil.failure(resultJson, e.getMessage());
       Logger.error("sql exception in setValidity", e);
-      resultJson.put("return_code", 400);
-      resultJson.put("error_message", e.getMessage());
     } catch (Exception e) {
+      ContrUtil.failure(resultJson, e.getMessage());
       Logger.error("sql exception in setValidity", e);
-      resultJson.put("return_code", 400);
-      resultJson.put("error_message", e.getMessage());
     }
-    resultJson.put("message", "there was a problem");
     return ok(resultJson);
   }
 
   // returns json with either error message, error message + empty, or common parent(s)
   public static Result getCommonParents() {
-    // Li wherehows does not have an implimentation for this, so error
-    if (Play.application().configuration().getString("diet").equals("true")) {
-      Logger.error("Trying to run a function not implimented in LinkedIn wherehows");
-      ObjectNode resultJson = Json.newObject();
-      resultJson.put("return_code", 400);
-      resultJson.put("error_message", "LinkedIn WhereHows does not impliment this call");
-      return ok(resultJson);
-    }
-
     ObjectNode resultJson = Json.newObject();
     String urnOne = request().getQueryString("urnOne");
     String urnTwo = request().getQueryString("urnTwo");
     if (urnOne != null && urnTwo != null) {
       try {
         resultJson = DatasetDao.getCommonParents(urnOne, urnTwo);
-        return ok(resultJson);
         } catch (Exception e) {
+        ContrUtil.failure(resultJson, e.getMessage());
         Logger.error("sql exception in getCommonParents", e);
-        resultJson.put("return_code", 400);
-        resultJson.put("error_message", e.getMessage());
         }
     } else {
-      resultJson.put("return_code", 400);
-      resultJson.put("error_message", "not all required arguments passed");
+      ContrUtil.failure(resultJson, "not all required arguments passed");
+        Logger.error("not all required arguments passed");
     }
     return ok(resultJson);
   }
@@ -407,8 +367,7 @@ public class DatasetController extends Controller {
       resultJson.put("message", "dataset removed");
     } catch (Exception e) {
       Logger.error("exception when trying to remove dataset:", e);
-      resultJson.put("return_code", 400);
-      resultJson.put("error_message", e.getMessage());
+      ContrUtil.failure(resultJson, e.getMessage());
     }
     return ok(resultJson);
   }
