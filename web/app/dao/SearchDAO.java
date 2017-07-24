@@ -58,7 +58,24 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 			"CASE WHEN `schema` like '$keyword%' THEN 20 ELSE 0 END rank_08, " +
 			"CASE WHEN `schema` like '%$keyword%' THEN 10 ELSE 0 END rank_09 " +
 			"FROM dict_dataset WHERE MATCH(`name`, `schema`,  `properties`, `urn`)" +
-			" AGAINST ('*$keyword* *v_$keyword*' IN BOOLEAN MODE) ) t " +
+			" AGAINST ('*$keyword* *v_$keyword* \"$keyword\"' IN BOOLEAN MODE) ) t " +
+			"ORDER BY rank DESC, `name`, `urn` LIMIT ?, ?;";
+
+	public final static String SEARCH_DATASET_WITH_PAGINATION_AND_TYPE = "SELECT SQL_CALC_FOUND_ROWS " +
+			"id, `name`, `schema`, `source`, `urn`, FROM_UNIXTIME(source_modified_time) as modified, " +
+			"rank_01 + rank_02 + rank_03 + rank_04 + rank_05 + rank_06 + rank_07 + rank_08 + rank_09 as rank " +
+			"FROM (SELECT id, `name`, `schema`, `source`, `urn`, source_modified_time, " +
+			"CASE WHEN `name` = '$keyword' THEN 3000 ELSE 0 END rank_01, " +
+			"CASE WHEN `name` like '$keyword%' THEN 2000 ELSE 0 END rank_02, " +
+			"CASE WHEN `name` like '%$keyword%' THEN 1000 ELSE 0 END rank_03, " +
+			"CASE WHEN `urn` = '$keyword' THEN 300 ELSE 0 END rank_04, " +
+			"CASE WHEN `urn` like '$keyword%' THEN 200 ELSE 0 END rank_05, " +
+			"CASE WHEN `urn` like '%$keyword%' THEN 100 ELSE 0 END rank_06, " +
+			"CASE WHEN `schema` = '$keyword' THEN 30 ELSE 0 END rank_07, " +
+			"CASE WHEN `schema` like '$keyword%' THEN 20 ELSE 0 END rank_08, " +
+			"CASE WHEN `schema` like '%$keyword%' THEN 10 ELSE 0 END rank_09 " +
+			"FROM dict_dataset WHERE MATCH(`name`, `schema`,  `properties`, `urn`)" +
+			" AGAINST ('*$keyword* *v_$keyword* \"$keyword\"' IN BOOLEAN MODE) and `storage_type` = '$type' ) t " +
 			"ORDER BY rank DESC, `name`, `urn` LIMIT ?, ?;";
 
 	public final static String SEARCH_DATASET_BY_SOURCE_WITH_PAGINATION = "SELECt SQL_CALC_FOUND_ROWS " +
@@ -75,7 +92,24 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 			"CASE WHEN `schema` like '$keyword%' THEN 20 ELSE 0 END rank_08, " +
 			"CASE WHEN `schema` like '%$keyword%' THEN 10 ELSE 0 END rank_09 " +
 			"FROM dict_dataset WHERE MATCH(`name`, `schema`,  `properties`, `urn`)" +
-			" AGAINST ('*$keyword* *v_$keyword*' IN BOOLEAN MODE) and source = ? ) t " +
+			" AGAINST ('*$keyword* *v_$keyword* \"$keyword\"' IN BOOLEAN MODE) and source = ? ) t " +
+			"ORDER BY rank desc, `name`, `urn` LIMIT ?, ?;";
+
+	public final static String SEARCH_DATASET_BY_SOURCE_WITH_PAGINATION_AND_TYPE = "SELECt SQL_CALC_FOUND_ROWS " +
+			"id, `name`, `schema`, `source`, `urn`, FROM_UNIXTIME(source_modified_time) as modified, " +
+			"rank_01 + rank_02 + rank_03 + rank_04 + rank_05 + rank_06 + rank_07 + rank_08 + rank_09 as rank " +
+			"FROM (SELECT id, `name`, `schema`, `source`, `urn`, source_modified_time, " +
+			"CASE WHEN `name` = '$keyword' THEN 3000 ELSE 0 END rank_01, " +
+			"CASE WHEN `name` like '$keyword%' THEN 2000 ELSE 0 END rank_02, " +
+			"CASE WHEN `name` like '%$keyword%' THEN 1000 ELSE 0 END rank_03, " +
+			"CASE WHEN `urn` = '$keyword' THEN 300 ELSE 0 END rank_04, " +
+			"CASE WHEN `urn` like '$keyword%' THEN 200 ELSE 0 END rank_05, " +
+			"CASE WHEN `urn` like '%$keyword%' THEN 100 ELSE 0 END rank_06, " +
+			"CASE WHEN `schema` = '$keyword' THEN 30 ELSE 0 END rank_07, " +
+			"CASE WHEN `schema` like '$keyword%' THEN 20 ELSE 0 END rank_08, " +
+			"CASE WHEN `schema` like '%$keyword%' THEN 10 ELSE 0 END rank_09 " +
+			"FROM dict_dataset WHERE MATCH(`name`, `schema`,  `properties`, `urn`)" +
+			" AGAINST ('*$keyword* *v_$keyword* \"$keyword\"' IN BOOLEAN MODE) and source = ? and `storage_type` = '$type' ) t " +
 			"ORDER BY rank desc, `name`, `urn` LIMIT ?, ?;";
 
 	public final static String SEARCH_FLOW_WITH_PAGINATION = "SELECT SQL_CALC_FOUND_ROWS " +
@@ -159,25 +193,33 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static List<String> getAutoCompleteList()
 	{
+		//Logger.debug("=== Entering SearchDAO.java:getAutoCompleteList()");
 		List<String> cachedAutoCompleteList = (List<String>)Cache.get(SEARCH_AUTOCOMPLETE_LIST);
+			//Logger.debug("=== Run first query in SearchDAO.java:getAutoCompleteList()");
 		if (cachedAutoCompleteList == null || cachedAutoCompleteList.size() == 0)
 		{
 			//List<String> metricList = getJdbcTemplate().queryForList(GET_METRIC_AUTO_COMPLETE_LIST, String.class);
 			List<String> flowList = getJdbcTemplate().queryForList(GET_FLOW_AUTO_COMPLETE_LIST, String.class);
+			//Logger.debug("=== Run second query in SearchDAO.java:getAutoCompleteList()");
 			List<String> jobList = getJdbcTemplate().queryForList(GET_JOB_AUTO_COMPLETE_LIST, String.class);
+			//Logger.debug("=== Run third query in SearchDAO.java:getAutoCompleteList()");
 			List<String> datasetList = getJdbcTemplate().queryForList(GET_DATASET_AUTO_COMPLETE_LIST, String.class);
+			//Logger.debug("=== Run fourth query in SearchDAO.java:getAutoCompleteList()");
+			//Logger.debug("=== Run all queries in SearchDAO.java:getAutoCompleteList()");
 			cachedAutoCompleteList =
 					Stream.concat(datasetList.stream(),
 							Stream.concat(flowList.stream(), jobList.stream())).collect(Collectors.toList());
 			Collections.sort(cachedAutoCompleteList);
 			Cache.set(SEARCH_AUTOCOMPLETE_LIST, cachedAutoCompleteList, 60*60);
 		}
+		Logger.debug("=== Exiting SearchDAO.java:getAutoCompleteList()");
 
 		return cachedAutoCompleteList;
 	}
 
 	public static List<String> getAutoCompleteListForDataset()
 	{
+		//Logger.debug("Entering SearchDAO.java:getAutoCompleteListForDataset()");
 		List<String> cachedAutoCompleteListForDataset = (List<String>)Cache.get(SEARCH_AUTOCOMPLETE_LIST_DATASET);
 		if (cachedAutoCompleteListForDataset == null || cachedAutoCompleteListForDataset.size() == 0)
 		{
@@ -192,6 +234,7 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static List<String> getAutoCompleteListForMetric()
 	{
+		//Logger.debug("Entering SearchDAO.java:getAutoCompleteListForMetric()");
 		List<String> cachedAutoCompleteListForMetric = (List<String>)Cache.get(SEARCH_AUTOCOMPLETE_LIST_METRIC);
 		if (cachedAutoCompleteListForMetric == null || cachedAutoCompleteListForMetric.size() == 0)
 		{
@@ -206,6 +249,7 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static List<String> getAutoCompleteListForFlow()
 	{
+		//Logger.debug("Entering SearchDAO.java:getAutoCompleteListForFlow()");
 		List<String> cachedAutoCompleteListForFlow = (List<String>)Cache.get(SEARCH_AUTOCOMPLETE_LIST_FLOW);
 		if (cachedAutoCompleteListForFlow == null || cachedAutoCompleteListForFlow.size() == 0)
 		{
@@ -222,6 +266,7 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static List<String> getSuggestionList(String category, String searchKeyword)
 	{
+		//Logger.debug("Entering SearchDAO.java:getSuggestionList()");
 		List<String> SuggestionList = new ArrayList<String>();
 		String elasticSearchType = "dataset";
 		String elasticSearchTypeURLKey = "elasticsearch.dataset.url";
@@ -659,8 +704,89 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 		return resultNode;
 	}
 
+
+	public static ObjectNode getPagedEntityByKeyword(String category, String keyword, String source, String storage_type, int page, int size)
+	{
+		//Logger.debug("Entering SearchDAO.java:getPagedEntityByKeyword()");
+		List<Dataset> pagedDatasets = new ArrayList<Dataset>();
+		final JdbcTemplate jdbcTemplate = getJdbcTemplate();
+		javax.sql.DataSource ds = jdbcTemplate.getDataSource();
+		DataSourceTransactionManager tm = new DataSourceTransactionManager(ds);
+
+		TransactionTemplate txTemplate = new TransactionTemplate(tm);
+
+		ObjectNode result;
+		result = txTemplate.execute(new TransactionCallback<ObjectNode>()
+		{
+			public ObjectNode doInTransaction(TransactionStatus status)
+			{
+				List<Map<String, Object>> rows = null;
+				if (StringUtils.isBlank(source) || source.toLowerCase().equalsIgnoreCase("all"))
+				{
+					if (storage_type == null || storage_type.equals("all")) {
+						String query = SEARCH_DATASET_WITH_PAGINATION.replace("$keyword", keyword);
+						rows = jdbcTemplate.queryForList(query, (page - 1) * size, size);
+					} else {
+						String query = SEARCH_DATASET_WITH_PAGINATION_AND_TYPE.replace("$keyword", keyword);
+						query = query.replace("$type", storage_type);
+						rows = jdbcTemplate.queryForList(query, (page - 1) * size, size);
+					}
+				}
+				else
+				{
+					if (storage_type == null || storage_type.equals("all")) {
+						String query = SEARCH_DATASET_BY_SOURCE_WITH_PAGINATION.replace("$keyword", keyword);
+						rows = jdbcTemplate.queryForList(query, (page - 1) * size, size);
+					} else {
+						String query = SEARCH_DATASET_BY_SOURCE_WITH_PAGINATION_AND_TYPE.replace("$keyword", keyword);
+						query = query.replace("$type", storage_type);
+						rows = jdbcTemplate.queryForList(query, source, (page - 1) * size, size);
+					}
+				}
+
+				for (Map row : rows) {
+
+					Dataset ds = new Dataset();
+					ds.id = (Long)row.get(DatasetRowMapper.DATASET_ID_COLUMN);
+					ds.name = (String)row.get(DatasetRowMapper.DATASET_NAME_COLUMN);
+					ds.source = (String)row.get(DatasetRowMapper.DATASET_SOURCE_COLUMN);
+					ds.urn = (String)row.get(DatasetRowMapper.DATASET_URN_COLUMN);
+					ds.schema = (String)row.get(DatasetRowMapper.DATASET_SCHEMA_COLUMN);
+					pagedDatasets.add(ds);
+				}
+				long count = 0;
+				try {
+					count = jdbcTemplate.queryForObject(
+							"SELECT FOUND_ROWS()",
+							Long.class);
+				}
+				catch(EmptyResultDataAccessException e)
+				{
+					Logger.error("Exception = " + e.getMessage());
+				}
+
+				ObjectNode resultNode = Json.newObject();
+				resultNode.put("count", count);
+				resultNode.put("page", page);
+				resultNode.put("category", category);
+				resultNode.put("source", source);
+				resultNode.put("itemsPerPage", size);
+				resultNode.put("totalPages", (int)Math.ceil(count/((double)size)));
+				resultNode.set("data", Json.toJson(pagedDatasets));
+
+				return resultNode;
+			}
+		});
+
+		return result;
+	}
+
+
 	public static ObjectNode getPagedDatasetByKeyword(String category, String keyword, String source, int page, int size)
 	{
+		//Logger.debug("Entering SearchDAO.java:getPagedDatasetByKeyword()");
+		return getPagedEntityByKeyword(category, keyword, source, "data", page, size);
+		/*
     	List<Dataset> pagedDatasets = new ArrayList<Dataset>();
 		final JdbcTemplate jdbcTemplate = getJdbcTemplate();
 		javax.sql.DataSource ds = jdbcTemplate.getDataSource();
@@ -676,7 +802,9 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 				List<Map<String, Object>> rows = null;
 				if (StringUtils.isBlank(source) || source.toLowerCase().equalsIgnoreCase("all"))
 				{
-					String query = SEARCH_DATASET_WITH_PAGINATION.replace("$keyword", keyword);
+					//String query = SEARCH_DATASET_WITH_PAGINATION.replace("$keyword", keyword);
+					String query = SEARCH_DATASET_WITH_PAGINATION_AND_TYPE.replace("$keyword", keyword);
+					query = query.replace("$type", storage_type);
 					rows = jdbcTemplate.queryForList(query, (page-1)*size, size);
 				}
 				else
@@ -719,11 +847,12 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 			}
 		});
 
-		return result;
+		return result;*/
 	}
 
 	public static ObjectNode getPagedMetricByKeyword(final String category, String keyword, int page, int size)
 	{
+		//Logger.debug("Entering SearchDAO.java:getPagedMetricByKeyword()");
 		List<Metric> pagedMetrics = new ArrayList<Metric>();
 		final JdbcTemplate jdbcTemplate = getJdbcTemplate();
 		javax.sql.DataSource ds = jdbcTemplate.getDataSource();
@@ -801,8 +930,12 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 		return result;
 	}
 
+	// flow temporarily represents db
 	public static ObjectNode getPagedFlowByKeyword(String category, String keyword, int page, int size)
 	{
+		//Logger.debug("Entering SearchDAO.java:getPagedFlowByKeyword()");
+		return getPagedEntityByKeyword(category, keyword, "all", "db", page, size);
+		/*
 		final List<FlowJob> pagedFlows = new ArrayList<FlowJob>();
 		final JdbcTemplate jdbcTemplate = getJdbcTemplate();
 		javax.sql.DataSource ds = jdbcTemplate.getDataSource();
@@ -859,10 +992,14 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 		});
 
 		return result;
+		*/
 	}
 
 	public static ObjectNode getPagedJobByKeyword(String category, String keyword, int page, int size)
 	{
+		//Logger.debug("Entering SearchDAO.java:getPagedJobByKeyword()");
+		return getPagedEntityByKeyword(category, keyword, "all", "app", page, size);
+		/*
 		final List<FlowJob> pagedFlowJobs = new ArrayList<FlowJob>();
 		final JdbcTemplate jdbcTemplate = getJdbcTemplate();
 		javax.sql.DataSource ds = jdbcTemplate.getDataSource();
@@ -924,10 +1061,17 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 		});
 
 		return result;
+		*/
+	}
+
+	public static ObjectNode getPagedAllByKeyword(String category, String keyword, int page, int size) {
+		//Logger.debug("Entering SearchDAO.java:getPagedAllByKeyword()");
+		return getPagedEntityByKeyword(category, keyword, "all", "all", page, size);
 	}
 
 	public static ObjectNode getPagedCommentsByKeyword(String category, String keyword, int page, int size)
 	{
+		//Logger.debug("Entering SearchDAO.java:getPagedCommentsByKeyword()");
 		List<Dataset> pagedDatasets = new ArrayList<Dataset>();
 		final JdbcTemplate jdbcTemplate = getJdbcTemplate();
 		javax.sql.DataSource ds = jdbcTemplate.getDataSource();
