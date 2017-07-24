@@ -58,11 +58,7 @@ public class DatabaseWriter extends Writer {
 
     StringBuilder sb = new StringBuilder();
     sb.append("UPDATE " + this.tableName + " SET " + setValues + " WHERE urn = '" + urn + "'");
-    try {
-      this.jdbcTemplate.execute(sb.toString());
-    } catch (DataAccessException e) {
-      logger.error("UPDATE statement have error : " + sb.toString(), e);
-    }
+    this.jdbcTemplate.execute(sb.toString());
   }
 
   // a generalized version of update
@@ -71,12 +67,7 @@ public class DatabaseWriter extends Writer {
     StringBuilder sb = new StringBuilder();
     sb.append("UPDATE " + this.tableName + " SET " + setValues + " WHERE " + selCol + " = '" + selVal + "'");
     //System.out.println(sb.toString());
-    try {
-      this.jdbcTemplate.execute(sb.toString());
-    } catch (DataAccessException e) {
-      //System.out.println(sb.toString() + e.getMessage());
-      logger.error("UPDATE statement have error : " + sb.toString(), e);
-    }
+    this.jdbcTemplate.execute(sb.toString());
   }
 
   // if parameter is a string, needs to be passed as 'val' including the quotes
@@ -87,12 +78,8 @@ public class DatabaseWriter extends Writer {
       for (Map.Entry<String, String> param : params.entrySet()) {
         sb.append(" " + param.getKey() + " = " + param.getValue() + " AND");
       }
-      try {
-        System.out.println("DELETE statement is: " + sb.substring(0, sb.length() - 4));
-        this.jdbcTemplate.execute(sb.substring(0, sb.length() - 4));
-      } catch (DataAccessException e) {
-        logger.error("DELETE statement has error : " + sb.toString() + e);
-      }
+      System.out.println("DELETE statement is: " + sb.substring(0, sb.length() - 4));
+      this.jdbcTemplate.execute(sb.substring(0, sb.length() - 4));
     }
   }
 
@@ -113,12 +100,7 @@ public class DatabaseWriter extends Writer {
 
     logger.debug("In databaseWriter : " + sb.toString());
 
-    try {
-      this.jdbcTemplate.execute(sb.toString());
-    } catch (DataAccessException e) {
-      logger.error("This statement have error : " + sb.toString() + " | " + e);
-      this.records.clear(); // need to recover the records.
-    }
+    this.jdbcTemplate.execute(sb.toString());
     this.records.clear();
     return false;
   }
@@ -157,8 +139,7 @@ public class DatabaseWriter extends Writer {
    * @return boolean if the insert is successful
    * @throws SQLException
    */
-  public boolean insert()
-      throws SQLException {
+  public boolean insert() throws SQLException, IllegalAccessException {
     if (records.size() == 0 || !(records.get(0) instanceof AbstractRecord)) {
       logger.debug("DatabaseWriter no record to insert or unknown record Class.");
       System.out.println("DatabaseWriter no record or unknown record Class: " + records.size() + " | " + records.get(0) + " | " + (records.get(0) instanceof AbstractRecord));
@@ -176,20 +157,7 @@ public class DatabaseWriter extends Writer {
     //logger.debug("DatabaseWriter template for " + record0.getClass() + " : " + sql);
 
     for (final Record record : records) {
-      try {
-        jdbcTemplate.update(sql, ((AbstractRecord) record).getAllValuesToString());
-
-        /* jdbcTemplate.update(sql, new PreparedStatementSetter() {
-          @Override
-          public void setValues(PreparedStatement ps)
-              throws SQLException {
-            record.setPreparedStatementValues(ps);
-          }
-        }); */
-      } catch (IllegalAccessException | DataAccessException ae) {
-        logger.error("DatabaseWriter insert error: " + ae);
-        ae.printStackTrace();
-      }
+      jdbcTemplate.update(sql, ((AbstractRecord) record).getAllValuesToString());
     }
     records.clear();
     return true;
