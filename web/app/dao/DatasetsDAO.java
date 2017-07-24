@@ -335,8 +335,8 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 			"FROM cfg_object_name_map WHERE mapped_object_name = ?";
 
 	private final static String GET_DATASET_LISTVIEW_TOP_LEVEL_NODES = "SELECT DISTINCT " +
-			"SUBSTRING_INDEX(urn, ':///', 1) as `name`, 0 as id, " +
-			"LEFT(urn, INSTR(urn, ':///') + 3) as urn FROM dict_dataset order by 1";
+			"SUBSTRING_INDEX(urn, '://', 1) as `name`, 0 as id, " +
+			"LEFT(urn, INSTR(urn, '://') + 3) as urn FROM dict_dataset order by 1";
 
 	private final static String GET_DATASET_LISTVIEW_NODES_BY_URN = "SELECT DISTINCT " +
 			"SUBSTRING_INDEX(SUBSTRING_INDEX(d.urn, ?, -1), '/', 1) as `name`, " +
@@ -1967,6 +1967,7 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 	}
 
 	public static List<DatasetListViewNode> getDatasetListViewNodes(String urn) {
+
 
 		List<DatasetListViewNode> nodes = new ArrayList<DatasetListViewNode>();
 		List<Map<String, Object>> rows = null;

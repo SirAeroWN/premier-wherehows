@@ -628,6 +628,7 @@ public class FlowsDAO extends AbstractMySQLOpenSourceDAO
 
 	public static List<FlowListViewNode> getFlowListViewClusters()
 	{
+		Logger.debug("getFlowListViewClusters");
 		List<FlowListViewNode> nodes = new ArrayList<FlowListViewNode>();
 		List<Map<String, Object>> rows = null;
 

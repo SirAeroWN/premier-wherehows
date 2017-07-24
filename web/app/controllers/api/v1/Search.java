@@ -32,6 +32,7 @@ public class Search extends Controller
 {
     public static Result getSearchAutoComplete()
     {
+        //Logger.debug("Entering v1/Search.java:getSearchAutoComplete()");
         ObjectNode result = Json.newObject();
         result.put("status", "ok");
         result.set("source", Json.toJson(SearchDAO.getAutoCompleteList()));
@@ -41,6 +42,7 @@ public class Search extends Controller
 
     public static Result getSearchAutoCompleteForDataset()
     {
+        //Logger.debug("Entering v1/Search.java:getSearchAutoCompleteForDataset()");
         ObjectNode result = Json.newObject();
         result.put("status", "ok");
         result.set("source", Json.toJson(SearchDAO.getAutoCompleteListForDataset()));
@@ -50,6 +52,7 @@ public class Search extends Controller
 
     public static Result getSearchAutoCompleteForMetric()
     {
+        //Logger.debug("Entering v1/Search.java:getSearchAutoCompleteForMetric()");
         ObjectNode result = Json.newObject();
         result.put("status", "ok");
         result.set("source", Json.toJson(SearchDAO.getAutoCompleteListForMetric()));
@@ -59,6 +62,7 @@ public class Search extends Controller
 
     public static Result getSearchAutoCompleteForFlow()
     {
+        //Logger.debug("Entering v1/Search.java:getSearchAutoCompleteForFlow()");
         ObjectNode result = Json.newObject();
         result.put("status", "ok");
         result.set("source", Json.toJson(SearchDAO.getAutoCompleteListForFlow()));
@@ -69,6 +73,7 @@ public class Search extends Controller
 
     public static Result searchByKeyword()
     {
+        //Logger.debug("Entering v1/Search.java:searchByKeyword()");
         ObjectNode result = Json.newObject();
 
         int page = 1;
@@ -140,7 +145,7 @@ public class Search extends Controller
                 result.set("result", SearchDAO.getPagedMetricByKeyword(category, keyword, page, size));
             }
         }
-        else if (category.toLowerCase().equalsIgnoreCase("flows"))
+        else if (category.toLowerCase().equalsIgnoreCase("databases"))
         {
             if(StringUtils.isNotBlank(searchEngine) && searchEngine.equalsIgnoreCase("elasticsearch"))
             {
@@ -173,6 +178,18 @@ public class Search extends Controller
             else
             {
                 result.set("result", SearchDAO.getPagedCommentsByKeyword(category, keyword, page, size));
+            }
+
+        }
+        else if (category.toLowerCase().equalsIgnoreCase("all"))
+        {
+            if(StringUtils.isNotBlank(searchEngine) && searchEngine.equalsIgnoreCase("elasticsearch"))
+            {
+                result.set("result", SearchDAO.elasticSearchDatasetByKeyword(category, keyword, null, page, size));
+            }
+            else
+            {
+                result.set("result", SearchDAO.getPagedAllByKeyword(category, keyword, page, size));
             }
 
         }
