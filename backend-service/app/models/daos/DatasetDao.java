@@ -135,17 +135,12 @@ public class DatasetDao {
     }
 
 
-    // Find layout id
-    if (record.getSamplePartitionFullPath() != null) {
-      PartitionPatternMatcher ppm = new PartitionPatternMatcher(PartitionLayoutDao.getPartitionLayouts());
-      record.setPartitionLayoutPatternId(ppm.analyze(record.getSamplePartitionFullPath()));
-    }
-
     DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "dict_dataset");
     dw.append(record);
     dw.close();
   }
 
+  // might want to log the json that we recieve
   public static void setDatasetRecord (JsonNode dataset)
     throws Exception {
     ObjectMapper om = new ObjectMapper();
@@ -175,11 +170,6 @@ public class DatasetDao {
       if (refDataset != null) {
         record.setRefDatasetId(((Long) refDataset.get("id")).intValue());
       }
-    }
-    // Find layout id
-    if (record.getSamplePartitionFullPath() != null) {
-      PartitionPatternMatcher ppm = new PartitionPatternMatcher(PartitionLayoutDao.getPartitionLayouts());
-      record.setPartitionLayoutPatternId(ppm.analyze(record.getSamplePartitionFullPath()));
     }
 
     DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "dict_dataset");
@@ -238,6 +228,7 @@ public class DatasetDao {
       return 0;
     }
   }
+  
   public static ObjectNode getDatasetDependency(JsonNode input)
           throws Exception {
 

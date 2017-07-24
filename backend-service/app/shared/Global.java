@@ -33,10 +33,6 @@ public class Global extends GlobalSettings {
   @Override
   public void onStart(Application arg0) {
     Logger.info("on start---===" + arg0);
-
-    if (Play.application().configuration().getString("diet").equals("true")) {
-      Logger.info("running in diet mode");
-    }
   }
 
   public static Set<Integer> getWhiteList() {
