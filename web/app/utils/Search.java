@@ -135,10 +135,13 @@ public class Search
 
     public final static String COMMENT_CATEGORY = "comments";
 
+    public final static String DATABASE_CATEGORY = "databases";
+
     public final static String FLOW_CATEGORY = "flows";
 
     public final static String JOB_CATEGORY = "jobs";
 
+    // don't need this, maybe?
     public static ObjectNode generateElasticSearchPhraseSuggesterQuery(String category, String field, String searchKeyword)
     {
         if (StringUtils.isBlank(searchKeyword))
@@ -166,6 +169,7 @@ public class Search
         return suggestNode;
     }
 
+    // don't need this, maybe?
     public static ObjectNode generateElasticSearchQueryString(String category, String source, String keywords)
     {
         if (StringUtils.isBlank(keywords))
@@ -216,6 +220,7 @@ public class Search
 
     public static ObjectNode generateDatasetAdvSearchQueryString(JsonNode searchOpt)
     {
+        //Logger.debug("Entering utils/Search.java:generateDatasetAdvSearchQueryString");
         List<String> scopeInList = new ArrayList<String>();
         List<String> scopeNotInList = new ArrayList<String>();
         List<String> tableInList = new ArrayList<String>();
@@ -586,6 +591,7 @@ public class Search
 
     public static ObjectNode generateMetricAdvSearchQueryString(JsonNode searchOpt)
     {
+        //Logger.debug("Entering utils/Search.java:generateMetricAdvSearchQueryString");
         List<String> dashboardInList = new ArrayList<String>();
         List<String> dashboardNotInList = new ArrayList<String>();
         List<String> groupInList = new ArrayList<String>();
@@ -951,6 +957,7 @@ public class Search
 
     public static ObjectNode generateFlowJobAdvSearchQueryString(JsonNode searchOpt)
     {
+        //Logger.debug("Entering utils/Search.java:generateFlowJobAdvSearchQueryString");
         List<String> appcodeInList = new ArrayList<String>();
         List<String> appcodeNotInList = new ArrayList<String>();
         List<String> flowInList = new ArrayList<String>();

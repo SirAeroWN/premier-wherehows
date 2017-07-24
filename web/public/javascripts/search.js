@@ -82,6 +82,7 @@
 
   $('.searchCategory').click(function (e) {
     var objs = $('.searchCategory');
+    console.log(objs)
     if (objs) {
       $.each(objs, function (index, value) {
         $(objs[index]).parent().removeClass('active');
@@ -89,12 +90,15 @@
     }
     global.g_currentCategory = e.target.text;
     updateSearchCategories(e.target.text);
+    console.log(e.target.text);
     //$(e.target).parent().addClass( 'active' );
     e.preventDefault();
   });
 
+
   var datasetSourcesUrl = '/api/v1/advsearch/sources';
   $.get(datasetSourcesUrl, function (data) {
+    console.log('got sources');
     if (data && data.status == 'ok') {
       var advSearchSourceObj = $('#advSearchSource');
       if (advSearchSourceObj) {

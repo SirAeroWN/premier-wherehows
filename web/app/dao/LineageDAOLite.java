@@ -33,6 +33,7 @@ import play.Logger;
 import play.Play;
 import play.libs.Json;
 import utils.Lineage;
+import utils.Property;
 
 public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
 
@@ -117,11 +118,11 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
     }
 
     private static String getPrefix(String urn) {
-        return urn.substring(0, urn.indexOf("://")).toLowerCase();
+        return Property.getPrefix(urn);
     }
 
     private static String getPostfix(String urn) {
-        return urn.substring(urn.indexOf("://") + 3);
+        return Property.getPostfix(urn);
     }
 
     private static String getNodeType(String urn) {
@@ -147,12 +148,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
     }
 
     private static String getProp(String propName) {
-        List<String> props = getJdbcTemplate().queryForList(GET_PROPERTY, String.class, propName);
-        if (props == null || props.size() == 0) {
-            Logger.info("Could not find property for property_name: " + propName);
-            return "default";
-        }
-        return props.get(0);
+        return Property.getProp(propName);
     }
 
     private static void getRelativeGraph(List<LineageNodeLite> nodes, List<LineageEdgeLite> edges, int maxDepth, int direction, LineageNodeLite currNode) {
@@ -267,19 +263,13 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
     private static void setEdgeAttr(LineageEdgeLite edge, LineageNodeLite source, LineageNodeLite target) {
         setEdgeLabel(edge, source, target);
         setEdgeType(edge, source, target);
-        //setEdgeColor(edge, source, target)
         setEdgeStyle(edge, source, target);
     }
 
     private static void setEdgeLabel(LineageEdgeLite edge, LineageNodeLite source, LineageNodeLite target) {
         List<String> labelqueries = new ArrayList<String>();
         String label = "";
-        labelqueries.add("edge.label.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
-        labelqueries.add("edge.label.from." + getPrefix(source.urn));
-        labelqueries.add("edge.label.to." + getPrefix(target.urn));
-        labelqueries.add("edge.label.between." + source.node_type + "." + target.node_type);
-        labelqueries.add("edge.label.from." + source.node_type);
-        labelqueries.add("edge.label.to." + target.node_type);
+        attrQueries(labelqueries, "label", source, target);
         for (int i = 0; i < labelqueries.size(); i++) {
             label = getProp(labelqueries.get(i));
             if (label != "default") {
@@ -296,12 +286,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
     private static void setEdgeType(LineageEdgeLite edge, LineageNodeLite source, LineageNodeLite target) {
         List<String> typequeries = new ArrayList<String>();
         String type = "";
-        typequeries.add("edge.type.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
-        typequeries.add("edge.type.from." + getPrefix(source.urn));
-        typequeries.add("edge.type.to." + getPrefix(target.urn));
-        typequeries.add("edge.type.between." + source.node_type + "." + target.node_type);
-        typequeries.add("edge.type.from." + source.node_type);
-        typequeries.add("edge.type.to." + target.node_type);
+        attrQueries(typequeries, "type", source, target);
         for (int i = 0; i < typequeries.size(); i++) {
             type = getProp(typequeries.get(i));
             Logger.info("type for source " + getPrefix(source.urn) + " is " + type);
@@ -318,37 +303,10 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
         }
     }
 
-    private static void setEdgeColor(LineageEdgeLite edge, LineageNodeLite source, LineageNodeLite target) {
-        List<String> colorqueries = new ArrayList<String>();
-        String color = "";
-        colorqueries.add("edge.color.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
-        colorqueries.add("edge.color.from." + getPrefix(source.urn));
-        colorqueries.add("edge.color.to." + getPrefix(target.urn));
-        colorqueries.add("edge.color.between." + source.node_type + "." + target.node_type);
-        colorqueries.add("edge.color.from." + source.node_type);
-        colorqueries.add("edge.color.to." + target.node_type);
-        for (int i = 0; i < colorqueries.size(); i++) {
-            color = getProp(colorqueries.get(i));
-            if (color != "default") {
-                break;
-            }
-        }
-        if (color != "default") {
-            edge.color = color;
-        } else {
-            edge.color = "black";
-        }
-    }
-
     private static void setEdgeStyle(LineageEdgeLite edge, LineageNodeLite source, LineageNodeLite target) {
         List<String> stylequeries = new ArrayList<String>();
         String style = "";
-        stylequeries.add("edge.style.between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
-        stylequeries.add("edge.style.from." + getPrefix(source.urn));
-        stylequeries.add("edge.style.to." + getPrefix(target.urn));
-        stylequeries.add("edge.style.between." + source.node_type + "." + target.node_type);
-        stylequeries.add("edge.style.from." + source.node_type);
-        stylequeries.add("edge.style.to." + target.node_type);
+        attrQueries(stylequeries, "style", source, target);
         for (int i = 0; i < stylequeries.size(); i++) {
             style = getProp(stylequeries.get(i));
             if (style != "default") {
@@ -378,6 +336,15 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
         }
     }
 
+    private static void attrQueries(List<String> queries, String attr, LineageNodeLite source, LineageNodeLite target) {
+        queries.add("edge." + attr + ".between." + getPrefix(source.urn) + "." + getPrefix(target.urn));
+        queries.add("edge." + attr + ".from." + getPrefix(source.urn));
+        queries.add("edge." + attr + ".to." + getPrefix(target.urn));
+        queries.add("edge." + attr + ".between." + source.node_type + "." + target.node_type);
+        queries.add("edge." + attr + ".from." + source.node_type);
+        queries.add("edge." + attr + ".to." + target.node_type);
+    }
+
 
     private static void assignApp(LineageNodeLite node) {
         List<Map<String, Object>> rows = null;
@@ -394,8 +361,8 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
             JsonNode prop = Json.parse((String) row.get("properties"));
 
             // properties is a JsonNode, extract what we want out of it
-            node.description = prop.get("description").asText();
-            node.app_code = prop.get("app_code").asText();
+            node.description = (prop.has("description")) ? prop.get("description").asText() : "null";
+            node.app_code = (prop.has("app_code")) ? prop.get("app_code").asText() : "null";
 
             // check wh_property for a user specified color, use some generic defaults if nothing found
             //node.color = getColor(node.urn, node.node_type);
@@ -417,7 +384,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
         for (Map<String, Object> row : rows) {
             // node only knows id, level, and urn, assign all other attributes
             JsonNode prop = Json.parse((String) row.get("properties"));
-            node.description = prop.get("description").asText();
+            node.description = (prop.has("description")) ? prop.get("description").asText() : "null";
             node.source = (String) row.get("source");
             node.storage_type = (String) row.get("dataset_type"); // what the js calls storage_type, the sql calls dataset_type
             node.dataset_type = (String) row.get("dataset_type");
@@ -444,9 +411,9 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
 
         for (Map<String, Object> row : rows) {
             JsonNode prop = Json.parse((String) row.get("properties"));
-            node.description = prop.get("description").asText();
-            node.jdbc_url = prop.get("jdbc_url").asText();
-            node.db_code = prop.get("db_code").asText();
+            node.description = (prop.has("description")) ? prop.get("description").asText() : "null";
+            node.jdbc_url = (prop.has("jdbc_url")) ? prop.get("jdbc_url").asText() : "null";
+            node.db_code = (prop.has("db_code")) ? prop.get("db_code").asText() : "null";
 
             // check wh_property for a user specified color, use some generic defaults if nothing found
             //node.color = getColor(node.urn, node.node_type);

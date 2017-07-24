@@ -104,6 +104,7 @@ public class DatasetDao {
 
   public static final String GET_AT_TIME_MORPHEME = "AND source_modified_time = :time ";
 
+
   public static Map<String, Object> getDatasetById(int datasetId)
     throws SQLException {
     Map<String, Object> params = new HashMap<>();
@@ -124,6 +125,7 @@ public class DatasetDao {
     ObjectMapper om = new ObjectMapper();
     om.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
     DatasetRecord record = om.convertValue(dataset, DatasetRecord.class);
+
     if (record.getRefDatasetUrn() != null) {
       Map<String, Object> refDataset = getDatasetByUrn(record.getRefDatasetUrn());
       // Find ref dataset id
@@ -133,17 +135,12 @@ public class DatasetDao {
     }
 
 
-    // Find layout id
-    if (record.getSamplePartitionFullPath() != null) {
-      PartitionPatternMatcher ppm = new PartitionPatternMatcher(PartitionLayoutDao.getPartitionLayouts());
-      record.setPartitionLayoutPatternId(ppm.analyze(record.getSamplePartitionFullPath()));
-    }
-
     DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "dict_dataset");
     dw.append(record);
     dw.close();
   }
 
+  // might want to log the json that we recieve
   public static void setDatasetRecord (JsonNode dataset)
     throws Exception {
     ObjectMapper om = new ObjectMapper();
@@ -173,11 +170,6 @@ public class DatasetDao {
       if (refDataset != null) {
         record.setRefDatasetId(((Long) refDataset.get("id")).intValue());
       }
-    }
-    // Find layout id
-    if (record.getSamplePartitionFullPath() != null) {
-      PartitionPatternMatcher ppm = new PartitionPatternMatcher(PartitionLayoutDao.getPartitionLayouts());
-      record.setPartitionLayoutPatternId(ppm.analyze(record.getSamplePartitionFullPath()));
     }
 
     DatabaseWriter dw = new DatabaseWriter(JdbcUtil.wherehowsJdbcTemplate, "dict_dataset");
@@ -236,6 +228,7 @@ public class DatasetDao {
       return 0;
     }
   }
+  
   public static ObjectNode getDatasetDependency(JsonNode input)
           throws Exception {
 

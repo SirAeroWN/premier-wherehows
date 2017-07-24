@@ -25,6 +25,7 @@ public class Flow extends Controller
 {
     public static Result getPagedRootProjects()
     {
+        Logger.debug("getPagedRootProjects");
         ObjectNode result = Json.newObject();
         int page = 1;
         String pageStr = request().getQueryString("page");
@@ -73,6 +74,7 @@ public class Flow extends Controller
 
     public static Result getPagedProjects(String application)
     {
+        Logger.debug("getPagedProjects");
         ObjectNode result = Json.newObject();
         int page = 1;
         String pageStr = request().getQueryString("page");
@@ -121,6 +123,7 @@ public class Flow extends Controller
 
     public static Result getPagedFlows(String application, String project)
     {
+        Logger.debug("getPagedFlows");
         ObjectNode result = Json.newObject();
         int page = 1;
         String pageStr = request().getQueryString("page");
@@ -169,6 +172,7 @@ public class Flow extends Controller
 
     public static Result getPagedJobs(String application, Long flowId)
     {
+        Logger.debug("getPagedJobs");
         ObjectNode result = Json.newObject();
         int page = 1;
         String pageStr = request().getQueryString("page");
@@ -217,6 +221,7 @@ public class Flow extends Controller
 
     public static Result getFlowListViewClusters()
     {
+        Logger.debug("getFlowListViewClusters");
         ObjectNode result = Json.newObject();
 
         result.put("status", "ok");
@@ -226,6 +231,7 @@ public class Flow extends Controller
 
     public static Result getFlowListViewProjects(String application)
     {
+        Logger.debug("getFlowListViewProjects");
         ObjectNode result = Json.newObject();
 
         result.put("status", "ok");
@@ -235,6 +241,7 @@ public class Flow extends Controller
 
     public static Result getFlowListViewFlows(String application, String project)
     {
+        Logger.debug("getFlowListViewFlows");
         ObjectNode result = Json.newObject();
 
         result.put("status", "ok");

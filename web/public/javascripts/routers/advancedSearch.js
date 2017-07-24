@@ -25,6 +25,7 @@ App.AdvsearchRoute = Ember.Route.extend({
     updateActiveTab();
     query = q.query;
     var url = 'api/v1/advsearch/search?searchOpts=' + query + '&page=' + params.page;
+    //console.log('asdgfhgstrefreag');
     $.get(url, function(data) {
       if (data && data.status == "ok") {
         for(var index = 0; index < data.result.data.length; index++) {

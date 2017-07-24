@@ -1,2 +1,1 @@
-include "wherehows-common", "hadoop-dataset-extractor-standalone", "metadata-etl", "data-model", "backend-service",
-  "web"
+include "wherehows-common", "data-model", "backend-service", "web"

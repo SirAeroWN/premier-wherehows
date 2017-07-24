@@ -40,7 +40,7 @@ App.SearchController = Ember.Controller.extend({
     isFlows: function(){
         var model = this.get("model");
         if (model && model.category) {
-            if (model.category.toLocaleLowerCase() === 'flows')
+            if (model.category.toLocaleLowerCase() === 'databases')
             {
                 return true;
             }
@@ -51,6 +51,16 @@ App.SearchController = Ember.Controller.extend({
         var model = this.get("model");
         if (model && model.category) {
             if (model.category.toLocaleLowerCase() === 'jobs')
+            {
+                return true;
+            }
+        }
+        return false;
+    }.property('model.category'),
+    isAll: function(){
+        var model = this.get("model");
+        if (model && model.category) {
+            if (model.category.toLocaleLowerCase() === 'all')
             {
                 return true;
             }
@@ -138,7 +148,7 @@ App.SearchController = Ember.Controller.extend({
             this.transitionToRoute
             ( 'search'
                 , { queryParams:
-                { category: 'Flows'
+                { category: 'Databases'
                     , keywords: this.get('keywords')
                     , page: 1
                     , source: null
@@ -167,6 +177,18 @@ App.SearchController = Ember.Controller.extend({
                     , page: 1
                     , source: null
                 }
+                }
+            )
+        },
+        switchSearchToAll: function(keyword){
+            this.transitionToRoute
+            ( 'search'
+                , { queryParams:
+                    { category: 'All'
+                        , keyword: this.get('keywords')
+                        , page: 1
+                        , source: null
+                    }
                 }
             )
         }

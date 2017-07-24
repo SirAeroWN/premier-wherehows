@@ -21,6 +21,7 @@ import java.util.List;
 import models.daos.PropertyDao;
 import models.daos.UserDao;
 import utils.Urn;
+import utils.ContrUtil;
 import org.springframework.dao.EmptyResultDataAccessException;
 import play.Logger;
 import play.libs.Json;
@@ -46,8 +47,7 @@ public class PropertyController extends Controller {
             resultJson.put("message", "Assignment Property inserted!");
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 400);
-            resultJson.put("error_message", e.getMessage());
+            ContrUtil.failure(resultJson, e.getMessage());
         }
 
         return ok(resultJson);
@@ -63,15 +63,13 @@ public class PropertyController extends Controller {
             resultJson.put("message", "Assignment Property updated!");
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 400);
-            resultJson.put("error_message", e.getMessage());
+            ContrUtil.failure(resultJson, e.getMessage());
         }
 
         return ok(resultJson);
     }
 
-    public static Result getAssignProp(String name)
-            throws SQLException {
+    public static Result getAssignProp(String name) throws SQLException {
         ObjectNode resultJson = Json.newObject();
         try {
             if (name != null) {
@@ -80,10 +78,8 @@ public class PropertyController extends Controller {
                 resultJson.put("properties", result);
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
-        }
+            ContrUtil.failure(resultJson, 404, e.getMessage());
+            Logger.error(e.getMessage());        }
 
         return ok(resultJson);
     }
@@ -101,8 +97,7 @@ public class PropertyController extends Controller {
             resultJson.put("message", "Sort List Property inserted!");
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 400);
-            resultJson.put("error_message", e.getMessage());
+            ContrUtil.failure(resultJson, e.getMessage());
         }
 
         return ok(resultJson);
@@ -117,10 +112,8 @@ public class PropertyController extends Controller {
             resultJson.put("return_code", 200);
             resultJson.put("message", "Sort List Property updated!");
         } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
-        }
+            ContrUtil.failure(resultJson, 404, e.getMessage());
+            Logger.error(e.getMessage());        }
 
         return ok(resultJson);
     }
@@ -136,8 +129,7 @@ public class PropertyController extends Controller {
             }
         } catch (Exception e) {
             e.printStackTrace();
-            resultJson.put("return_code", 400);
-            resultJson.put("error_message", e.getMessage());
+            ContrUtil.failure(resultJson, e.getMessage());
         }
 
         return ok(resultJson);
@@ -145,322 +137,50 @@ public class PropertyController extends Controller {
 
 
 
-    // These controller functions are for working with node's colors
+    // general getters and setters for basic properties
     @BodyParser.Of(BodyParser.Json.class)
-    public static Result addNodeColor() {
+    public static Result postProperty(String base, String attr) {
         JsonNode prop = request().body().asJson();
         ObjectNode resultJson = Json.newObject();
         try {
-            PropertyDao.addNodeColor(prop);
+            PropertyDao.addProp(prop, base, attr, attr);
             resultJson.put("return_code", 200);
-            resultJson.put("message", "Node Color inserted!");
+            resultJson.put("message", base + " " + attr + " inserted!");
         } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 400);
-            resultJson.put("error_message", e.getMessage());
+            ContrUtil.failure(resultJson, e.getMessage());
+            Logger.error(e.getMessage());
         }
 
         return ok(resultJson);
     }
 
     @BodyParser.Of(BodyParser.Json.class)
-    public static Result updateNodeColor() {
+    public static Result putProperty(String base, String attr) {
         JsonNode prop = request().body().asJson();
         ObjectNode resultJson = Json.newObject();
         try {
-            PropertyDao.updateNodeColor(prop);
+            PropertyDao.updateProp(prop, base, attr, attr);
             resultJson.put("return_code", 200);
-            resultJson.put("message", "Node Color updated!");
+            resultJson.put("message", base + " " + attr + " updated!");
         } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
+            ContrUtil.failure(resultJson, e.getMessage());
+            Logger.error(e.getMessage());
         }
 
         return ok(resultJson);
     }
 
-    public static Result getNodeColor(String name) {
+    public static Result getProperty(String base, String attr, String name) {
         ObjectNode resultJson = Json.newObject();
         try {
             if (name != null) {
-                ObjectNode result = PropertyDao.getNodeColor(name);
+                String result = PropertyDao.getProp(base, attr, name);
                 resultJson.put("return_code", 200);
                 resultJson.put("color", result);
             }
         } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 400);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-
-
-    // These controller functions are for working with node types, intended for setting a scheme as either data, app, or db but could also add new types which would require additional handling
-    @BodyParser.Of(BodyParser.Json.class)
-    public static Result addNodeType() {
-        JsonNode prop = request().body().asJson();
-        ObjectNode resultJson = Json.newObject();
-        try {
-            PropertyDao.addNodeType(prop);
-            resultJson.put("return_code", 200);
-            resultJson.put("message", "Node Type inserted!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 400);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-    @BodyParser.Of(BodyParser.Json.class)
-    public static Result updateNodeType() {
-        JsonNode prop = request().body().asJson();
-        ObjectNode resultJson = Json.newObject();
-        try {
-            PropertyDao.updateNodeType(prop);
-            resultJson.put("return_code", 200);
-            resultJson.put("message", "Node Color updated!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-    public static Result getNodeType(String name) throws SQLException {
-        ObjectNode resultJson = Json.newObject();
-        try {
-            if (name != null) {
-                ObjectNode result = PropertyDao.getNodeType(name);
-                resultJson.put("return_code", 200);
-                resultJson.put("type", result);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-
-    // edge color is not currently used, but might be in the future
-    @BodyParser.Of(BodyParser.Json.class)
-    public static Result addEdgeColor() {
-        JsonNode prop = request().body().asJson();
-        ObjectNode resultJson = Json.newObject();
-        try {
-            PropertyDao.addEdgeColor(prop);
-            resultJson.put("return_code", 200);
-            resultJson.put("message", "Edge Color inserted!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-    @BodyParser.Of(BodyParser.Json.class)
-    public static Result updateEdgeColor() {
-        JsonNode prop = request().body().asJson();
-        ObjectNode resultJson = Json.newObject();
-        try {
-            PropertyDao.updateEdgeColor(prop);
-            resultJson.put("return_code", 200);
-            resultJson.put("message", "Edge Color updated!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-    public static Result getEdgeColor(String name) throws SQLException {
-        ObjectNode resultJson = Json.newObject();
-        try {
-            if (name != null) {
-                ObjectNode result = PropertyDao.getEdgeColor(name);
-                resultJson.put("return_code", 200);
-                resultJson.put("color", result);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-
-
-    // These controller functions are for working with edge types, currently "job" is the only type that effects anything
-    @BodyParser.Of(BodyParser.Json.class)
-    public static Result addEdgeType() {
-        JsonNode prop = request().body().asJson();
-        ObjectNode resultJson = Json.newObject();
-        try {
-            PropertyDao.addEdgeType(prop);
-            resultJson.put("return_code", 200);
-            resultJson.put("message", "Edge Type inserted!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-    @BodyParser.Of(BodyParser.Json.class)
-    public static Result updateEdgeType() {
-        JsonNode prop = request().body().asJson();
-        ObjectNode resultJson = Json.newObject();
-        try {
-            PropertyDao.updateEdgeType(prop);
-            resultJson.put("return_code", 200);
-            resultJson.put("message", "Edge Type updated!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-    public static Result getEdgeType(String name) throws SQLException {
-        ObjectNode resultJson = Json.newObject();
-        try {
-            if (name != null) {
-                ObjectNode result = PropertyDao.getEdgeType(name);
-                resultJson.put("return_code", 200);
-                resultJson.put("type", result);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-
-
-    // These controller functions are for working with edge styles, this can be used to set the color as well
-    @BodyParser.Of(BodyParser.Json.class)
-    public static Result addEdgeStyle() {
-        JsonNode prop = request().body().asJson();
-        ObjectNode resultJson = Json.newObject();
-        try {
-            PropertyDao.addEdgeStyle(prop);
-            resultJson.put("return_code", 200);
-            resultJson.put("message", "Edge Style inserted!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 400);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-    @BodyParser.Of(BodyParser.Json.class)
-    public static Result updateEdgeStyle() {
-        JsonNode prop = request().body().asJson();
-        ObjectNode resultJson = Json.newObject();
-        try {
-            PropertyDao.updateEdgeStyle(prop);
-            resultJson.put("return_code", 200);
-            resultJson.put("message", "Edge Style updated!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-    public static Result getEdgeStyle(String name) throws SQLException {
-        ObjectNode resultJson = Json.newObject();
-        try {
-            if (name != null) {
-                ObjectNode result = PropertyDao.getEdgeStyle(name);
-                resultJson.put("return_code", 200);
-                resultJson.put("Style", result);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 400);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-
-
-    // These controller functions are for working with edge labels, the intent is that the label describes the source node's relationship to the target node
-    @BodyParser.Of(BodyParser.Json.class)
-    public static Result addEdgeLabel() {
-        JsonNode prop = request().body().asJson();
-        ObjectNode resultJson = Json.newObject();
-        try {
-            PropertyDao.addEdgeLabel(prop);
-            resultJson.put("return_code", 200);
-            resultJson.put("message", "Edge Label inserted!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 400);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-    @BodyParser.Of(BodyParser.Json.class)
-    public static Result updateEdgeLabel() {
-        JsonNode prop = request().body().asJson();
-        ObjectNode resultJson = Json.newObject();
-        try {
-            PropertyDao.updateEdgeLabel(prop);
-            resultJson.put("return_code", 200);
-            resultJson.put("message", "Edge Style updated!");
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 404);
-            resultJson.put("error_message", e.getMessage());
-        }
-
-        return ok(resultJson);
-    }
-
-    public static Result getEdgeLabel(String name) throws SQLException {
-        ObjectNode resultJson = Json.newObject();
-        try {
-            if (name != null) {
-                ObjectNode result = PropertyDao.getEdgeLabel(name);
-                resultJson.put("return_code", 200);
-                resultJson.put("Style", result);
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-            resultJson.put("return_code", 400);
-            resultJson.put("error_message", e.getMessage());
+            ContrUtil.failure(resultJson, e.getMessage());
+            Logger.error(e.getMessage());
         }
 
         return ok(resultJson);
@@ -479,8 +199,7 @@ public class PropertyController extends Controller {
             resultJson.put("message", "property removed");
         } catch (Exception e) {
             Logger.error("exception when trying to remove property:", e);
-            resultJson.put("return_code", 400);
-            resultJson.put("error_message", e.getMessage());
+            ContrUtil.failure(resultJson, e.getMessage());
         }
         return ok(resultJson);
     }
