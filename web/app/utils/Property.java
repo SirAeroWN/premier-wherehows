@@ -58,7 +58,7 @@ public class Property {
     public static String getProp(String propName) {
         List<String> props = getJdbcTemplate().queryForList(GET_PROPERTY, String.class, propName);
         if (props == null || props.size() == 0) {
-            Logger.info("Could not find property for property_name: " + propName);
+            //Logger.info("Could not find property for property_name: " + propName);
             return "default";
         }
         return props.get(0);
