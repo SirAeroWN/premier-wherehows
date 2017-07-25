@@ -87,6 +87,7 @@ VALUES
 	('node.type.qa', 'db', 'N', NULL),
 	('node.type.raw-parquet', 'data', 'N', NULL),
 	('node.type.sa', 'db', 'N', NULL),
+	('node.type.sla-supply', 'app', 'N', NULL),
 	('node.type.spend', 'db', 'N', NULL),
 	('node.type.supply-druid', 'data', 'N', NULL),
 	('node.type.surgical-supply-file', 'data', 'N', NULL),

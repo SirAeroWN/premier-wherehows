@@ -75,7 +75,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
                 assignGeneral(node);
                 if (assignPrefs(node) == false) {
                     assignApp(node);
-                    Logger.debug("using default assigner for " + node.urn);
+                    Logger.debug("using default app assigner for " + node.urn);
                 }
                 break;
             case "data":
@@ -83,7 +83,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
                 assignGeneral(node);
                 if (assignPrefs(node) == false) {
                     assignData(node);
-                    Logger.debug("using default assigner for " + node.urn);
+                    Logger.debug("using default data assigner for " + node.urn);
                 }
                 node.abstracted_path = getPostfix(node.urn);
                 break;
@@ -92,7 +92,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
                 assignGeneral(node);
                 if (assignPrefs(node) == false) {
                     assignDB(node);
-                    Logger.debug("using default assigner for " + node.urn);
+                    Logger.debug("using default db assigner for " + node.urn);
                 }
                 break;
             default:
@@ -156,67 +156,88 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
         if (Math.abs(currNode.level) <= Math.abs(maxDepth)) {
             // do our thing
             List<String> relatives = getRelatives(currNode.urn, direction);
-            Logger.debug("relatives: " + relatives.toString());
+            //Logger.debug("relatives: " + relatives.toString());
             for (String relative : relatives) {
-                LineageNodeLite node = new LineageNodeLite();
-                node.id = nodes.size();
-                node.level = currNode.level + direction;
-                node.urn = relative;
-                node._sort_list = new ArrayList<String>();
+                boolean old = false;
+                int id = 0;
+                LineageNodeLite node = null;
                 LineageEdgeLite edge = new LineageEdgeLite();
                 edge.id = edges.size();
-                switch (getNodeType(relative).toLowerCase()) {
-                    case "app":
-                        // do assignment stuff
-                        node.node_type = "app";
-
-                        assignGeneral(node);
-                        if (assignPrefs(node) == false) {
-                            assignApp(node);
-                            Logger.debug("using default assigner for " + node.urn);
-                        }
-
-                        nodes.add(node);
-                        edges.add(edge);
-                        getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
+                //
+                //
+                // we should check if the node already exists in our list here
+                //
+                //
+                // check that nodes doesn't already have a node with the same urn
+                for (LineageNodeLite n : nodes) {
+                    if (relative.equals(n.urn)) {
+                        // this new node already exists, we should skip the provisioning part and assign this id in edge
+                        old = true;
+                        node = n;
                         break;
-                    case "data":
-                        // do assignment stuff
-                        node.node_type = "data";
+                    }
+                }
 
-                        assignGeneral(node);
-                        if (assignPrefs(node) == false) {
-                            assignData(node);
-                            Logger.debug("using default assigner for " + node.urn);
-                        }
-                        node.abstracted_path = getPostfix(node.urn);
+                // check that the relative urn isn't already attached to an existant node
+                if (!old) {
+                    node = new LineageNodeLite();
+                    node.id = nodes.size();
+                    node.level = currNode.level + direction;
+                    node.urn = relative;
+                    node._sort_list = new ArrayList<String>();
+                    switch (getNodeType(relative).toLowerCase()) {
+                        case "app":
+                            // do assignment stuff
+                            node.node_type = "app";
 
-                        nodes.add(node);
-                        edges.add(edge);
-                        getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
-                        break;
-                    case "db":
-                        // do assignment stuff
-                        node.node_type = "db";
+                            assignGeneral(node);
+                            if (assignPrefs(node) == false) {
+                                assignApp(node);
+                                Logger.debug("using default app assigner for " + node.urn);
+                            }
 
-                        assignGeneral(node);
-                        if (assignPrefs(node) == false) {
-                            assignDB(node);
-                            Logger.debug("using default assigner for " + node.urn);
-                        }
+                            nodes.add(node);
+                            edges.add(edge);
+                            getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
+                            break;
+                        case "data":
+                            // do assignment stuff
+                            node.node_type = "data";
 
-                        nodes.add(node);
-                        edges.add(edge);
-                        getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
-                        break;
-                    default:
-                        node.node_type = "general";
-                        assignGeneral(node);
-                        assignPrefs(node);
-                        nodes.add(node);
-                        edges.add(edge);
-                        getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
-                        Logger.error("parsing failed for relative URN: " + relative);
+                            assignGeneral(node);
+                            if (assignPrefs(node) == false) {
+                                assignData(node);
+                                Logger.debug("using default data assigner for " + node.urn);
+                            }
+                            node.abstracted_path = getPostfix(node.urn);
+
+                            nodes.add(node);
+                            edges.add(edge);
+                            getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
+                            break;
+                        case "db":
+                            // do assignment stuff
+                            node.node_type = "db";
+
+                            assignGeneral(node);
+                            if (assignPrefs(node) == false) {
+                                assignDB(node);
+                                Logger.debug("using default db assigner for " + node.urn);
+                            }
+
+                            nodes.add(node);
+                            edges.add(edge);
+                            getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
+                            break;
+                        default:
+                            node.node_type = "general";
+                            assignGeneral(node);
+                            assignPrefs(node);
+                            nodes.add(node);
+                            edges.add(edge);
+                            getRelativeGraph(nodes, edges, maxDepth, direction, nodes.get(nodes.size() - 1));
+                            Logger.error("parsing failed for relative URN: " + relative);
+                    }
                 }
                 if (direction > 0) {
                     edge.target = currNode.id;
@@ -227,7 +248,9 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
                     edge.source = currNode.id;
                     setEdgeAttr(edge, currNode, node);
                 }
-
+                if (old) {
+                    edges.add(edge);
+                }
             }
         }
         // we have reached maximum requested depth, let's peace out
@@ -289,7 +312,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
         attrQueries(typequeries, "type", source, target);
         for (int i = 0; i < typequeries.size(); i++) {
             type = getProp(typequeries.get(i));
-            Logger.info("type for source " + getPrefix(source.urn) + " is " + type);
+            //Logger.info("type for source " + getPrefix(source.urn) + " is " + type);
             if (type != "default") {
                 break;
             }
@@ -432,6 +455,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
 
         rows = namedParameterJdbcTemplate.queryForList(GET_DATA_ATTR, parameters);
 
+
         for (Map<String, Object> row : rows) {
             node.name = (String) row.get("name");
             node.schema = (String) row.get("schema");
@@ -449,15 +473,15 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
         // first try to get property list
         String properties = getProp("prop." + getPrefix(node.urn));
         if (properties == "default") {
-            Logger.info("no properties for " + getPrefix(node.urn));
+            //Logger.info("no properties for " + getPrefix(node.urn));
             properties = getProp("prop." + node.node_type);
             if (properties == "default") {
-                Logger.info("no properties for " + node.node_type);
+                //Logger.info("no properties for " + node.node_type);
                 return false;
             }
         }
         List<String> propList = Arrays.asList(properties.split(","));
-        Logger.debug("propList: " + propList);
+        //Logger.debug("propList: " + propList);
 
         // now get all the values that dict_dataset has
         List<Map<String, Object>> rows = null;
@@ -486,10 +510,10 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
 
         String sortsattr = getProp("prop.sortlist." + getPrefix(node.urn));
         if (sortsattr == "default") {
-            Logger.info("no sortlist for " + getPrefix(node.urn));
+            //Logger.info("no sortlist for " + getPrefix(node.urn));
             sortsattr = getProp("prop.sortlist." + node.node_type);
             if (sortsattr == "default") {
-                Logger.info("no sortlist for " + node.node_type);
+                //Logger.info("no sortlist for " + node.node_type);
                 return false;
             }
         }
