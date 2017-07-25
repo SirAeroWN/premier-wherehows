@@ -109,7 +109,7 @@ public class LineageNodeLite {
                 throw new NoSuchFieldException();
             }
         } else {
-            Logger.error("field name or value is null");
+            Logger.error("field name or value is null: " + fieldName + ", " + value);
         }
     }
 
