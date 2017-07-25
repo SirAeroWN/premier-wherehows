@@ -135,10 +135,9 @@ function resetCategoryActiveFlag(category)
 {
     $('#categoryDatasets').removeClass('active');
     $('#categoryComments').removeClass('active');
-    $('#categoryMetrics').removeClass('active');
     $('#categoryDatabases').removeClass('active');
-    $('#categoryFlows').removeClass('active');
     $('#categoryJobs').removeClass('active');
+    $('#categoryAll').removeClass('active');
     if (category.toLowerCase() == 'datasets')
     {
         $('#categoryDatasets').addClass('active');
@@ -147,14 +146,6 @@ function resetCategoryActiveFlag(category)
     {
         $('#categoryComments').addClass('active');
     }
-    else if (category.toLowerCase() == 'metrics')
-    {
-        $('#categoryMetrics').addClass('active');
-    }
-    else if (category.toLowerCase() == 'flows')
-    {
-        $('#categoryFlows').addClass('active');
-    }
     else if (category.toLowerCase() == 'databases')
     {
         $('#categoryDatabases').addClass('active');
@@ -162,6 +153,10 @@ function resetCategoryActiveFlag(category)
     else if (category.toLowerCase() == 'jobs')
     {
         $('#categoryJobs').addClass('active');
+    }
+    else if (category.toLowerCase() == 'all')
+    {
+        $('#categoryAll').addClass('active');
     }
     currentCategory = category;
 }
@@ -238,7 +233,6 @@ function updateSearchCategories(category)
         $('#categoryIcon').removeClass('fa fa-file-o');
         $('#categoryIcon').addClass('fa fa-file-o');
      }
-     console.log(category.toLowerCase());
     resetCategoryActiveFlag(category);
 }
 
