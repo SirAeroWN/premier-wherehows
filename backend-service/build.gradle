@@ -33,7 +33,6 @@ dependencies{
     // User defined libraries (will be copied to lib/ before `play compile`)
     // compile 'group:name:0.1'
     compile project(":wherehows-common")
-    compile project(":metadata-etl")
     compile externalDependency.play
     compile externalDependency.play_java_jdbc
     compile externalDependency.typesafe_config
@@ -45,7 +44,6 @@ dependencies{
     compile externalDependency.kafka_clients
 
     provided project(":wherehows-common")
-    provided project(":metadata-etl")
 }
 
 clean {

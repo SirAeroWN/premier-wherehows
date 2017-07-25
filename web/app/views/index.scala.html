@@ -9,9 +9,19 @@
           </div>
           <ul id="menutabs" style="display:none" class="nav nav-tabs category-header">
             <li>
-              <a data-toggle="tab" href="#filtertab">Datasets</a>
+              <a data-toggle="tab" href="#filtertab">ALL</a>
             </li>
-            <li><a data-toggle="tab" href="#flowtab">Flows</a></li>
+            <li>
+              <a data-toggle="tab" href="#databasetab">Databases</a>
+            </li>
+            <!-- Commenting out for now, intend to bring back in a different form at a later date
+            <li>
+                <a data-toggle="tab" href="#filtertab2">Databases</a>
+            </li>
+              <li>
+                  <a data-toggle="tab" href="#jobtab">Jobs</a>
+              </li>
+            /-->
           </ul>
           <div class="tab-content">
             <div class="filter">
@@ -20,10 +30,6 @@
             <div id="filtertab" class="tab-pane">
               <div id="datasetlist" class="list-group"></div>
               <div id="tree2" data-source="ajax" class="sampletree" style="display: none;"></div>
-            </div>
-            <div id="flowtab" class="tab-pane">
-              <div id="flowlist" class="list-group"></div>
-              <div id="tree3" data-source="ajax" class="sampletree" style="display: none;"></div>
             </div>
           </div>
         </div>
@@ -357,34 +363,34 @@
       {{/if}}
     </script>
 
-<script type="text/x-handlebars" id="components/dataset-owner-list">
-  {{#if owners}}
-    <header>
-      Owners:
-      <ul>
-        {{#each owners as |owner|}}
-          <li>
-            {{#if owner.email}}
-              <a title="Email {{owner.name}} about {{datasetName}}"
-                 href="mailto:{{owner.email}}?subject=RE: Dataset {{datasetName}}">
-                {{owner.name}}
-              </a>
-            {{else}}
-              {{owner.name}}
-            {{/if}}
-          </li>
-        {{/each}}
-      </ul>
-      {{#if ownersEmailList}}
-        <span>
-          <a title="Email all dataset owners" href="mailto: {{ownersEmailList}}">Ask a question?</a>
-        </span>
+    <script type="text/x-handlebars" id="components/dataset-owner-list">
+      {{#if owners}}
+        <header>
+          Owners:
+          <ul>
+            {{#each owners as |owner|}}
+              <li>
+                {{#if owner.email}}
+                  <a title="Email {{owner.name}} about {{datasetName}}"
+                     href="mailto:{{owner.email}}?subject=RE: Dataset {{datasetName}}">
+                    {{owner.name}}
+                  </a>
+                {{else}}
+                  {{owner.name}}
+                {{/if}}
+              </li>
+            {{/each}}
+          </ul>
+          {{#if ownersEmailList}}
+            <span>
+              <a title="Email all dataset owners" href="mailto: {{ownersEmailList}}">Ask a question?</a>
+            </span>
+          {{/if}}
+        </header>
+      {{else}}
+        No known owners for this dataset
       {{/if}}
-    </header>
-  {{else}}
-    No known owners for this dataset
-  {{/if}}
-</script>
+    </script>
 
     <script type="text/x-handlebars" id="components/dataset-author">
       <div class="row" style="margin-top: 5px; margin-bottom: 5px;">
@@ -870,129 +876,6 @@
       {{/if}}
     </script>
 
-    <script type="text/x-handlebars" id="metrics">
-      <div id="pagedMetrics">
-        <div class="row">
-          <div class="col-xs-12">
-            {{#unless detailview}}
-            <div class="search-pagination">
-              <ul class="pager">
-                {{#unless first}}
-                  <li class="previous">
-                    {{#if group}}
-                      {{#link-to 'metricnamesubpage' dashboard group previousPage}}
-                        &larr; Prev
-                      {{/link-to}}
-                    {{else}}
-                      {{#if dashboard}}
-                      {{#link-to 'metricnamepage' dashboard previousPage}}
-                        &larr; Prev
-                      {{/link-to}}
-                      {{else}}
-                      {{#link-to 'metricspage' previousPage}}
-                        &larr; Prev
-                      {{/link-to}}
-                      {{/if}}
-                    {{/if}}
-                  </li>
-                {{/unless}}
-                <li>
-                  {{ model.data.count }} metrics - page {{ model.data.page }} of {{ model.data.totalPages }}
-                </li>
-                {{#unless last}}
-                  <li class="next">
-                    {{#if group}}
-                      {{#link-to 'metricnamesubpage' dashboard group nextPage}}
-                        Next &rarr;
-                      {{/link-to}}
-                    {{else}}
-                      {{#if dashboard}}
-                      {{#link-to 'metricnamepage' dashboard nextPage}}
-                        Next &rarr;
-                      {{/link-to}}
-                      {{else}}
-                      {{#link-to 'metricspage' nextPage}}
-                        Next &rarr;
-                      {{/link-to}}
-                      {{/if}}
-                    {{/if}}
-                  </li>
-                {{/unless}}
-              </ul>
-            </div>
-            {{/unless}}
-            {{#unless detailview}}
-            <div class="well well-sm">
-              <div class="row">
-                <div class="col-xs-11">
-                  <ul class="breadcrumbs">
-                    {{#each breadcrumbs as |crumb|}}
-                      <li>
-                        <a title="{{crumb.title}}" href="#/metrics/{{crumb.urn}}">
-                          {{crumb.title}}
-                        </a>
-                      </li>
-                    {{/each}}
-                  </ul>
-                </div>
-              </div>
-            </div>
-
-            <table class="table table-bordered search-results">
-              <tbody>
-                {{#each model.data.metrics as |metric|}}
-                  <tr>
-                    <td class="dataset-info">
-                      <div class="row">
-                        <div class="col-xs-8">
-                          {{#link-to 'metric' metric}}
-                            {{metric.name}}
-                          {{/link-to}} <br />
-                          {{ metric.group }} - {{ metric.dashboardName }} <br />
-                          {{ metric.description }}
-                        </div>
-                        <div class="col-xs-4 text-right">
-                          <ul class="datasetTableLinks">
-                            <li
-                              class="text-center"
-                            >
-                              {{#metric-watch metric=metric getMetrics='getMetrics'}}
-                              {{/metric-watch}}
-                            </li>
-                            <li
-                              class="text-center"
-                            >
-                              <a
-                                href="/lineage/metric/{{metric.id}}"
-                                title="{{metric.name}}"
-                              >
-                                <i class="fa fa-sitemap"></i>
-                              </a>
-                            </li>
-                          </ul>
-
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                {{/each}}
-              </tbody>
-            </table>
-            {{/unless}}
-          </div>
-          <div class="col-xs-12">
-            {{outlet}}
-          </div>
-        </div>
-      </div>
-    </script>
-
-
-    <script type="text/x-handlebars" id="metric">
-      {{#metric-detail showLineage=showLineage model=model}}
-      {{/metric-detail}}
-    </script>
-
     <script type="text/x-handlebars" id="search">
       <div class="btn-group" role="group">
         <p style="display:inline;float:left;margin-right:5px;margin-top:6px;"><b>Filter By:</b></p>
@@ -1007,8 +890,13 @@
           </button>
           <ul class="dropdown-menu" role="menu">
             <li>
-            {{#link-to 'search' (query-params category="Datasets" source="all" page=1)}}
+            {{#link-to 'search' (query-params category="Datasets" source="All" page=1)}}
                 All
+            {{/link-to}}
+            </li>
+            <li>
+            {{#link-to 'search' (query-params category="Datasets" source="NAS" page=1)}}
+                NAS
             {{/link-to}}
             </li>
             <li>
@@ -1068,13 +956,19 @@
           type="button"
           class="btn {{if isFlows 'btn-primary'}} {{unless isFlows 'btn-default'}}"
           {{action 'switchSearchToFlow' keyword}}>
-          Flows
+          Databases
         </button>
         <button
           type="button"
           class="btn {{if isJobs 'btn-primary'}} {{unless isJobs 'btn-default'}}"
           {{action 'switchSearchToJob' keyword}}>
           Jobs
+        </button>
+        <button
+          type="button"
+          class="btn {{if isAll 'btn-primary'}} {{unless isAll 'btn-default'}}"
+          {{action 'switchSearchToAll' keyword}}>
+          All
         </button>
       </div>
 

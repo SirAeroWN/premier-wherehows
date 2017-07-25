@@ -136,6 +136,7 @@ function resetCategoryActiveFlag(category)
     $('#categoryDatasets').removeClass('active');
     $('#categoryComments').removeClass('active');
     $('#categoryMetrics').removeClass('active');
+    $('#categoryDatabases').removeClass('active');
     $('#categoryFlows').removeClass('active');
     $('#categoryJobs').removeClass('active');
     if (category.toLowerCase() == 'datasets')
@@ -153,6 +154,10 @@ function resetCategoryActiveFlag(category)
     else if (category.toLowerCase() == 'flows')
     {
         $('#categoryFlows').addClass('active');
+    }
+    else if (category.toLowerCase() == 'databases')
+    {
+        $('#categoryDatabases').addClass('active');
     }
     else if (category.toLowerCase() == 'jobs')
     {
@@ -213,6 +218,16 @@ function updateSearchCategories(category)
         $('#categoryIcon').removeClass('fa fa-file-o');
         $('#categoryIcon').addClass('fa fa-random');
     }
+    else if (category.toLowerCase() == 'databases')
+    {
+        $('#categoryIcon').removeClass('fa fa-list');
+        $('#categoryIcon').removeClass('fa fa-database');
+        $('#categoryIcon').removeClass('fa fa-comment');
+        $('#categoryIcon').removeClass('fa fa-random');
+        $('#categoryIcon').removeClass('fa fa-plus-square-o');
+        $('#categoryIcon').removeClass('fa fa-file-o');
+        $('#categoryIcon').addClass('fa fa-random');
+    }
      else if (category.toLowerCase() == 'jobs')
      {
         $('#categoryIcon').removeClass('fa fa-list');
@@ -223,6 +238,7 @@ function updateSearchCategories(category)
         $('#categoryIcon').removeClass('fa fa-file-o');
         $('#categoryIcon').addClass('fa fa-file-o');
      }
+     console.log(category.toLowerCase());
     resetCategoryActiveFlag(category);
 }
 

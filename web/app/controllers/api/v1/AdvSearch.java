@@ -28,6 +28,7 @@ public class AdvSearch extends Controller
 {
     public static Result getDatasetSources()
     {
+        //Logger.debug("Entering AdvSearch.java:getDatasetSources()");
         ObjectNode result = Json.newObject();
 
         result.put("status", "ok");
@@ -38,6 +39,7 @@ public class AdvSearch extends Controller
 
     public static Result getDatasetScopes()
     {
+        //Logger.debug("Entering AdvSearch.java:getDatasetScopes() " + Thread.currentThread().getStackTrace()[1].toString() + " " + Thread.currentThread().getStackTrace()[2].toString());
         ObjectNode result = Json.newObject();
 
         result.put("status", "ok");
@@ -48,6 +50,7 @@ public class AdvSearch extends Controller
 
     public static Result getDatasetTableNames()
     {
+        //Logger.debug("Entering AdvSearch.java:getDatasetTableNames()");
         ObjectNode result = Json.newObject();
         String scopes = request().getQueryString("scopes");
         result.put("status", "ok");
@@ -58,6 +61,7 @@ public class AdvSearch extends Controller
 
     public static Result getDatasetFields()
     {
+        //Logger.debug("Entering AdvSearch.java:getDatasetFields()");
         ObjectNode result = Json.newObject();
         String tables = request().getQueryString("tables");
         result.put("status", "ok");
@@ -68,6 +72,7 @@ public class AdvSearch extends Controller
 
     public static Result getFlowApplicationCodes()
     {
+        //Logger.debug("Entering AdvSearch.java:getFlowApplicationCodes()");
         ObjectNode result = Json.newObject();
         result.put("status", "ok");
         result.set("appcodes", Json.toJson(AdvSearchDAO.getFlowApplicationCodes()));
@@ -77,6 +82,7 @@ public class AdvSearch extends Controller
 
     public static Result getFlowNames()
     {
+        //Logger.debug("Entering AdvSearch.java:getFlowNames()");
         ObjectNode result = Json.newObject();
         String apps = request().getQueryString("apps");
         result.put("status", "ok");
@@ -87,6 +93,7 @@ public class AdvSearch extends Controller
 
     public static Result getJobNames()
     {
+        //Logger.debug("Entering AdvSearch.java:getJobNames()");
         ObjectNode result = Json.newObject();
         result.put("status", "ok");
         result.set("jobNames", Json.toJson(AdvSearchDAO.getFlowJobNames()));
@@ -96,6 +103,7 @@ public class AdvSearch extends Controller
 
     public static Result search()
     {
+        //Logger.debug("Entering AdvSearch.java:search() " + Thread.currentThread().getStackTrace()[1].toString() + " " + Thread.currentThread().getStackTrace()[2].toString());
         ObjectNode result = Json.newObject();
         String searchOptStr = request().getQueryString("searchOpts");
         JsonNode searchOpt = Json.parse(searchOptStr);
@@ -164,6 +172,7 @@ public class AdvSearch extends Controller
                 }
                 else
                 {
+                    Logger.debug("json: " + searchOpt.asText());
                     result.set("result", Json.toJson(AdvSearchDAO.searchMetrics(searchOpt, page, size)));
                 }
                 return ok(result);

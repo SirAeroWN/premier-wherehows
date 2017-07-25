@@ -110,16 +110,19 @@ public class AdvSearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static List<String> getDatasetSources()
 	{
+        //Logger.debug("Entering AdvSearch.java:getDatasetSources()");
 		return getJdbcTemplate().queryForList(GET_DATASET_SOURCES, String.class);
 	}
 
 	public static List<String> getDatasetScopes()
 	{
+        //Logger.debug("Entering AdvSearch.java:getDatasetScopes()");
 		return getJdbcTemplate().queryForList(GET_DATASET_SCOPES, String.class);
 	}
 
 	public static List<String> getTableNames(String scopes)
 	{
+        //Logger.debug("Entering AdvSearch.java:getTableNames()");
 		List<String> tables = null;
 		if (StringUtils.isNotBlank(scopes))
 		{
@@ -141,6 +144,7 @@ public class AdvSearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static List<String> getFields(String tables)
 	{
+        //Logger.debug("Entering AdvSearch.java:getFields()");
 		String query = null;
 		if (StringUtils.isNotBlank(tables))
 		{
@@ -175,6 +179,7 @@ public class AdvSearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static List<String> getFlowNames(String applications)
 	{
+        //ogger.debug("Entering AdvSearch.java:getFlowNames()");
 		List<String> flowNames = null;
 		if (StringUtils.isNotBlank(applications))
 		{
@@ -196,11 +201,13 @@ public class AdvSearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static List<String> getFlowJobNames()
 	{
+        //Logger.debug("Entering AdvSearch.java:getFlowJobNames()");
 		return getJdbcTemplate().queryForList(GET_JOB_NAMES, String.class);
 	}
 
 	public static ObjectNode elasticSearch(JsonNode searchOpt, int page, int size)
 	{
+        //Logger.debug("Entering AdvSearch.java:elasticSearch()");
 		ObjectNode resultNode = Json.newObject();
 		Long count = 0L;
 		List<Dataset> pagedDatasets = new ArrayList<>();
@@ -275,6 +282,7 @@ public class AdvSearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static ObjectNode elasticSearchMetric(JsonNode searchOpt, int page, int size)
 	{
+        //Logger.debug("Entering AdvSearch.java:elasticSearchMetric()");
 		ObjectNode resultNode = Json.newObject();
 		Long count = 0L;
 		List<Metric> pagedMetrics = new ArrayList<>();
@@ -363,6 +371,7 @@ public class AdvSearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static ObjectNode elasticSearchFlowJobs(JsonNode searchOpt, int page, int size)
 	{
+        //Logger.debug("Entering AdvSearch.java:elasticSearchFlowJobs()");
 		ObjectNode resultNode = Json.newObject();
 		Long count = 0L;
 		List<FlowJob> pagedFlows = new ArrayList<>();
@@ -448,6 +457,7 @@ public class AdvSearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static ObjectNode search(JsonNode searchOpt, int page, int size)
 	{
+		//Logger.debug("Entering AdvSearchDAO.java:search() " + searchOpt.asText());
 		ObjectNode resultNode = Json.newObject();
 		int count = 0;
 		List<String> scopeInList = new ArrayList<String>();
@@ -1137,6 +1147,7 @@ public class AdvSearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static ObjectNode searchFlows(JsonNode searchOpt, int page, int size)
 	{
+		//Logger.debug("Entering AdvSearchDAO.java:searchFlows()");
 		ObjectNode resultNode = Json.newObject();
 		int count = 0;
 		List<String> appcodeInList = new ArrayList<String>();
@@ -1548,6 +1559,7 @@ public class AdvSearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public static ObjectNode searchMetrics(JsonNode searchOpt, int page, int size)
 	{
+		//Logger.debug("entering AdvSearchDAO.java:searchMetrics");
 		ObjectNode resultNode = Json.newObject();
 		int count = 0;
 		List<String> dashboardInList = new ArrayList<String>();

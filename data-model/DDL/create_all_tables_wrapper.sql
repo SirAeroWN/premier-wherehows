@@ -1,3 +1,5 @@
+-- noinspection SqlNoDataSourceInspectionForFile
+
 --
 -- Copyright 2015 LinkedIn Corp. All rights reserved.
 --
