@@ -886,7 +886,7 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 			Logger.error("Exception = " + e.getMessage());
 		}
 
-		return LineageDAO.getImpactDatasetsByUrn(urn);
+		return LineageDAOLite.getImpactDatasetsByUrn(urn);
 	}
 
 	public static boolean favorite(int id, String user)

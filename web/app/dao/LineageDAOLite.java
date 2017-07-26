@@ -550,7 +550,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
         impD.id = (Long) row.get("id");
         impD.datasetUrl = "#/datasets/" + impD.id;
         JsonNode prop = Json.parse((String) row.get("properties"));
-        if ((prop.get("valid").asText()) == "true") {
+        if (prop.has("valid") && (prop.get("valid").asText()) == "true") {
             impD.isValidDataset = true;
         } else {
             impD.isValidDataset = false;
