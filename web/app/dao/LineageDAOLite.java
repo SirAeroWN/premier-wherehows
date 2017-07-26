@@ -270,7 +270,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
     private static List<String> getParents(String urn) {
         List<String> parents = getJdbcTemplate().queryForList(GET_PARENTS, String.class, urn);
         if (parents == null || parents.size() == 0) {
-            Logger.error("couldn't find any parents for URN: " + urn);
+            //Logger.error("couldn't find any parents for URN: " + urn);
         }
         return parents;
     }
@@ -278,7 +278,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
     private static List<String> getChildren(String urn) {
         List<String> children = getJdbcTemplate().queryForList(GET_CHILDREN, String.class, urn);
         if (children == null || children.size() == 0) {
-            Logger.error("couldn't find any children for URN: " + urn);
+            //Logger.error("couldn't find any children for URN: " + urn);
         }
         return children;
     }
@@ -570,28 +570,73 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
                 impactDatasets = new ArrayList<>();
             }
 
+            boolean used = false;
             int level = 0;
-            Set<String> impactedUrns = new HashSet<>();
+            List<String> impactedUrns = new ArrayList<>();
             List<String> nextSearchUrnList = new ArrayList<>();
+            List<String> nextSearchUrnListPreview = new ArrayList<>();
 
             while (searchUrnList.size() > 0) {
                 for (String surn : searchUrnList) {
-                    nextSearchUrnList.addAll(getChildren(surn));
 
-                    Logger.info(surn + " is marked as " + getNodeType(surn));
+
+                    // there has got to be  better way to avoid dupes, right?
+                    nextSearchUrnListPreview = new ArrayList<>(getChildren(surn));
+                    for (int i = 0; i < nextSearchUrnListPreview.size(); i++) {
+                        used = false;
+                        for (int j = i + 1; j < nextSearchUrnListPreview.size(); j++) {
+                            if (nextSearchUrnListPreview.get(i).equals(nextSearchUrnListPreview.get(j))) {
+                                used = true;
+                                break;
+                            }
+                        }
+                        if (!used) {
+                            nextSearchUrnList.add(nextSearchUrnListPreview.get(i));
+                        }
+                    }
+                    
+
+                    //Logger.info(surn + " is marked as " + getNodeType(surn));
                     if (getNodeType(surn).equals("data")) {
-                        Logger.debug(surn + " is marked as data");
-                        impactedUrns.add(level + "****" + surn); // the astricks are used to seperate the encoded level for easier decoding
+                        //Logger.debug(surn + " is marked as data");
+                        // if the urn is already in the list ofimpacted datasets, then we don't want to add it to impactedUrns
+                        used = false;
+                        for (String imp : impactedUrns) {
+                            if (imp.substring(imp.indexOf("****") + 4).equals(surn)) {
+                                used = true;
+                                break;
+                            }
+                        }
+                        if (!used) {
+                            impactedUrns.add(level + "****" + surn); // the astricks are used to seperate the encoded level for easier decoding
+                        }
                     }
                 }
+
+
                 searchUrnList = new ArrayList<>(nextSearchUrnList);
                 nextSearchUrnList = new ArrayList<>();
                 level++;
             }
 
+
             for (String idurn: impactedUrns) {
                 impactDatasets.add(assignImpactDataset(idurn));
             }
+
+
+            Collections.sort(impactDatasets, new Comparator<ImpactDataset>() {
+                public int compare(ImpactDataset imp1, ImpactDataset imp2) {
+                    if (imp1.level < imp2.level) return -1;
+                    if (imp1.level > imp2.level) return 1;
+                    int order = imp1.name.compareTo(imp2.name);
+                    if (order < 0) return -1;
+                    if (order > 0) return 1;
+                    return 0;
+                }
+            });
+
+
         }
     }
 
