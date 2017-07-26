@@ -790,25 +790,6 @@
           </div>
         </div>
 
-        {{#unless isSFDC}}
-        <div class="panel panel-default">
-          <div class="panel-heading" role="tab" id="sampleHeading">
-            <h4 class="panel-title">
-              <a class="collapsed" data-toggle="collapse" data-parent="#accordion"
-               href="#sampleData" aria-expanded="false" aria-controls="sampleData">
-                Sample Data
-              </a>
-            </h4>
-          </div>
-          <div id="sampleData" class="panel-collapse collapse" role="tabpanel" aria-labelledby="sampleHeading">
-            <div class="panel-body">
-              {{#dataset-sample hasSamples=hasSamples isPinot=isPinot columns=columns samples=samples}}
-              {{/dataset-sample}}
-            </div>
-          </div>
-        </div>
-        {{/unless}}
-
         <div class="panel panel-default">
           <div class="panel-heading" role="tab" id="impactsHeading">
             <h4 class="panel-title">
@@ -840,23 +821,6 @@
             <div class="panel-body">
               {{#dataset-relations hasDepends=hasDepends depends=depends hasReferences=hasReferences references=references}}
               {{/dataset-relations}}
-            </div>
-          </div>
-        </div>
-
-        <div class="panel panel-default">
-          <div class="panel-heading" role="tab" id="accessHeading">
-            <h4 class="panel-title">
-              <a class="collapsed" data-toggle="collapse" data-parent="#accordion"
-               href="#accessview" aria-expanded="false" aria-controls="accessData">
-                Accessiblities
-              </a>
-            </h4>
-          </div>
-          <div id="accessview" class="panel-collapse collapse" role="tabpanel" aria-labelledby="accessHeading">
-            <div class="panel-body">
-              {{#dataset-access hasAccess=hasAccess accessibilities=accessibilities}}
-              {{/dataset-access}}
             </div>
           </div>
         </div>
