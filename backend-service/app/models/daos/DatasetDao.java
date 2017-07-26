@@ -33,7 +33,6 @@ import play.Logger;
 import utils.JdbcUtil;
 import wherehows.common.schemas.DatasetDependencyRecord;
 import wherehows.common.schemas.DatasetRecord;
-import wherehows.common.utils.PartitionPatternMatcher;
 import wherehows.common.writers.DatabaseWriter;
 
 

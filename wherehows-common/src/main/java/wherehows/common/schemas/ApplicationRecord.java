@@ -20,7 +20,6 @@ public class ApplicationRecord extends AbstractRecord {
 
   String type;
   String name;
-  DeploymentRecord deploymentDetail; // not using the dataset info in DeploymentRecord
   String uri;
 
   @Override
@@ -45,14 +44,6 @@ public class ApplicationRecord extends AbstractRecord {
 
   public void setName(String name) {
     this.name = name;
-  }
-
-  public DeploymentRecord getDeploymentDetail() {
-    return deploymentDetail;
-  }
-
-  public void setDeploymentDetail(DeploymentRecord deploymentDetail) {
-    this.deploymentDetail = deploymentDetail;
   }
 
   public String getUri() {

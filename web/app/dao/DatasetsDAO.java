@@ -1377,7 +1377,7 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 
 	public static String postColumnComment(int datasetId, int columnId, Map<String, String[]> params, String user)
 	{
-    String result = "Post comment failed. Please try again.";
+		String result = "Post comment failed. Please try again.";
 		if (params == null || params.size() == 0)
 		{
 			return result;
