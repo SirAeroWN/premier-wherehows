@@ -33,7 +33,6 @@ import play.Logger;
 import utils.JdbcUtil;
 import wherehows.common.schemas.DatasetDependencyRecord;
 import wherehows.common.schemas.DatasetRecord;
-import wherehows.common.utils.PartitionPatternMatcher;
 import wherehows.common.writers.DatabaseWriter;
 
 
@@ -150,6 +149,9 @@ public class DatasetDao {
     if (record != null) {
       Map<String, Object> params = new HashMap<>();
       params.put("urn", record.getUrn());
+      if (record.getUrn().indexOf(":///") == -1) {
+        throw new Exception("improperly formatted urn, requires ':///'");
+      }
       try {
         Map<String, Object> result = JdbcUtil.wherehowsNamedJdbcTemplate.queryForMap(GET_DATASET_BY_URN, params);
         updateDataset(dataset);

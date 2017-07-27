@@ -27,7 +27,6 @@ import utils.Urn;
 import utils.JdbcUtil;
 import play.Logger;
 import wherehows.common.schemas.PropertyRecord;
-import wherehows.common.utils.PartitionPatternMatcher;
 import wherehows.common.writers.DatabaseWriter;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
