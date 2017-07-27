@@ -79,7 +79,7 @@ App.DatasetsController = Ember.Controller.extend({
         watchUrn: function(urn) {
             if (!urn)
             {
-                urn = "DATASETS_ROOT";
+                urn = "EVERYTHING_ROOT";
             }
             var _this = this
             var url = "/api/v1/urn/watch"
