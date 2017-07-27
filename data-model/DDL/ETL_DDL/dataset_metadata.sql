@@ -47,7 +47,7 @@ CREATE TABLE `stg_dict_dataset` (
   PRIMARY KEY (`urn`, `db_id`)
 )
   ENGINE = InnoDB
-  DEFAULT CHARSET = latin1
+  DEFAULT CHARSET = utf8
   PARTITION BY HASH(db_id)
   PARTITIONS 8;
 
@@ -56,17 +56,17 @@ CREATE TABLE `dict_dataset` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT,
   `name` varchar(200) CHARACTER SET utf8 NOT NULL,
   `schema` mediumtext CHARACTER SET utf8,
-  `schema_type` varchar(50) DEFAULT 'JSON' COMMENT 'JSON, Hive, DDL, XML, CSV',
+  `schema_type` varchar(50) CHARACTER SET utf8 DEFAULT 'JSON' COMMENT 'JSON, Hive, DDL, XML, CSV',
   `properties` text CHARACTER SET utf8,
   `fields` mediumtext CHARACTER SET utf8,
   `urn` varchar(200) CHARACTER SET utf8 NOT NULL,
-  `source` varchar(50) DEFAULT NULL COMMENT 'The original data source type (for dataset in data warehouse). Oracle, Kafka ...',
-  `location_prefix` varchar(200) DEFAULT NULL,
+  `source` varchar(50) CHARACTER SET utf8 DEFAULT NULL COMMENT 'The original data source type (for dataset in data warehouse). Oracle, Kafka ...',
+  `location_prefix` varchar(200) CHARACTER SET utf8 DEFAULT NULL,
   `parent_name` varchar(200) DEFAULT NULL COMMENT 'Schema Name for RDBMS, Group Name for Jobs/Projects/Tracking Datasets on HDFS ',
-  `storage_type` enum('data','app','db') DEFAULT NULL,
+  `storage_type` enum('data','app','db') CHARACTER SET utf8 DEFAULT NULL,
   `ref_dataset_id` int(11) unsigned DEFAULT NULL COMMENT 'Refer to Master/Main dataset for Views/ExternalTables',
   `status_id` smallint(6) unsigned DEFAULT NULL COMMENT 'Reserve for dataset status',
-  `dataset_type` varchar(30) DEFAULT NULL COMMENT 'hdfs, hive, kafka, teradata, mysql, sqlserver, file, nfs, pinot, salesforce, oracle, db2, netezza, cassandra, hbase, qfs, zfs',
+  `dataset_type` varchar(30) CHARACTER SET utf8 DEFAULT NULL COMMENT 'hdfs, hive, kafka, teradata, mysql, sqlserver, file, nfs, pinot, salesforce, oracle, db2, netezza, cassandra, hbase, qfs, zfs',
   `hive_serdes_class` varchar(300) DEFAULT NULL,
   `is_partitioned` char(1) DEFAULT NULL,
   `partition_layout_pattern_id` smallint(6) DEFAULT NULL,
@@ -78,11 +78,11 @@ CREATE TABLE `dict_dataset` (
   `wh_etl_exec_id` bigint(20) DEFAULT NULL COMMENT 'wherehows etl execution id that modified this record',
   PRIMARY KEY (`id`),
   UNIQUE KEY `uq_dataset_urn` (`urn`),
-  FULLTEXT KEY `fti_datasets_all` (`name`,`schema`,`properties`,`urn`)
+  FULLTEXT KEY `fti_datasets_all` (`name`,`schema`,`properties`,`urn`, `dataset_type`, `fields`)
 )
   ENGINE=InnoDB
   AUTO_INCREMENT=16
-  DEFAULT CHARSET=latin1;
+  DEFAULT CHARSET=utf8;
 
 -- stagging table for sample data
 CREATE TABLE `stg_dict_dataset_sample` (
@@ -141,7 +141,7 @@ CREATE TABLE `stg_dict_field_detail` (
   PRIMARY KEY (`urn`, `sort_id`, `db_id`)
 )
   ENGINE = InnoDB
-  DEFAULT CHARSET = latin1
+  DEFAULT CHARSET = utf8
   PARTITION BY HASH(db_id)
   PARTITIONS 8;
 
@@ -190,7 +190,7 @@ CREATE TABLE `dict_field_detail` (
 )
   ENGINE = InnoDB
   AUTO_INCREMENT = 0
-  DEFAULT CHARSET = latin1
+  DEFAULT CHARSET = utf8
   COMMENT = 'Flattened Fields/Columns';
 
 -- schema history
@@ -245,8 +245,8 @@ CREATE TABLE comments (
   FULLTEXT KEY `fti_comment` (`text`)
 )
   ENGINE = InnoDB
-  CHARACTER SET latin1
-  COLLATE latin1_swedish_ci
+  CHARACTER SET utf8
+  COLLATE utf8_general_ci
   AUTO_INCREMENT = 0;
 
 -- field comments

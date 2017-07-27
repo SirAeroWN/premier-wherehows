@@ -153,64 +153,6 @@
                 }
             }
         });
-
-        /*
-        $("#tree1").bind("fancytreeactivate", function(event, data){
-            var node = data.node;
-            if(node)
-            {
-                if (node.isFolder())
-                {
-                    if (node.data && node.data.level)
-                    {
-                        var level = node.data.level;
-                        if (level == 1)
-                        {
-                            window.location = "#/metrics/name/" + node.title + '/page/1';
-                        }
-                        else if (level == 2)
-                        {
-                            if (node.data.dashboard_name)
-                            {
-                                window.location = "#/metrics/name/" +
-                                    node.data.dashboard_name + '/' +
-                                    node.title +
-                                    '/page/1';
-                            }
-                        }
-                    }
-                }
-                else{
-                    if (node && node.data && node.data.metric_id)
-                    {
-                        window.location = "#/metrics/" + node.data.metric_id;
-                    }
-                }
-            }
-        });
-
-        $("#tree1").bind("fancytreeinit", function(event, data){
-
-            if (window.g_currentMetricNodeName && window.g_currentMetricNodeId)
-            {
-                findAndActiveMetricNode(window.g_currentMetricNodeName,
-                    window.g_currentMetricNodeId);
-            }
-            else if (window.g_currentMetricDashboardName && window.g_currentMetricGroupName)
-            {
-                findAndActiveMetricGroupNode(window.g_currentMetricDashboardName,
-                    window.g_currentMetricGroupName);
-            }
-            else if (window.g_currentMetricDashboardName)
-            {
-                findAndActiveMetricDashboardNode(window.g_currentMetricDashboardName);
-            }
-            window.g_currentMetricNodeName = null;
-            window.g_currentMetricNodeId = null;
-            window.g_currentMetricDashboardName = null;
-            window.g_currentMetricGroupName = null;
-        });
-        */
     });
 
 })(window, jQuery)

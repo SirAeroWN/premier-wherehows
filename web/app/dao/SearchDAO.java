@@ -46,7 +46,8 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 
 	public final static String SEARCH_DATASET_WITH_PAGINATION = "SELECT SQL_CALC_FOUND_ROWS " +
 			"id, `name`, `schema`, `source`, `urn`, FROM_UNIXTIME(source_modified_time) as modified, " +
-			"rank_01 + rank_02 + rank_03 + rank_04 + rank_05 + rank_06 + rank_07 + rank_08 + rank_09 as rank " +
+			"rank_01 + rank_02 + rank_03 + rank_04 + rank_05 + rank_06 + rank_07 + rank_08 + rank_09 + " +
+			"rank_10 + rank_11 + rank_12 + rank_13 + rank_14 + rank_15 as rank " +
 			"FROM (SELECT id, `name`, `schema`, `source`, `urn`, source_modified_time, " +
 			"CASE WHEN `name` = '$keyword' THEN 3000 ELSE 0 END rank_01, " +
 			"CASE WHEN `name` like '$keyword%' THEN 2000 ELSE 0 END rank_02, " +
@@ -56,14 +57,21 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 			"CASE WHEN `urn` like '%$keyword%' THEN 100 ELSE 0 END rank_06, " +
 			"CASE WHEN `schema` = '$keyword' THEN 30 ELSE 0 END rank_07, " +
 			"CASE WHEN `schema` like '$keyword%' THEN 20 ELSE 0 END rank_08, " +
-			"CASE WHEN `schema` like '%$keyword%' THEN 10 ELSE 0 END rank_09 " +
-			"FROM dict_dataset WHERE MATCH(`name`, `schema`,  `properties`, `urn`)" +
+			"CASE WHEN `schema` like '%$keyword%' THEN 10 ELSE 0 END rank_09, " +
+			"CASE WHEN `dataset_type` = '$keyword' THEN 30 ELSE 0 END rank_10, " +
+			"CASE WHEN `dataset_type` LIKE '$keyword%' THEN 20 ELSE 0 END rank_11, " +
+			"CASE WHEN `dataset_type` LIKE '%$keyword%' THEN 10 ELSE 0 END rank_12, " +
+			"CASE WHEN `fields` = '$keyword' THEN 30 ELSE 0 END rank_13, " +
+			"CASE WHEN `fields` LIKE '$keyword%' THEN 20 ELSE 0 END rank_14, " +
+			"CASE WHEN `fields` LIKE '%$keyword%' THEN 10 ELSE 0 END rank_15 " +
+			"FROM dict_dataset WHERE MATCH(`name`, `schema`,  `properties`, `urn`, `dataset_type`, `fields`)" +
 			" AGAINST ('*$keyword* *v_$keyword* \"$keyword\"' IN BOOLEAN MODE) ) t " +
 			"ORDER BY rank DESC, `name`, `urn` LIMIT ?, ?;";
 
 	public final static String SEARCH_DATASET_WITH_PAGINATION_AND_TYPE = "SELECT SQL_CALC_FOUND_ROWS " +
 			"id, `name`, `schema`, `source`, `urn`, FROM_UNIXTIME(source_modified_time) as modified, " +
-			"rank_01 + rank_02 + rank_03 + rank_04 + rank_05 + rank_06 + rank_07 + rank_08 + rank_09 as rank " +
+			"rank_01 + rank_02 + rank_03 + rank_04 + rank_05 + rank_06 + rank_07 + rank_08 + rank_09 + " +
+			"rank_10 + rank_11 + rank_12 + rank_13 + rank_14 + rank_15 as rank " +
 			"FROM (SELECT id, `name`, `schema`, `source`, `urn`, source_modified_time, " +
 			"CASE WHEN `name` = '$keyword' THEN 3000 ELSE 0 END rank_01, " +
 			"CASE WHEN `name` like '$keyword%' THEN 2000 ELSE 0 END rank_02, " +
@@ -73,14 +81,21 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 			"CASE WHEN `urn` like '%$keyword%' THEN 100 ELSE 0 END rank_06, " +
 			"CASE WHEN `schema` = '$keyword' THEN 30 ELSE 0 END rank_07, " +
 			"CASE WHEN `schema` like '$keyword%' THEN 20 ELSE 0 END rank_08, " +
-			"CASE WHEN `schema` like '%$keyword%' THEN 10 ELSE 0 END rank_09 " +
-			"FROM dict_dataset WHERE MATCH(`name`, `schema`,  `properties`, `urn`)" +
+			"CASE WHEN `schema` like '%$keyword%' THEN 10 ELSE 0 END rank_09, " +
+			"CASE WHEN `dataset_type` = '$keyword' THEN 30 ELSE 0 END rank_10, " +
+			"CASE WHEN `dataset_type` LIKE '$keyword%' THEN 20 ELSE 0 END rank_11, " +
+			"CASE WHEN `dataset_type` LIKE '%$keyword%' THEN 10 ELSE 0 END rank_12, " +
+			"CASE WHEN `fields` = '$keyword' THEN 30 ELSE 0 END rank_13, " +
+			"CASE WHEN `fields` LIKE '$keyword%' THEN 20 ELSE 0 END rank_14, " +
+			"CASE WHEN `fields` LIKE '%$keyword%' THEN 10 ELSE 0 END rank_15 " +
+			"FROM dict_dataset WHERE MATCH(`name`, `schema`,  `properties`, `urn`, `dataset_type`, `fields`)" +
 			" AGAINST ('*$keyword* *v_$keyword* \"$keyword\"' IN BOOLEAN MODE) and `storage_type` = '$type' ) t " +
 			"ORDER BY rank DESC, `name`, `urn` LIMIT ?, ?;";
 
 	public final static String SEARCH_DATASET_BY_SOURCE_WITH_PAGINATION = "SELECt SQL_CALC_FOUND_ROWS " +
 			"id, `name`, `schema`, `source`, `urn`, FROM_UNIXTIME(source_modified_time) as modified, " +
-			"rank_01 + rank_02 + rank_03 + rank_04 + rank_05 + rank_06 + rank_07 + rank_08 + rank_09 as rank " +
+			"rank_01 + rank_02 + rank_03 + rank_04 + rank_05 + rank_06 + rank_07 + rank_08 + rank_09 + " +
+			"rank_10 + rank_11 + rank_12 + rank_13 + rank_14 + rank_15 as rank " +
 			"FROM (SELECT id, `name`, `schema`, `source`, `urn`, source_modified_time, " +
 			"CASE WHEN `name` = '$keyword' THEN 3000 ELSE 0 END rank_01, " +
 			"CASE WHEN `name` like '$keyword%' THEN 2000 ELSE 0 END rank_02, " +
@@ -90,14 +105,21 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 			"CASE WHEN `urn` like '%$keyword%' THEN 100 ELSE 0 END rank_06, " +
 			"CASE WHEN `schema` = '$keyword' THEN 30 ELSE 0 END rank_07, " +
 			"CASE WHEN `schema` like '$keyword%' THEN 20 ELSE 0 END rank_08, " +
-			"CASE WHEN `schema` like '%$keyword%' THEN 10 ELSE 0 END rank_09 " +
-			"FROM dict_dataset WHERE MATCH(`name`, `schema`,  `properties`, `urn`)" +
+			"CASE WHEN `schema` like '%$keyword%' THEN 10 ELSE 0 END rank_09, " +
+			"CASE WHEN `dataset_type` = '$keyword' THEN 30 ELSE 0 END rank_10, " +
+			"CASE WHEN `dataset_type` LIKE '$keyword%' THEN 20 ELSE 0 END rank_11, " +
+			"CASE WHEN `dataset_type` LIKE '%$keyword%' THEN 10 ELSE 0 END rank_12, " +
+			"CASE WHEN `fields` = '$keyword' THEN 30 ELSE 0 END rank_13, " +
+			"CASE WHEN `fields` LIKE '$keyword%' THEN 20 ELSE 0 END rank_14, " +
+			"CASE WHEN `fields` LIKE '%$keyword%' THEN 10 ELSE 0 END rank_15 " +
+			"FROM dict_dataset WHERE MATCH(`name`, `schema`,  `properties`, `urn`, `dataset_type`, `fields`)" +
 			" AGAINST ('*$keyword* *v_$keyword* \"$keyword\"' IN BOOLEAN MODE) and source = ? ) t " +
 			"ORDER BY rank desc, `name`, `urn` LIMIT ?, ?;";
 
 	public final static String SEARCH_DATASET_BY_SOURCE_WITH_PAGINATION_AND_TYPE = "SELECt SQL_CALC_FOUND_ROWS " +
 			"id, `name`, `schema`, `source`, `urn`, FROM_UNIXTIME(source_modified_time) as modified, " +
-			"rank_01 + rank_02 + rank_03 + rank_04 + rank_05 + rank_06 + rank_07 + rank_08 + rank_09 as rank " +
+			"rank_01 + rank_02 + rank_03 + rank_04 + rank_05 + rank_06 + rank_07 + rank_08 + rank_09 + " +
+			"rank_10 + rank_11 + rank_12 + rank_13 + rank_14 + rank_15 as rank " +
 			"FROM (SELECT id, `name`, `schema`, `source`, `urn`, source_modified_time, " +
 			"CASE WHEN `name` = '$keyword' THEN 3000 ELSE 0 END rank_01, " +
 			"CASE WHEN `name` like '$keyword%' THEN 2000 ELSE 0 END rank_02, " +
@@ -107,8 +129,14 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 			"CASE WHEN `urn` like '%$keyword%' THEN 100 ELSE 0 END rank_06, " +
 			"CASE WHEN `schema` = '$keyword' THEN 30 ELSE 0 END rank_07, " +
 			"CASE WHEN `schema` like '$keyword%' THEN 20 ELSE 0 END rank_08, " +
-			"CASE WHEN `schema` like '%$keyword%' THEN 10 ELSE 0 END rank_09 " +
-			"FROM dict_dataset WHERE MATCH(`name`, `schema`,  `properties`, `urn`)" +
+			"CASE WHEN `schema` like '%$keyword%' THEN 10 ELSE 0 END rank_09, " +
+			"CASE WHEN `dataset_type` = '$keyword' THEN 30 ELSE 0 END rank_10, " +
+			"CASE WHEN `dataset_type` LIKE '$keyword%' THEN 20 ELSE 0 END rank_11, " +
+			"CASE WHEN `dataset_type` LIKE '%$keyword%' THEN 10 ELSE 0 END rank_12, " +
+			"CASE WHEN `fields` = '$keyword' THEN 30 ELSE 0 END rank_13, " +
+			"CASE WHEN `fields` LIKE '$keyword%' THEN 20 ELSE 0 END rank_14, " +
+			"CASE WHEN `fields` LIKE '%$keyword%' THEN 10 ELSE 0 END rank_15 " +
+			"FROM dict_dataset WHERE MATCH(`name`, `schema`,  `properties`, `urn`, `dataset_type`, `fields`)" +
 			" AGAINST ('*$keyword* *v_$keyword* \"$keyword\"' IN BOOLEAN MODE) and source = ? and `storage_type` = '$type' ) t " +
 			"ORDER BY rank desc, `name`, `urn` LIMIT ?, ?;";
 
@@ -786,68 +814,7 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 	{
 		//Logger.debug("Entering SearchDAO.java:getPagedDatasetByKeyword()");
 		return getPagedEntityByKeyword(category, keyword, source, "data", page, size);
-		/*
-    	List<Dataset> pagedDatasets = new ArrayList<Dataset>();
-		final JdbcTemplate jdbcTemplate = getJdbcTemplate();
-		javax.sql.DataSource ds = jdbcTemplate.getDataSource();
-		DataSourceTransactionManager tm = new DataSourceTransactionManager(ds);
-
-		TransactionTemplate txTemplate = new TransactionTemplate(tm);
-
-		ObjectNode result;
-		result = txTemplate.execute(new TransactionCallback<ObjectNode>()
-		{
-			public ObjectNode doInTransaction(TransactionStatus status)
-			{
-				List<Map<String, Object>> rows = null;
-				if (StringUtils.isBlank(source) || source.toLowerCase().equalsIgnoreCase("all"))
-				{
-					//String query = SEARCH_DATASET_WITH_PAGINATION.replace("$keyword", keyword);
-					String query = SEARCH_DATASET_WITH_PAGINATION_AND_TYPE.replace("$keyword", keyword);
-					query = query.replace("$type", storage_type);
-					rows = jdbcTemplate.queryForList(query, (page-1)*size, size);
-				}
-				else
-				{
-					String query = SEARCH_DATASET_BY_SOURCE_WITH_PAGINATION.replace("$keyword", keyword);
-					rows = jdbcTemplate.queryForList(query, source, (page-1)*size, size);
-				}
-
-				for (Map row : rows) {
-
-					Dataset ds = new Dataset();
-					ds.id = (Long)row.get(DatasetRowMapper.DATASET_ID_COLUMN);
-					ds.name = (String)row.get(DatasetRowMapper.DATASET_NAME_COLUMN);
-					ds.source = (String)row.get(DatasetRowMapper.DATASET_SOURCE_COLUMN);
-					ds.urn = (String)row.get(DatasetRowMapper.DATASET_URN_COLUMN);
-					ds.schema = (String)row.get(DatasetRowMapper.DATASET_SCHEMA_COLUMN);
-					pagedDatasets.add(ds);
-				}
-				long count = 0;
-				try {
-					count = jdbcTemplate.queryForObject(
-							"SELECT FOUND_ROWS()",
-							Long.class);
-				}
-				catch(EmptyResultDataAccessException e)
-				{
-					Logger.error("Exception = " + e.getMessage());
-				}
-
-				ObjectNode resultNode = Json.newObject();
-				resultNode.put("count", count);
-				resultNode.put("page", page);
-				resultNode.put("category", category);
-				resultNode.put("source", source);
-				resultNode.put("itemsPerPage", size);
-				resultNode.put("totalPages", (int)Math.ceil(count/((double)size)));
-				resultNode.set("data", Json.toJson(pagedDatasets));
-
-				return resultNode;
-			}
-		});
-
-		return result;*/
+		
 	}
 
 	public static ObjectNode getPagedMetricByKeyword(final String category, String keyword, int page, int size)
@@ -1065,7 +1032,6 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 	}
 
 	public static ObjectNode getPagedAllByKeyword(String category, String keyword, int page, int size) {
-		//Logger.debug("Entering SearchDAO.java:getPagedAllByKeyword()");
 		return getPagedEntityByKeyword(category, keyword, "all", "all", page, size);
 	}
 

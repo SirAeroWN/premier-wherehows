@@ -30,11 +30,8 @@ import utils.JdbcUtil;
 import wherehows.common.DatasetPath;
 import wherehows.common.LineageCombiner;
 import wherehows.common.schemas.ApplicationRecord;
-import wherehows.common.schemas.JobExecutionRecord;
 import wherehows.common.schemas.LineageDatasetRecord;
-import wherehows.common.schemas.LineageRecord;
 import wherehows.common.schemas.LineageRecordLite;
-import wherehows.common.utils.PartitionPatternMatcher;
 import wherehows.common.utils.PreparedStatementUtil;
 import wherehows.common.writers.DatabaseWriter;
 import wherehows.common.exceptions.IncompleteJsonException;
@@ -45,31 +42,6 @@ import wherehows.common.exceptions.IncompleteJsonException;
  * created by norv on 07/06/16
  */
 public class LineageDaoLite {
-
-    public static List<Map<String, Object>> getJobsByDataset(String urn, String period, String cluster, String instance, String sourceTargetType)
-            throws SQLException {
-        Logger.error("getJobsByDataset is not implimented in diet mode");
-        List<Map<String, Object>> empty = new ArrayList<>();
-        return empty;
-    }
-
-    public static List<Map<String, Object>> getDatasetsByJob(String flowPath, String jobName, String instance, String sourceTargetType) {
-        Logger.error("getDatasetsByJob is not implimented in diet mode");
-        List<Map<String, Object>> empty = new ArrayList<>();
-        return empty;
-    }
-
-    public static List<Map<String, Object>> getDatasetsByFlowExec(Long flowExecId, String jobName, String instance, String sourceTargetType) {
-        Logger.error("getDatasetsByFlowExec is not implimented in diet mode");
-        List<Map<String, Object>> empty = new ArrayList<>();
-        return empty;
-    }
-
-    public static List<Map<String, Object>> getDatasetsByJobExec(Long jobExecId, String instance, String sourceTargetType) {
-        Logger.error("getDatasetsByJobExec is not implimented in diet mode");
-        List<Map<String, Object>> empty = new ArrayList<>();
-        return empty;
-    }
 
     // insert relationships between give nodes into family table
     // all parents in parents array are parents of every child in the children array
@@ -103,19 +75,5 @@ public class LineageDaoLite {
         } else if (!lineage.has("parent_urn") && !lineage.has("child_urn")) {
             throw new IncompleteJsonException("Missing `parent_urn` and `child_urn` fields");
         }
-    }
-
-    public static void updateJobExecutionLineage(JsonNode root)
-            throws Exception {
-        Logger.error("updateJobExecutionLineage is not implimented in diet mode");
-    }
-
-    // convert LineageDatasetRecord and JobExecutionRecord into LineageRecord
-    private static LineageRecord convertLineageDataset(LineageDatasetRecord lineageDataset, JobExecutionRecord jobExec)
-            throws Exception {
-        Logger.error("convertLineageDataset is not implimented in diet mode");
-        final LineageRecord record = new LineageRecord(jobExec.getAppId(), jobExec.getFlowExecutionId(), jobExec.getName(),
-                jobExec.getExecutionId());
-        return record;
     }
 }

@@ -16,7 +16,6 @@ package controllers.api.v1;
 import com.fasterxml.jackson.databind.node.ObjectNode;
 import dao.DatasetsDAO;
 import dao.FlowsDAO;
-import dao.LineageDAO;
 import dao.LineageDAOLite;
 import play.Play;
 import play.libs.Json;

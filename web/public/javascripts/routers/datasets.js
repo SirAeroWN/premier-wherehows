@@ -219,7 +219,7 @@ App.DatasetRoute = Ember.Route.extend({
             var name = urn.substring(index +1);
             findAndActiveDatasetNode(name, urn);
           }
-          var breadcrumbs = [{"title":"DATASETS_ROOT", "urn":"page/1"}];
+          var breadcrumbs = [{"title":"EVERYTHING_ROOT", "urn":"page/1"}];
           var updatedUrn = urn.replace("://", "");
           var b = updatedUrn.split('/');
           for(var i = 0; i < b.length; i++) {
@@ -571,7 +571,7 @@ App.PageRoute = Ember.Route.extend({
     });
     var url = 'api/v1/datasets?size=10&page=' + param.page;
     currentTab = 'Datasets';
-    var breadcrumbs = [{"title":"DATASETS_ROOT", "urn":"page/1"}];
+    var breadcrumbs = [{"title":"EVERYTHING_ROOT", "urn":"page/1"}];
     updateActiveTab();
     $.get(url, function(data) {
       if (data && data.status == "ok"){
@@ -581,7 +581,7 @@ App.PageRoute = Ember.Route.extend({
         datasetController.set('detailview', false);
       }
     });
-    var watcherEndpoint = "/api/v1/urn/watch?urn=DATASETS_ROOT";
+    var watcherEndpoint = "/api/v1/urn/watch?urn=EVERYTHING_ROOT";
     $.get(watcherEndpoint, function(data){
         if(data.id && data.id !== 0) {
             datasetController.set('urnWatched', true)
@@ -641,7 +641,7 @@ App.SubpageRoute = Ember.Route.extend({
     }
     currentTab = 'Datasets';
     updateActiveTab();
-    var breadcrumbs = [{"title":"DATASETS_ROOT", "urn":"page/1"}];
+    var breadcrumbs = [{"title":"EVERYTHING_ROOT", "urn":"page/1"}];
     var urn = param.urn.replace("://", "");
     var b = urn.split('/');
     for(var i = 0; i < b.length; i++) {

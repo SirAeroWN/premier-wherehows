@@ -781,7 +781,7 @@ public class Dataset extends Controller
         return ok(result);
     }
 
-    public static Result getReferenceViews(Long datasetId)
+    public static Result getReferenceViews(long datasetId)
     {
         ObjectNode result = Json.newObject();
         List<DatasetDependency> references = new ArrayList<>();

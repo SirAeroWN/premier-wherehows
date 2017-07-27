@@ -24,7 +24,7 @@
   String.prototype.replaceAll = function (target, replacement) {
     return this.split(target).join(replacement);
   };
-  global.g_currentCategory = 'Datasets';
+  global.g_currentCategory = 'All';
   function renderAdvSearchDatasetSources(parent, sources) {
     let content = '';
     if ((!parent) || (!sources) || sources.length == 0) {

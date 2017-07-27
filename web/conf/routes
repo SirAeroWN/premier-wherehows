@@ -19,9 +19,9 @@ POST    /api/v1/usersettings/me             controllers.api.v1.User.updateSettin
 
 GET     /tree/:name                         controllers.Application.loadTree(name:String)
 
-GET     /tree/flow/:app                     controllers.Application.loadFlowProjects(app:String)
+#GET     /tree/flow/:app                     controllers.Application.loadFlowProjects(app:String)
 
-GET     /tree/flow/:app/:project            controllers.Application.loadFlowNodes(app:String, project:String)
+#GET     /tree/flow/:app/:project            controllers.Application.loadFlowNodes(app:String, project:String)
 
 GET     /lineage                                    controllers.Application.lineage()
 
@@ -29,7 +29,7 @@ GET     /lineage/dataset/:id                        controllers.Application.data
 
 GET     /lineage/metric/:id                         controllers.Application.metricLineage(id: Int)
 
-GET     /lineage/flow/:application/:project/:flow   controllers.Application.flowLineage(application: String, project: String, flow: String)
+#GET     /lineage/flow/:application/:project/:flow   controllers.Application.flowLineage(application: String, project: String, flow: String)
 
 GET     /schemaHistory                              controllers.Application.schemaHistory()
 
@@ -45,17 +45,17 @@ GET     /api/v1/autocomplete/search         controllers.api.v1.Search.getSearchA
 
 GET     /api/v2/autocomplete/searchDataset         controllers.api.v1.Search.getSearchAutoCompleteForDataset()
 
-GET     /api/v2/autocomplete/searchMetric         controllers.api.v1.Search.getSearchAutoCompleteForMetric()
+#GET     /api/v2/autocomplete/searchMetric         controllers.api.v1.Search.getSearchAutoCompleteForMetric()
 
-GET     /api/v2/autocomplete/searchFlow         controllers.api.v1.Search.getSearchAutoCompleteForFlow()
+#GET     /api/v2/autocomplete/searchFlow         controllers.api.v1.Search.getSearchAutoCompleteForFlow()
 
 GET     /api/v1/list/datasets               controllers.api.v1.Dataset.getDatasetListNodes()
 
-GET     /api/v1/list/flows                  controllers.api.v1.Database.getDatasetListNodes()
+#GET     /api/v1/list/flows                  controllers.api.v1.Database.getDatasetListNodes()
 
-GET     /api/v1/list/flows/:application     controllers.api.v1.Flow.getFlowListViewProjects(application:String)
+#GET     /api/v1/list/flows/:application     controllers.api.v1.Flow.getFlowListViewProjects(application:String)
 
-GET     /api/v1/list/flows/:application/:project      controllers.api.v1.Flow.getFlowListViewFlows(application:String, project:String)
+#GET     /api/v1/list/flows/:application/:project      controllers.api.v1.Flow.getFlowListViewFlows(application:String, project:String)
 
 GET     /api/v1/datasets                    controllers.api.v1.Dataset.getPagedDatasets()
 
@@ -141,27 +141,27 @@ DELETE  /api/v1/datasets/:id/own                    controllers.api.v1.Dataset.u
 
 GET     /api/v1/search                              controllers.api.v1.Search.searchByKeyword()
 
-GET     /api/v1/metrics                             controllers.api.v1.Metric.getPagedMetrics()
+#GET     /api/v1/metrics                             controllers.api.v1.Metric.getPagedMetrics()
 
-GET     /api/v1/metrics/:id                         controllers.api.v1.Metric.getMetricByID(id:Int)
+#GET     /api/v1/metrics/:id                         controllers.api.v1.Metric.getMetricByID(id:Int)
 
-GET     /api/v1/metrics/name/:dashboardName         controllers.api.v1.Metric.getPagedMetricsByDashboard(dashboardName:String)
+#GET     /api/v1/metrics/name/:dashboardName         controllers.api.v1.Metric.getPagedMetricsByDashboard(dashboardName:String)
 
-GET     /api/v1/metrics/name/:dashboardName/:group  controllers.api.v1.Metric.getPagedMetricsByDashboardandGroup(dashboardName:String, group:String)
+#GET     /api/v1/metrics/name/:dashboardName/:group  controllers.api.v1.Metric.getPagedMetricsByDashboardandGroup(dashboardName:String, group:String)
 
-POST    /api/v1/metrics/:id/update                  controllers.api.v1.Metric.updateMetric(id:Int)
+#POST    /api/v1/metrics/:id/update                  controllers.api.v1.Metric.updateMetric(id:Int)
 
-POST    /api/v1/metrics/:id/watch                   controllers.api.v1.Metric.watchMetric(id:Int)
+#POST    /api/v1/metrics/:id/watch                   controllers.api.v1.Metric.watchMetric(id:Int)
 
-DELETE  /api/v1/metrics/:id/watch/:watchId          controllers.api.v1.Metric.unwatchMetric(id:Int, watchId:Int)
+#DELETE  /api/v1/metrics/:id/watch/:watchId          controllers.api.v1.Metric.unwatchMetric(id:Int, watchId:Int)
 
-GET     /api/v1/flows                               controllers.api.v1.Database.getPagedDatasets()
+#GET     /api/v1/flows                               controllers.api.v1.Database.getPagedDatasets()
 
-GET     /api/v1/flows/:application                  controllers.api.v1.Flow.getPagedProjects(application: String)
+#GET     /api/v1/flows/:application                  controllers.api.v1.Flow.getPagedProjects(application: String)
 
-GET     /api/v1/flows/:application/:project         controllers.api.v1.Flow.getPagedFlows(application: String, project: String)
+#GET     /api/v1/flows/:application/:project         controllers.api.v1.Flow.getPagedFlows(application: String, project: String)
 
-GET     /api/v1/flow/:application/:flowId           controllers.api.v1.Flow.getPagedJobs(application: String, flowId: Long)
+#GET     /api/v1/flow/:application/:flowId           controllers.api.v1.Flow.getPagedJobs(application: String, flowId: Long)
 
 GET     /api/v1/advsearch/sources                   controllers.api.v1.AdvSearch.getDatasetSources()
 
@@ -173,7 +173,7 @@ GET     /api/v1/advsearch/fields                    controllers.api.v1.AdvSearch
 
 GET     /api/v1/advsearch/appcodes                  controllers.api.v1.AdvSearch.getFlowApplicationCodes()
 
-GET     /api/v1/advsearch/flowNames                 controllers.api.v1.AdvSearch.getFlowNames()
+#GET     /api/v1/advsearch/flowNames                 controllers.api.v1.AdvSearch.getFlowNames()
 
 GET     /api/v1/advsearch/jobNames                  controllers.api.v1.AdvSearch.getJobNames()
 
@@ -181,11 +181,11 @@ GET     /api/v1/advsearch/search                    controllers.api.v1.AdvSearch
 
 GET     /api/v1/lineage/dataset/:id                 controllers.api.v1.Lineage.getDatasetLineageGraphData(id:Int)
 
-GET     /api/v1/lineage/flow/:application/:project/:flowId   controllers.api.v1.Lineage.getFlowLineageGraphData(application: String, project: String, flowId: Long)
+#GET     /api/v1/lineage/flow/:application/:project/:flowId   controllers.api.v1.Lineage.getFlowLineageGraphData(application: String, project: String, flowId: Long)
 
-GET     /api/v1/schemaHistory/datasets              controllers.api.v1.SchemaHistory.getPagedDatasets()
+#GET     /api/v1/schemaHistory/datasets              controllers.api.v1.SchemaHistory.getPagedDatasets()
 
-GET     /api/v1/schemaHistory/historyData/:id       controllers.api.v1.SchemaHistory.getSchemaHistory(id: Int)
+#GET     /api/v1/schemaHistory/historyData/:id       controllers.api.v1.SchemaHistory.getSchemaHistory(id: Int)
 
 POST    /api/v1/tracking                            controllers.api.v1.Tracking.addTrackingEvent()
 

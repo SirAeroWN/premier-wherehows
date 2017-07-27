@@ -3,10 +3,6 @@
     <div>
       <div id="mainSplitter">
         <div id="tabSplitter">
-          <div class="btn-group" role="group" aria-label="Toggle List/Tree View">
-            <button id="listviewbtn" type="button" class="btn btn-primary">List View</button>
-            <button id="treeviewbtn" type="button" class="btn btn-default">Tree View</button>
-          </div>
           <ul id="menutabs" style="display:none" class="nav nav-tabs category-header">
             <li>
               <a data-toggle="tab" href="#filtertab">ALL</a>
@@ -14,14 +10,6 @@
             <li>
               <a data-toggle="tab" href="#databasetab">Databases</a>
             </li>
-            <!-- Commenting out for now, intend to bring back in a different form at a later date
-            <li>
-                <a data-toggle="tab" href="#filtertab2">Databases</a>
-            </li>
-              <li>
-                  <a data-toggle="tab" href="#jobtab">Jobs</a>
-              </li>
-            /-->
           </ul>
           <div class="tab-content">
             <div class="filter">
@@ -667,20 +655,6 @@
               Downstream
             </a>
           </li>
-          <li id="depends">
-            <a data-toggle="tab"
-              title="Relations"
-              href="#dependtab">
-              Relations
-            </a>
-          </li>
-          <li id="access">
-            <a data-toggle="tab"
-              title="Accessibilities"
-              href="#accesstab">
-              Accessibilities
-            </a>
-          </li>
         </ul>
         <div class="tab-content">
           {{#unless isPinot}}
@@ -715,14 +689,6 @@
             {{#dataset-impact hasImpacts=hasImpacts impacts=impacts}}
             {{/dataset-impact}}
           </div>
-          <div id="dependtab" class="tab-pane">
-            {{#dataset-relations hasDepends=hasDepends depends=depends hasReferences=hasReferences references=references}}
-            {{/dataset-relations}}
-          </div>
-          <div id="accesstab" class="tab-pane">
-            {{#dataset-access hasAccess=hasAccess accessibilities=accessibilities}}
-            {{/dataset-access}}
-          </div>
         </div>
       {{else}}
       <div class="panel-group" id="accordion" role="tablist" aria-multiselectable="true">
@@ -731,7 +697,7 @@
           <div class="panel-heading" role="tab" id="propertiesHeading">
             <h4 class="panel-title">
               <a data-toggle="collapse" data-parent="#accordion"
-                href="#properties" aria-expanded="true" aria-controls="properties">
+                href="#properties" aria-expanded="false" aria-controls="properties">
                 Properties
               </a>
             </h4>
@@ -768,7 +734,7 @@
           <div class="panel-heading" role="tab" id="schemaHeading">
             <h4 class="panel-title">
               <a class="collapsed" data-toggle="collapse" data-parent="#accordion"
-               href="#schema" aria-expanded="false" aria-controls="schema">
+               href="#schema" aria-expanded="true" aria-controls="schema">
                 Schema
               </a>
             </h4>
@@ -802,25 +768,6 @@
           </div>
         </div>
 
-        {{#unless isSFDC}}
-        <div class="panel panel-default">
-          <div class="panel-heading" role="tab" id="sampleHeading">
-            <h4 class="panel-title">
-              <a class="collapsed" data-toggle="collapse" data-parent="#accordion"
-               href="#sampleData" aria-expanded="false" aria-controls="sampleData">
-                Sample Data
-              </a>
-            </h4>
-          </div>
-          <div id="sampleData" class="panel-collapse collapse" role="tabpanel" aria-labelledby="sampleHeading">
-            <div class="panel-body">
-              {{#dataset-sample hasSamples=hasSamples isPinot=isPinot columns=columns samples=samples}}
-              {{/dataset-sample}}
-            </div>
-          </div>
-        </div>
-        {{/unless}}
-
         <div class="panel panel-default">
           <div class="panel-heading" role="tab" id="impactsHeading">
             <h4 class="panel-title">
@@ -835,40 +782,6 @@
             <div class="panel-body">
               {{#dataset-impact hasImpacts=hasImpacts impacts=impacts}}
               {{/dataset-impact}}
-            </div>
-          </div>
-        </div>
-
-        <div class="panel panel-default">
-          <div class="panel-heading" role="tab" id="dependsHeading">
-            <h4 class="panel-title">
-              <a class="collapsed" data-toggle="collapse" data-parent="#accordion"
-               href="#dependsview" aria-expanded="false" aria-controls="sampleData">
-                Relations
-              </a>
-            </h4>
-          </div>
-          <div id="dependsview" class="panel-collapse collapse" role="tabpanel" aria-labelledby="impactsHeading">
-            <div class="panel-body">
-              {{#dataset-relations hasDepends=hasDepends depends=depends hasReferences=hasReferences references=references}}
-              {{/dataset-relations}}
-            </div>
-          </div>
-        </div>
-
-        <div class="panel panel-default">
-          <div class="panel-heading" role="tab" id="accessHeading">
-            <h4 class="panel-title">
-              <a class="collapsed" data-toggle="collapse" data-parent="#accordion"
-               href="#accessview" aria-expanded="false" aria-controls="accessData">
-                Accessiblities
-              </a>
-            </h4>
-          </div>
-          <div id="accessview" class="panel-collapse collapse" role="tabpanel" aria-labelledby="accessHeading">
-            <div class="panel-body">
-              {{#dataset-access hasAccess=hasAccess accessibilities=accessibilities}}
-              {{/dataset-access}}
             </div>
           </div>
         </div>
