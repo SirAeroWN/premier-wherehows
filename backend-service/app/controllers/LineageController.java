@@ -46,21 +46,12 @@ public class LineageController extends Controller {
       resultJson.put("return_code", 200);
       resultJson.put("message", "Lineage inserted!");
       Logger.info("lineage inserted");
-    } catch (IOException ioe) {
-
-      Logger.error("caught exception", ioe);
-
-      ContrUtil.failure(resultJson, ioe.getMessage());
-    } catch (SQLException sqle) {
-
-      Logger.error("caught exception", sqle);
-
-      ContrUtil.failure(resultJson, sqle.getMessage());
     } catch (Exception e) {
-
-      Logger.error("caught exception", e);
       
       ContrUtil.failure(resultJson, e.getMessage());
+
+      Logger.error("caught exception", e);
+      Logger.info("Post JSON for insertion: " + lineage.toString());
     }
     return ok(resultJson);
   }

@@ -140,8 +140,7 @@ public class DatasetDao {
   }
 
   // might want to log the json that we recieve
-  public static void setDatasetRecord (JsonNode dataset)
-    throws Exception {
+  public static void setDatasetRecord (JsonNode dataset) throws Exception {
     ObjectMapper om = new ObjectMapper();
     om.setPropertyNamingStrategy(PropertyNamingStrategy.CAMEL_CASE_TO_LOWER_CASE_WITH_UNDERSCORES);
     DatasetRecord record = om.convertValue(dataset, DatasetRecord.class);
@@ -150,7 +149,7 @@ public class DatasetDao {
       Map<String, Object> params = new HashMap<>();
       params.put("urn", record.getUrn());
       if (record.getUrn().indexOf(":///") == -1) {
-        throw new Exception("improperly formatted urn, requires ':///'");
+        throw new Exception("improperly formatted urn: " + record.getUrn() + ", requires ':///'");
       }
       try {
         Map<String, Object> result = JdbcUtil.wherehowsNamedJdbcTemplate.queryForMap(GET_DATASET_BY_URN, params);

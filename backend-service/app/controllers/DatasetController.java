@@ -88,15 +88,29 @@ public class DatasetController extends Controller {
 
   @BodyParser.Of(BodyParser.Json.class)
   public static Result addDataset() {
-    JsonNode dataset = request().body().asJson();
+    return addEntity(request().body().asJson(), "Dataset");
+  }
+
+  @BodyParser.Of(BodyParser.Json.class)
+  public static Result addJob() {
+    return addEntity(request().body().asJson(), "Job");
+  }
+
+  @BodyParser.Of(BodyParser.Json.class)
+  public static Result addDatabase() {
+    return addEntity(request().body().asJson(), "Database");
+  }
+
+  private static Result addEntity(JsonNode entity, String entity_type) {
     ObjectNode resultJson = Json.newObject();
     try {
-      DatasetDao.setDatasetRecord(dataset);
+      DatasetDao.setDatasetRecord(entity);
       resultJson.put("return_code", 200);
-      resultJson.put("message", "Dataset inserted!");
-      Logger.info("dataset inserted");
+      resultJson.put("message", entity_type + " inserted!");
+      Logger.info(entity_type + " with urn: " + entity.get("urn") + " inserted");
     } catch (Exception e) {
         ContrUtil.failure(resultJson, 404, e.getMessage());
+        Logger.info("Post JSON for " + entity_type + " failed insertion: " + entity.toString());
         Logger.error(e.getMessage());
     }
 

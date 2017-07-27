@@ -86,5 +86,14 @@ PUT         /property/remove                controllers.PropertyController.remov
 # Insert a new dataset
 POST        /dataset                      controllers.DatasetController.addDataset()
 
+# Insert a new job
+POST        /job                      controllers.DatasetController.addJob()
+
+# Insert a new app
+POST        /app                      controllers.DatasetController.addJob()
+
+# Insert a new database
+POST        /database                      controllers.DatasetController.addDatabase()
+
 # Insert a new job data lineage
 POST        /lineage                      controllers.LineageController.addJobLineage()
