@@ -111,7 +111,7 @@ App.DatasetsRoute = Ember.Route.extend({
           renderDatasetListView(data.nodes);
         }
       });
-      var url = 'api/v1/datasets?size=10&page=' + datasetController.get('model.data.page');
+      var url = 'api/v1/datasets?size=15&page=' + datasetController.get('model.data.page');
       currentTab = 'Datasets';
       updateActiveTab();
       $.get(url, function(data) {
@@ -547,7 +547,7 @@ App.NameRoute = Ember.Route.extend({
           renderDatasetListView(data.nodes);
         }
       });
-      var url = 'api/v1/datasets?size=10&page=' + datasetController.get('model.data.page');
+      var url = 'api/v1/datasets?size=15&page=' + datasetController.get('model.data.page');
       currentTab = 'Datasets';
       updateActiveTab();
       $.get(url, function(data) {
@@ -569,7 +569,7 @@ App.PageRoute = Ember.Route.extend({
         renderDatasetListView(data.nodes);
       }
     });
-    var url = 'api/v1/datasets?size=10&page=' + param.page;
+    var url = 'api/v1/datasets?size=15&page=' + param.page;
     currentTab = 'Datasets';
     var breadcrumbs = [{"title":"EVERYTHING_ROOT", "urn":"page/1"}];
     updateActiveTab();
@@ -600,7 +600,7 @@ App.PageRoute = Ember.Route.extend({
           renderDatasetListView(data.nodes);
         }
       });
-      var url = 'api/v1/datasets?size=10&page=' + datasetController.get('model.data.page');
+      var url = 'api/v1/datasets?size=15&page=' + datasetController.get('model.data.page');
       currentTab = 'Datasets';
       updateActiveTab();
       $.get(url, function(data) {
@@ -634,7 +634,7 @@ App.SubpageRoute = Ember.Route.extend({
         renderDatasetListView(data.nodes);
       }
     });
-    var url = 'api/v1/datasets?size=10&page=' + param.page + '&urn=' + param.urn;
+    var url = 'api/v1/datasets?size=15&page=' + param.page + '&urn=' + param.urn;
     if (addSlash)
     {
       url += '/';
@@ -689,7 +689,7 @@ App.SubpageRoute = Ember.Route.extend({
   },
   actions: {
     getDatasets: function(){
-      var url = 'api/v1/datasets?size=10&page=' +
+      var url = 'api/v1/datasets?size=15&page=' +
           datasetController.get('model.data.page') +
           '&urn=' +
           datasetController.get('urn');

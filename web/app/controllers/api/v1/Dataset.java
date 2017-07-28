@@ -77,11 +77,11 @@ public class Dataset extends Controller
             }
         }
 
-        int size = 10;
+        int size = 15;
         String sizeStr = request().getQueryString("size");
         if (StringUtils.isBlank(sizeStr))
         {
-            size = 10;
+            size = 15;
         }
         else
         {
@@ -92,7 +92,7 @@ public class Dataset extends Controller
             catch(NumberFormatException e)
             {
                 Logger.error("Dataset Controller getPagedDatasets wrong size parameter. Error message: " + e.getMessage());
-                size = 10;
+                size = 15;
             }
         }
 
@@ -379,11 +379,11 @@ public class Dataset extends Controller
             }
         }
 
-        int size = 10;
+        int size = 15;
         String sizeStr = request().getQueryString("size");
         if (StringUtils.isBlank(sizeStr))
         {
-            size = 10;
+            size = 15;
         }
         else
         {
@@ -395,7 +395,7 @@ public class Dataset extends Controller
             {
                 Logger.error("Dataset Controller getPagedDatasetComments wrong size parameter. Error message: " +
                     e.getMessage());
-                size = 10;
+                size = 15;
             }
         }
 
@@ -617,11 +617,11 @@ public class Dataset extends Controller
             }
         }
 
-        int size = 10;
+        int size = 15;
         String sizeStr = request().getQueryString("size");
         if (StringUtils.isBlank(sizeStr))
         {
-            size = 10;
+            size = 15;
         }
         else
         {
@@ -633,7 +633,7 @@ public class Dataset extends Controller
             {
                 Logger.error("Dataset Controller getPagedDatasetColumnComments wrong size parameter. Error message: " +
                     e.getMessage());
-                size = 10;
+                size = 15;
             }
         }
 
@@ -829,14 +829,6 @@ public class Dataset extends Controller
         ObjectNode result = Json.newObject();
         result.put("status", "ok");
         result.set("partitions", Json.toJson(DatasetsDAO.getDatasetPartitionGains(datasetId)));
-        return ok(result);
-    }
-
-    public static Result getDatasetAccess(Long datasetId)
-    {
-        ObjectNode result = Json.newObject();
-        result.put("status", "ok");
-        result.set("access", Json.toJson(DatasetsDAO.getDatasetAccessibilty(datasetId)));
         return ok(result);
     }
 
