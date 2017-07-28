@@ -13,7 +13,6 @@
  */
 package controllers;
 
-import dao.FlowsDAO;
 import dao.UserDAO;
 import play.data.DynamicForm;
 import play.mvc.Controller;
@@ -176,25 +175,6 @@ public class Application extends Controller
         session().clear();
         flash("success", "You've been logged out");
         return redirect(controllers.routes.Application.login());
-    }
-
-    public static Result loadTree(String key)
-    {
-        if (StringUtils.isNotBlank(key) && key.equalsIgnoreCase("flows"))
-        {
-            return ok(FlowsDAO.getFlowApplicationNodes());
-        }
-        return ok(Tree.loadTreeJsonNode(key + TREE_NAME_SUBFIX));
-    }
-
-    public static Result loadFlowProjects(String app)
-    {
-        return ok(FlowsDAO.getFlowProjectNodes(app));
-    }
-
-    public static Result loadFlowNodes(String app, String project)
-    {
-        return ok(FlowsDAO.getFlowNodes(app, project));
     }
 
 }
