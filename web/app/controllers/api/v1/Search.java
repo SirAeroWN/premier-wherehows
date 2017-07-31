@@ -77,7 +77,7 @@ public class Search extends Controller
         ObjectNode result = Json.newObject();
 
         int page = 1;
-        int size = 10;
+        int size = 15;
         String keyword = request().getQueryString("keyword");
         String category = request().getQueryString("category");
         String source = request().getQueryString("source");
@@ -104,7 +104,7 @@ public class Search extends Controller
         String sizeStr = request().getQueryString("size");
         if (StringUtils.isBlank(sizeStr))
         {
-            size = 10;
+            size = 15;
         }
         else
         {
@@ -116,7 +116,7 @@ public class Search extends Controller
             {
                 Logger.error("Dataset Controller searchByKeyword wrong page parameter. Error message: " +
                         e.getMessage());
-                size = 10;
+                size = 15;
             }
         }
 
@@ -133,19 +133,7 @@ public class Search extends Controller
 
         String searchEngine = Play.application().configuration().getString(SearchDAO.WHEREHOWS_SEARCH_ENGINE__KEY);
 
-        if (category.toLowerCase().equalsIgnoreCase("metric"))
-        {
-            if(StringUtils.isNotBlank(searchEngine) && searchEngine.equalsIgnoreCase("elasticsearch"))
-            {
-                result.set("result", SearchDAO.elasticSearchMetricByKeyword(category, keyword, page, size));
-
-            }
-            else
-            {
-                result.set("result", SearchDAO.getPagedMetricByKeyword(category, keyword, page, size));
-            }
-        }
-        else if (category.toLowerCase().equalsIgnoreCase("databases"))
+        if (category.toLowerCase().equalsIgnoreCase("databases"))
         {
             if(StringUtils.isNotBlank(searchEngine) && searchEngine.equalsIgnoreCase("elasticsearch"))
             {
