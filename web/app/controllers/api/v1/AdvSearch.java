@@ -50,7 +50,7 @@ public class AdvSearch extends Controller
 
     public static Result getDatasetTableNames()
     {
-        //Logger.debug("Entering AdvSearch.java:getDatasetTableNames()");
+        Logger.trace("Entering AdvSearch.java:getDatasetTableNames()");
         ObjectNode result = Json.newObject();
         String scopes = request().getQueryString("scopes");
         result.put("status", "ok");
