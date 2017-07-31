@@ -231,7 +231,7 @@ var g_downLevel = 1;
                             }
                         }
                     }
-                    else if (nodes[i].node_type == 'script')
+                    else if (nodes[i].node_type == 'app')
                     {
                         if (!firstJobNode)
                         {
@@ -920,12 +920,12 @@ var g_downLevel = 1;
         function selectTabularRow(d, i)
         {
             var str = '#data-table-tr-' + g_currentData.nodes[d].id;
-            if (type == 'job')
+            if (type == 'app')
             {
                 str = '#job-data-table-tr-' + g_currentData.nodes[d].id;
             }
             else{
-                if (g_currentData.nodes[i].node_type == 'script')
+                if (g_currentData.nodes[i].node_type == 'app')
                 {
                     str = '#job-table-tr-' + g_currentData.nodes[d].id;
                     if ($("#datatabpage").hasClass('active'))

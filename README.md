@@ -111,33 +111,50 @@ First, please get Play Framework in place.
 
 
 ####<a name="latest-get">Latest GET</a>
+
 * **URL**
 
-First, please get Play Framework in place.
-```
-wget http://downloads.typesafe.com/play/2.2.4/play-2.2.4.zip
+	/dataset/latest/:type
 
-# Unzip, Remove zipped folder, move play folder to $HOME
-unzip play-2.2.4.zip && rm play-2.2.4.zip && mv play-2.2.4 $HOME/
+* **Method:**
 
-# Add PLAY_HOME, GRADLE_HOME. Update Path to include new gradle, alias to counteract issues
-echo 'export PLAY_HOME="$HOME/play-2.2.4"' >> ~/.bashrc
-source ~/.bashrc
-```
+	`GET`
 
-You need to update the file $PLAY_HOME/framework/build to increase the **JVM stack size** (-Xss1M) to 2M or more.
+* **Data Params**
 
-Second, please [setup the metadata repository][DB] in MySQL. 
-```
+| Param Names | Description | Default | Required |
+| ----------- | ----------- | ------- |:--------:|
+| type        | scheme portion of urn | | Y |
+
+* **Success Response:**
+
+```json
 {
-	"message": "there was a problem"
+	"urn": "domain-parquet:///share/domain/parquet"
 }
-``` 
+```
+
+* **Error Response:**
+
+```json
+{
+	"message": "none found"
+}
+```
+
+```json
+{
+	"return_code": 400,
+	"error_message": "type not provided"
+}
+```
 
 * **Sample Call**
 
 ```
+
 GET /dataset/latest/domain-parquet
+
 ```
 
 
@@ -145,11 +162,7 @@ GET /dataset/latest/domain-parquet
 ####<a name="latest-after-get">Latest After GET</a>
 * **URL**
 
-1. Get the source code: ```git clone https://github.com/linkedin/WhereHows.git```
-2. Put a few 3rd-party jar files to **metadata-etl/extralibs** directory. Some of these jar files may not be available in Maven Central or Artifactory. See [the download instrucitons][EXJAR] for more detail. ```cd WhereHows/metadata-etl/extralibs``` 
-3. Go back to the **WhereHows** root directory and build all the modules: ```./gradlew build```
-4. Go back to the **WhereHows** root directory and start the metadata ETL and API service: ```cd backend-service ; $PLAY_HOME/play run```
-5. Go back to the **WhereHows** root directory and start the web front-end: ```cd web ; $PLAY_HOME/play run``` Then WhereHows UI is available at http://localhost:9000 by default. For example, ```play run -Dhttp.port=19001``` will use port 19001 to serve UI.
+	/dataset/after/:type/:time
 
 * **Method:**
 

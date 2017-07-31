@@ -51,7 +51,7 @@ public class LineageController extends Controller {
       ContrUtil.failure(resultJson, e.getMessage());
 
       Logger.error("caught exception", e);
-      Logger.info("Post JSON for insertion: " + lineage.toString());
+      Logger.info("Post JSON for insertion failure: " + lineage.toString());
     }
     return ok(resultJson);
   }

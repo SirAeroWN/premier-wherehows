@@ -50,7 +50,7 @@ public class AdvSearch extends Controller
 
     public static Result getDatasetTableNames()
     {
-        //Logger.debug("Entering AdvSearch.java:getDatasetTableNames()");
+        Logger.trace("Entering AdvSearch.java:getDatasetTableNames()");
         ObjectNode result = Json.newObject();
         String scopes = request().getQueryString("scopes");
         result.put("status", "ok");
@@ -108,7 +108,7 @@ public class AdvSearch extends Controller
         String searchOptStr = request().getQueryString("searchOpts");
         JsonNode searchOpt = Json.parse(searchOptStr);
         int page = 1;
-        int size = 10;
+        int size = 15;
         String pageStr = request().getQueryString("page");
         if (StringUtils.isBlank(pageStr))
         {
@@ -131,7 +131,7 @@ public class AdvSearch extends Controller
         String sizeStr = request().getQueryString("size");
         if (StringUtils.isBlank(sizeStr))
         {
-            size = 10;
+            size = 15;
         }
         else
         {
@@ -143,42 +143,11 @@ public class AdvSearch extends Controller
             {
                 Logger.error("AdvSearch Controller search wrong page parameter. Error message: " +
                         e.getMessage());
-                size = 10;
+                size = 15;
             }
         }
         result.put("status", "ok");
         String searchEngine = Play.application().configuration().getString(SearchDAO.WHEREHOWS_SEARCH_ENGINE__KEY);
-
-        if (searchOpt != null && searchOpt.has("category"))
-        {
-            String category = searchOpt.get("category").asText();
-            if(category.equalsIgnoreCase("flow"))
-            {
-                if(StringUtils.isNotBlank(searchEngine) && searchEngine.equalsIgnoreCase("elasticsearch"))
-                {
-                    result.set("result", Json.toJson(AdvSearchDAO.elasticSearchFlowJobs(searchOpt, page, size)));
-                }
-                else
-                {
-                    result.set("result", Json.toJson(AdvSearchDAO.searchFlows(searchOpt, page, size)));
-                }
-                return ok(result);
-            }
-            else if(category.equalsIgnoreCase("metric"))
-            {
-                if(StringUtils.isNotBlank(searchEngine) && searchEngine.equalsIgnoreCase("elasticsearch"))
-                {
-                    result.set("result", Json.toJson(AdvSearchDAO.elasticSearchMetric(searchOpt, page, size)));
-                }
-                else
-                {
-                    Logger.debug("json: " + searchOpt.asText());
-                    result.set("result", Json.toJson(AdvSearchDAO.searchMetrics(searchOpt, page, size)));
-                }
-                return ok(result);
-            }
-
-        }
 
         if(StringUtils.isNotBlank(searchEngine) && searchEngine.equalsIgnoreCase("elasticsearch"))
         {

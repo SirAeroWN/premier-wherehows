@@ -644,7 +644,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
     public static List<ImpactDataset> getImpactDatasetsByUrn(String urn) {
         List<ImpactDataset> impactDatasetList = new ArrayList<ImpactDataset>();
 
-         if (StringUtils.isNotBlank(urn))
+         if (urn != null && StringUtils.isNotBlank(urn))
          {
              List<String> searchUrnList = new ArrayList<String>();
              searchUrnList.add(urn);
