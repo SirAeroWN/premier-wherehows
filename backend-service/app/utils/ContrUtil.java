@@ -37,6 +37,14 @@ public class ContrUtil {
         response(resultJson, return_code, "error_message", error_message);
     }
 
+    public static void success(ObjectNode resultJson, String message) {
+        response(resultJson, 200, "message", message);
+    }
+
+    public static void success(ObjectNode resultJson, int return_code, String message) {
+        response(resultJson, return_code, "message", message);
+    }
+
     private static void response(ObjectNode resultJson, int return_code, String message_name, String message) {
         resultJson.put("return_code", return_code);
         resultJson.put(message_name, message);

@@ -455,8 +455,7 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 					ds.schema = (String)row.get(DatasetWithUserRowMapper.DATASET_SCHEMA_COLUMN);
 					String strOwner = (String)row.get(DatasetWithUserRowMapper.DATASET_OWNER_ID_COLUMN);
 					String strOwnerName = (String)row.get(DatasetWithUserRowMapper.DATASET_OWNER_NAME_COLUMN);
-					Long sourceModifiedTime =
-							(Long)row.get(DatasetWithUserRowMapper.DATASET_SOURCE_MODIFIED_TIME_COLUMN);
+					Long sourceModifiedTime = (Long)row.get(DatasetWithUserRowMapper.DATASET_SOURCE_MODIFIED_TIME_COLUMN);
 					String properties = (String)row.get(DatasetWithUserRowMapper.DATASET_PROPERTIES_COLUMN);
 					try
 					{
@@ -569,6 +568,19 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 					}
 					pagedDatasets.add(ds);
 				}
+
+				// sort pagedDatasets by dataset modified
+				Collections.sort(pagedDatasets, new Comparator<Dataset>(){
+					public int compare(Dataset ds1, Dataset ds2){
+						if (ds1.modified.after(ds2.modified)) {
+							return 1;
+						} else if (ds1.modified.before(ds2.modified)) {
+							return -1;
+						} else {
+							return 0;
+						}
+					}
+				});
 
 				resultNode.put("count", count);
 				resultNode.put("page", page);
