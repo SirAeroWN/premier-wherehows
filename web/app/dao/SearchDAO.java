@@ -240,7 +240,7 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 			Collections.sort(cachedAutoCompleteList);
 			Cache.set(SEARCH_AUTOCOMPLETE_LIST, cachedAutoCompleteList, 60*60);
 		}
-		Logger.debug("=== Exiting SearchDAO.java:getAutoCompleteList()");
+		Logger.trace("=== Exiting SearchDAO.java:getAutoCompleteList()");
 
 		return cachedAutoCompleteList;
 	}
