@@ -98,6 +98,11 @@ public class LineageNodeLite {
     // make coloring more flexible
     public String color;
 
+    // values from properties
+    public String valid;
+    public String date;
+    public String version;
+
     // set attribute by given name
     public void setStringField(String fieldName, String value) throws NoSuchFieldException, IllegalAccessException {
         if (fieldName != null && value != null) {

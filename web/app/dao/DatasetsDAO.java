@@ -573,9 +573,9 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 				Collections.sort(pagedDatasets, new Comparator<Dataset>(){
 					public int compare(Dataset ds1, Dataset ds2){
 						if (ds1.modified.after(ds2.modified)) {
-							return 1;
-						} else if (ds1.modified.before(ds2.modified)) {
 							return -1;
+						} else if (ds1.modified.before(ds2.modified)) {
+							return 1;
 						} else {
 							return 0;
 						}
