@@ -495,8 +495,8 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
             JsonNode prop = Json.parse((String) row.get("properties"));
             for (String p : propList) {
                 try {
-                    if (p.substring(0, 5) == "prop/" && prop != null) {
-                        node.setStringField(p, (String) prop.get(p.substring(5)).asText());
+                    if (p.substring(0, 5).equals("prop/") && prop != null && prop.has(p.substring(5))) {
+                        node.setStringField(p.substring(5), prop.get(p.substring(5)).asText());
                     } else {
                         node.setStringField(p, (String) row.get(p));
                     }
