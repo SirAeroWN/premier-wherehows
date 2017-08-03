@@ -169,8 +169,8 @@ function updateSearchCategories(category)
         $('#categoryIcon').removeClass('fa fa-database');
         $('#categoryIcon').removeClass('fa fa-comment');
         $('#categoryIcon').removeClass('fa fa-random');
-        $('#categoryIcon').removeClass('fa fa-plus-square-o');
-        $('#categoryIcon').removeClass('fa fa-file-o');
+        $('#categoryIcon').removeClass('fa fa-archive');
+        $('#categoryIcon').removeClass('fa fa-bolt');
         $('#categoryIcon').addClass('fa fa-list');
     }
     else if (category.toLowerCase() == 'datasets')
@@ -179,8 +179,8 @@ function updateSearchCategories(category)
         $('#categoryIcon').removeClass('fa fa-database');
         $('#categoryIcon').removeClass('fa fa-comment');
         $('#categoryIcon').removeClass('fa fa-random');
-        $('#categoryIcon').removeClass('fa fa-plus-square-o');
-        $('#categoryIcon').removeClass('fa fa-file-o');
+        $('#categoryIcon').removeClass('fa fa-archive');
+        $('#categoryIcon').removeClass('fa fa-bolt');
         $('#categoryIcon').addClass('fa fa-database');
     }
     else if (category.toLowerCase() == 'comments')
@@ -189,29 +189,9 @@ function updateSearchCategories(category)
         $('#categoryIcon').removeClass('fa fa-database');
         $('#categoryIcon').removeClass('fa fa-comment');
         $('#categoryIcon').removeClass('fa fa-random');
-        $('#categoryIcon').removeClass('fa fa-plus-square-o');
-        $('#categoryIcon').removeClass('fa fa-file-o');
+        $('#categoryIcon').removeClass('fa fa-archive');
+        $('#categoryIcon').removeClass('fa fa-bolt');
         $('#categoryIcon').addClass('fa fa-comment');
-    }
-    else if (category.toLowerCase() == 'metrics')
-    {
-        $('#categoryIcon').removeClass('fa fa-list');
-        $('#categoryIcon').removeClass('fa fa-database');
-        $('#categoryIcon').removeClass('fa fa-comment');
-        $('#categoryIcon').removeClass('fa fa-random');
-        $('#categoryIcon').removeClass('fa fa-plus-square-o');
-        $('#categoryIcon').removeClass('fa fa-file-o');
-        $('#categoryIcon').addClass('fa fa-plus-square-o');
-    }
-    else if (category.toLowerCase() == 'flows')
-    {
-        $('#categoryIcon').removeClass('fa fa-list');
-        $('#categoryIcon').removeClass('fa fa-database');
-        $('#categoryIcon').removeClass('fa fa-comment');
-        $('#categoryIcon').removeClass('fa fa-random');
-        $('#categoryIcon').removeClass('fa fa-plus-square-o');
-        $('#categoryIcon').removeClass('fa fa-file-o');
-        $('#categoryIcon').addClass('fa fa-random');
     }
     else if (category.toLowerCase() == 'databases')
     {
@@ -220,8 +200,8 @@ function updateSearchCategories(category)
         $('#categoryIcon').removeClass('fa fa-comment');
         $('#categoryIcon').removeClass('fa fa-random');
         $('#categoryIcon').removeClass('fa fa-plus-square-o');
-        $('#categoryIcon').removeClass('fa fa-file-o');
-        $('#categoryIcon').addClass('fa fa-random');
+        $('#categoryIcon').removeClass('fa fa-bolt');
+        $('#categoryIcon').addClass('fa fa-archive');
     }
      else if (category.toLowerCase() == 'jobs')
      {
@@ -229,9 +209,9 @@ function updateSearchCategories(category)
         $('#categoryIcon').removeClass('fa fa-database');
         $('#categoryIcon').removeClass('fa fa-comment');
         $('#categoryIcon').removeClass('fa fa-random');
-        $('#categoryIcon').removeClass('fa fa-plus-square-o');
-        $('#categoryIcon').removeClass('fa fa-file-o');
-        $('#categoryIcon').addClass('fa fa-file-o');
+        $('#categoryIcon').removeClass('fa fa-archive');
+        $('#categoryIcon').removeClass('fa fa-bolt');
+        $('#categoryIcon').addClass('fa fa-bolt');
      }
     resetCategoryActiveFlag(category);
 }
