@@ -53,7 +53,7 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 			"GROUP_CONCAT(IFNULL(u.display_name, '*') ORDER BY o.sort_id ASC SEPARATOR ',') as owner_name, " +
 			"FROM_UNIXTIME(source_created_time) as created, d.source_modified_time, " +
 			"FROM_UNIXTIME(source_modified_time) as modified " +
-			"FROM ( SELECT * FROM dict_dataset ORDER BY urn LIMIT ?, ? ) d " +
+			"FROM ( SELECT * FROM dict_dataset ORDER BY source_modified_time DESC LIMIT ?, ? ) d " +
 			"LEFT JOIN dataset_owner o on (d.id = o.dataset_id and (o.is_deleted is null OR o.is_deleted != 'Y')) " +
 			"LEFT JOIN dir_external_user_info u on (o.owner_id = u.user_id and u.app_id = 300) " +
 			"GROUP BY d.id, d.name, d.urn, d.source, d.properties, d.schema, " +
@@ -66,7 +66,7 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 			"GROUP_CONCAT(IFNULL(u.display_name, '*') ORDER BY o.sort_id ASC SEPARATOR ',') as owner_name, " +
 			"FROM_UNIXTIME(source_created_time) as created, d.source_modified_time, " +
 			"FROM_UNIXTIME(source_modified_time) as modified " +
-			"FROM ( SELECT * FROM dict_dataset ORDER BY urn LIMIT ?, ?) d LEFT JOIN favorites f ON (" +
+			"FROM ( SELECT * FROM dict_dataset ORDER BY source_modified_time DESC LIMIT ?, ?) d LEFT JOIN favorites f ON (" +
 			"d.id = f.dataset_id and f.user_id = ?) " +
 			"LEFT JOIN watch w on (d.id = w.item_id and w.item_type = 'dataset' and w.user_id = ?) " +
 			"LEFT JOIN dataset_owner o on (d.id = o.dataset_id and (o.is_deleted is null OR o.is_deleted != 'Y')) " +
@@ -82,7 +82,7 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 			"GROUP_CONCAT(IFNULL(u.display_name, '*') ORDER BY o.sort_id ASC SEPARATOR ',') as owner_name, " +
 			"FROM_UNIXTIME(source_created_time) as created, d.source_modified_time, " +
 			"FROM_UNIXTIME(source_modified_time) as modified " +
-			"FROM ( SELECT * FROM dict_dataset WHERE urn LIKE ? ORDER BY urn limit ?, ? ) d " +
+			"FROM ( SELECT * FROM dict_dataset WHERE urn LIKE ? ORDER BY source_modified_time DESC limit ?, ? ) d " +
 			"LEFT JOIN dataset_owner o on (d.id = o.dataset_id and (o.is_deleted is null OR o.is_deleted != 'Y')) " +
 			"LEFT JOIN dir_external_user_info u on (o.owner_id = u.user_id and u.app_id = 300) " +
 			"GROUP BY d.id, d.name, d.urn, d.source, d.properties, d.schema, created, " +
@@ -95,7 +95,7 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 			"d.properties, f.dataset_id, w.id as watch_id, " +
 			"FROM_UNIXTIME(source_created_time) as created, d.source_modified_time, " +
 			"FROM_UNIXTIME(source_modified_time) as modified " +
-			"FROM ( SELECT * FROM dict_dataset WHERE urn LIKE ?  ORDER BY urn LIMIT ?, ? ) d " +
+			"FROM ( SELECT * FROM dict_dataset WHERE urn LIKE ?  ORDER BY source_modified_time DESC LIMIT ?, ? ) d " +
 			"LEFT JOIN favorites f ON (" +
 			"d.id = f.dataset_id and f.user_id = ?) " +
 			"LEFT JOIN watch w ON (d.id = w.item_id and w.item_type = 'dataset' and w.user_id = ?) " +
@@ -511,8 +511,7 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 						}
 						else
 						{
-							Logger.error("getPagedDatasets get wrong owner and names. Dataset ID: "
-									+ Long.toString(ds.id) + " Owner: " + owners + " Owner names: " + ownerNames);
+							Logger.error("getPagedDatasets get wrong owner and names. Dataset ID: " + Long.toString(ds.id) + " Owner: " + owners + " Owner names: " + ownerNames);
 						}
 					}
 
@@ -520,26 +519,7 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 					Long watchId = (Long)row.get(DatasetWithUserRowMapper.DATASET_WATCH_ID_COLUMN);
 
 					Long schemaHistoryRecordCount = 0L;
-					try
-					{
-						schemaHistoryRecordCount = getJdbcTemplate().queryForObject(
-								CHECK_SCHEMA_HISTORY,
-								Long.class,
-								ds.id);
-					}
-					catch (EmptyResultDataAccessException e)
-					{
-						Logger.error("Exception = " + e.getMessage());
-					}
-
-					if (StringUtils.isNotBlank(ds.urn))
-					{
-						if (ds.urn.substring(0, 4).equalsIgnoreCase(DatasetRowMapper.HDFS_PREFIX))
-						{
-							ds.hdfsBrowserLink = Play.application().configuration().getString(HDFS_BROWSER_URL_KEY) +
-									ds.urn.substring(DatasetRowMapper.HDFS_URN_PREFIX_LEN);
-						}
-					}
+					
 					if (favoriteId != null && favoriteId > 0)
 					{
 						ds.isFavorite = true;
