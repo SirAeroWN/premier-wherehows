@@ -38,48 +38,6 @@ CREATE TABLE dataset_owner (
   UNIQUE KEY (`dataset_urn`, `owner_id`, `app_id`)
 );
 
-CREATE TABLE stg_dataset_owner (
-  `dataset_id` INT COMMENT 'dataset_id',
-  `dataset_urn` VARCHAR(200) NOT NULL,
-  `owner_id` VARCHAR(127) NOT NULL,
-  `sort_id` SMALLINT COMMENT '0 = primary owner, order by priority/importance',
-  `app_id` INT COMMENT 'application id of the namesapce',
-  `namespace` VARCHAR(127) COMMENT 'the namespace of the user',
-  `owner_type` VARCHAR(127) COMMENT 'Producer, Consumer, Stakeholder',
-  `owner_sub_type` VARCHAR(127) COMMENT 'DWH, UMP, BA, etc',
-  `owner_id_type` VARCHAR(127) COMMENT 'user, group, service, or urn',
-  `owner_source`  VARCHAR(127) COMMENT 'where the owner info is extracted: JIRA,RB,DB,FS,AUDIT',
-  `is_group` CHAR(1) COMMENT 'if owner is a group',
-  `db_name` VARCHAR(127) COMMENT 'database name',
-  `db_id` INT COMMENT 'database id',
-  `is_active` CHAR(1) COMMENT 'if owner is active',
-  `source_time` INT UNSIGNED COMMENT 'the source event time in epoch',
-  `is_parent_urn` CHAR(1) DEFAULT 'N' COMMENT 'if the urn is a directory for datasets',
-  KEY (dataset_urn, owner_id, namespace, db_name),
-  KEY dataset_index (dataset_urn),
-  KEY db_name_index (db_name)
-);
-
-CREATE TABLE stg_dataset_owner_unmatched (
-  `dataset_urn` VARCHAR(200) NOT NULL,
-  `owner_id` VARCHAR(127) NOT NULL,
-  `sort_id` SMALLINT COMMENT '0 = primary owner, order by priority/importance',
-  `app_id` INT COMMENT 'application id of the namesapce',
-  `namespace` VARCHAR(127) COMMENT 'the namespace of the user',
-  `owner_type` VARCHAR(127) COMMENT 'Producer, Consumer, Stakeholder',
-  `owner_sub_type` VARCHAR(127) COMMENT 'DWH, UMP, BA, etc',
-  `owner_id_type` VARCHAR(127) COMMENT 'user, group, role, service, or urn',
-  `owner_source`  VARCHAR(127) COMMENT 'where the owner info is extracted: JIRA,RB,DB,FS,AUDIT',
-  `is_group` CHAR(1) COMMENT 'if owner is a group',
-  `db_name` VARCHAR(127) COMMENT 'database name',
-  `db_id` INT COMMENT 'database id',
-  `is_active` CHAR(1) COMMENT 'if owner is active',
-  `source_time` INT UNSIGNED COMMENT 'the source event time in epoch',
-  KEY (dataset_urn, owner_id, namespace, db_name),
-  KEY dataset_index (dataset_urn),
-  KEY db_name_index (db_name)
-);
-
 CREATE TABLE `dir_external_user_info` (
   `app_id` smallint(5) unsigned NOT NULL,
   `user_id` varchar(50) NOT NULL,
