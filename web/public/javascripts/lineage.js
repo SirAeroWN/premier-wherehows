@@ -785,7 +785,7 @@ var g_downLevel = 1;
                     }
                 }
                 else if (data.nodes[i].node_type == 'db'){
-                    shape = "rect";
+                    shape = "circle";
                     if (data.nodes[i]["name"])
                     {
                         schema_type = data.nodes[i]["name"];
