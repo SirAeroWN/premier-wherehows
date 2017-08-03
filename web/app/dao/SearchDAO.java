@@ -227,16 +227,14 @@ public class SearchDAO extends AbstractMySQLOpenSourceDAO
 		if (cachedAutoCompleteList == null || cachedAutoCompleteList.size() == 0)
 		{
 			//List<String> metricList = getJdbcTemplate().queryForList(GET_METRIC_AUTO_COMPLETE_LIST, String.class);
-			List<String> flowList = getJdbcTemplate().queryForList(GET_FLOW_AUTO_COMPLETE_LIST, String.class);
+			//List<String> flowList = getJdbcTemplate().queryForList(GET_FLOW_AUTO_COMPLETE_LIST, String.class);
 			//Logger.debug("=== Run second query in SearchDAO.java:getAutoCompleteList()");
-			List<String> jobList = getJdbcTemplate().queryForList(GET_JOB_AUTO_COMPLETE_LIST, String.class);
+			//List<String> jobList = getJdbcTemplate().queryForList(GET_JOB_AUTO_COMPLETE_LIST, String.class);
 			//Logger.debug("=== Run third query in SearchDAO.java:getAutoCompleteList()");
 			List<String> datasetList = getJdbcTemplate().queryForList(GET_DATASET_AUTO_COMPLETE_LIST, String.class);
 			//Logger.debug("=== Run fourth query in SearchDAO.java:getAutoCompleteList()");
 			//Logger.debug("=== Run all queries in SearchDAO.java:getAutoCompleteList()");
-			cachedAutoCompleteList =
-					Stream.concat(datasetList.stream(),
-							Stream.concat(flowList.stream(), jobList.stream())).collect(Collectors.toList());
+			cachedAutoCompleteList = datasetList;
 			Collections.sort(cachedAutoCompleteList);
 			Cache.set(SEARCH_AUTOCOMPLETE_LIST, cachedAutoCompleteList, 60*60);
 		}

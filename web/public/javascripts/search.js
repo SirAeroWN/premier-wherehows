@@ -237,48 +237,6 @@
     });
   });
 
-  $.get('/api/v1/advsearch/appcodes', function (data) {
-    $('.appcodeInput').autocomplete({
-      minLength: 0,
-      source: function (req, res) {
-        var results = $.ui.autocomplete.filter(data.appcodes, extractLast(req.term));
-        res(results.slice(0, maxReturnedResults));
-      },
-      focus: function () {
-        return false;
-      },
-      select: function (event, ui) {
-        var terms = split(this.value);
-        terms.pop();
-        terms.push(ui.item.value);
-        terms.push('');
-        this.value = terms.join(', ');
-        return false;
-      }
-    });
-  });
-
-  $.get('/api/v1/advsearch/jobNames', function (data) {
-    $('.jobInput').autocomplete({
-      minLength: 0,
-      source: function (req, res) {
-        var results = $.ui.autocomplete.filter(data.jobNames, extractLast(req.term));
-        res(results.slice(0, maxReturnedResults));
-      },
-      focus: function () {
-        return false;
-      },
-      select: function (event, ui) {
-        var terms = split(this.value);
-        terms.pop();
-        terms.push(ui.item.value);
-        terms.push('');
-        this.value = terms.join(', ');
-        return false;
-      }
-    });
-  });
-
   $('#scopeInInput').blur(function () {
     $.get('/api/v1/advsearch/tables', {scopes: $('#scopeInInput').val()}, function (data) {
       $('.tableInput').autocomplete({

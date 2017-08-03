@@ -157,40 +157,6 @@ App.DatasetRoute = Ember.Route.extend({
       controller.set('datasetId', id);
     }
 
-      var instanceUrl = 'api/v1/datasets/' + id + "/instances";
-      $.get(instanceUrl, function(data) {
-        if (data && data.status == "ok" && data.instances && data.instances.length > 0) {
-          controller.set("hasinstances", true);
-          controller.set("instances", data.instances);
-          controller.set("currentInstance", data.instances[0]);
-          controller.set("latestInstance", data.instances[0]);
-          var versionUrl = 'api/v1/datasets/' + id + "/versions/db/" + data.instances[0].dbId;
-          $.get(versionUrl, function(data) {
-            if (data && data.status == "ok" && data.versions && data.versions.length > 0) {
-              controller.set("hasversions", true);
-              controller.set("versions", data.versions);
-              controller.set("currentVersion", data.versions[0]);
-              controller.set("latestVersion", data.versions[0]);
-            }
-            else
-            {
-              controller.set("hasversions", false);
-              controller.set("currentVersion", '0');
-              controller.set("latestVersion", '0');
-            }
-          });
-        }
-        else
-        {
-          controller.set("hasinstances", false);
-          controller.set("currentInstance", '0');
-          controller.set("latestInstance", '0');
-          controller.set("hasversions", false);
-          controller.set("currentVersion", '0');
-          controller.set("latestVersion", '0');
-        }
-      });
-
       if (urn)
       {
         var index = urn.lastIndexOf('/');
@@ -357,47 +323,6 @@ App.DatasetRoute = Ember.Route.extend({
                     }
               });
             }
-              else
-                {
-                  sampleUrl = 'api/v1/datasets/' + id + "/sample";
-                  $.get(sampleUrl, function(data) {
-                    if (data && data.status == "ok")
-                      {
-                        if (data.sampleData && data.sampleData.sample && (data.sampleData.sample.length > 0))
-                          {
-                            controller.set("hasSamples", true);
-                            var tmp = {};
-                            var count = data.sampleData.sample.length
-                            var d = data.sampleData.sample
-                            for(var i = 0; i < count; i++) {
-                              tmp['record ' + i] = d[i]
-                            }
-                            var node = JsonHuman.format(tmp)
-                            setTimeout(function(){
-                              var json_human = document.getElementById('datasetSampleData-json-human');
-                              if (json_human)
-                              {
-                                if (json_human.children && json_human.children.length > 0)
-                                {
-                                  json_human.removeChild(json_human.childNodes[json_human.children.length-1]);
-                                }
-
-                                json_human.appendChild(node)
-                              }
-
-                            }, 500);
-                          }
-                          else
-                            {
-                              controller.set("hasSamples", false);
-                            }
-                      }
-                      else
-                        {
-                          controller.set("hasSamples", false);
-                        }
-                  });
-                }
 
                 var impactAnalysisUrl = 'api/v1/datasets/' + id + "/impacts";
                 $.get(impactAnalysisUrl, function(data) {
@@ -444,23 +369,6 @@ App.DatasetRoute = Ember.Route.extend({
         else
         {
           controller.set("hasAccess", false);
-        }
-      }
-    });
-
-    var datasetReferencesUrl = 'api/v1/datasets/' + id + "/references";
-    $.get(datasetReferencesUrl, function(data) {
-      if (data && data.status == "ok")
-      {
-        if (data.references && (data.references.length > 0))
-        {
-          controller.set("hasReferences", true);
-          controller.set("references", data.references);
-          setTimeout(initializeReferencesTreeGrid, 500);
-        }
-        else
-        {
-          controller.set("hasReferences", false);
         }
       }
     });
