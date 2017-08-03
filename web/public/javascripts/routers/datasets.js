@@ -340,39 +340,6 @@ App.DatasetRoute = Ember.Route.extend({
                     }
                 });
 
-    var datasetDependsUrl = 'api/v1/datasets/' + id + "/depends";
-    $.get(datasetDependsUrl, function(data) {
-      if (data && data.status == "ok")
-      {
-        if (data.depends && (data.depends.length > 0))
-        {
-          controller.set("hasDepends", true);
-          controller.set("depends", data.depends);
-          setTimeout(initializeDependsTreeGrid, 500);
-        }
-        else
-        {
-          controller.set("hasDepends", false);
-        }
-      }
-    });
-
-    var datasetPartitionsUrl = 'api/v1/datasets/' + id + "/access";
-    $.get(datasetPartitionsUrl, function(data) {
-      if (data && data.status == "ok")
-      {
-        if (data.access && (data.access.length > 0))
-        {
-          controller.set("hasAccess", true);
-          controller.set("accessibilities", data.access);
-        }
-        else
-        {
-          controller.set("hasAccess", false);
-        }
-      }
-    });
-
     Promise.resolve($.get(`api/v1/datasets/${id}/owners`))
         .then(({status, owners = []}) => {
           status === 'ok' && controller.set('owners', owners);

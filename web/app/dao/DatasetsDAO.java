@@ -814,44 +814,6 @@ public class DatasetsDAO extends AbstractMySQLOpenSourceDAO
 		return propNode;
 	}
 
-	public static JsonNode getDatasetSampleDataByID(int id)
-	{
-		List<Map<String, Object>> rows = null;
-		JsonNode sampleNode = null;
-		String strSampleData = null;
-		Integer refID = 0;
-
-		rows = getJdbcTemplate().queryForList(GET_DATASET_SAMPLE_DATA_BY_ID, id);
-
-		for (Map row : rows) {
-			refID = (Integer)row.get("ref_id");
-			strSampleData = (String)row.get("data");
-			break;
-		}
-
-		if (refID != null && refID != 0)
-		{
-			rows = null;
-			rows = getJdbcTemplate().queryForList(GET_DATASET_SAMPLE_DATA_BY_REFID, refID);
-			for (Map row : rows) {
-				strSampleData = (String)row.get("data");
-				break;
-			}
-		}
-
-		if (StringUtils.isNotBlank(strSampleData)) {
-			try {
-				sampleNode = Json.parse(strSampleData);
-				return utils.SampleData.secureSampleData(sampleNode);
-			} catch (Exception e) {
-				Logger.error("Dataset getDatasetSampleDataByID parse properties failed, id = " + id);
-				Logger.error("Exception = " + e.getMessage());
-			}
-		}
-
-		return sampleNode;
-	}
-
 	public static List<DatasetOwner> getDatasetOwnersByID(int id)
 	{
 		List<DatasetOwner> owners = new ArrayList<DatasetOwner>();
