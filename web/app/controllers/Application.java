@@ -23,7 +23,6 @@ import utils.Tree;
 import views.html.index;
 import views.html.login;
 import views.html.lineage;
-import views.html.schemaHistory;
 import static play.data.Form.form;
 import org.apache.commons.lang3.StringUtils;
 import security.AuthenticationManager;
@@ -95,17 +94,6 @@ public class Application extends Controller
         return ok(lineage.render(username, type, 0, application.replace(" ", "."), project, flow));
     }
 
-    @Security.Authenticated(Secured.class)
-    public static Result schemaHistory()
-    {
-        String username = session("user");
-        if (username == null)
-        {
-            username = "";
-        }
-        return ok(schemaHistory.render(username));
-    }
-
     public static Result login()
     {
         //You cann generate the Csrf token such as String csrfToken = SecurityPlugin.getInstance().getCsrfToken();
@@ -175,6 +163,11 @@ public class Application extends Controller
         session().clear();
         flash("success", "You've been logged out");
         return redirect(controllers.routes.Application.login());
+    }
+
+    public static Result healthcheck()
+    {
+        return ok("GOOD");
     }
 
 }

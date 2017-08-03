@@ -50,26 +50,6 @@ public class Search extends Controller
         return ok(result);
     }
 
-    public static Result getSearchAutoCompleteForMetric()
-    {
-        //Logger.debug("Entering v1/Search.java:getSearchAutoCompleteForMetric()");
-        ObjectNode result = Json.newObject();
-        result.put("status", "ok");
-        result.set("source", Json.toJson(SearchDAO.getAutoCompleteListForMetric()));
-
-        return ok(result);
-    }
-
-    public static Result getSearchAutoCompleteForFlow()
-    {
-        //Logger.debug("Entering v1/Search.java:getSearchAutoCompleteForFlow()");
-        ObjectNode result = Json.newObject();
-        result.put("status", "ok");
-        result.set("source", Json.toJson(SearchDAO.getAutoCompleteListForFlow()));
-
-        return ok(result);
-    }
-
 
     public static Result searchByKeyword()
     {
@@ -135,62 +115,25 @@ public class Search extends Controller
 
         if (category.toLowerCase().equalsIgnoreCase("databases"))
         {
-            if(StringUtils.isNotBlank(searchEngine) && searchEngine.equalsIgnoreCase("elasticsearch"))
-            {
-                result.set("result", SearchDAO.elasticSearchFlowByKeyword(category, keyword, page, size));
-
-            }
-            else
-            {
-                result.set("result", SearchDAO.getPagedFlowByKeyword(category, keyword, page, size));
-            }
+                result.set("result", SearchDAO.getPagedDbByKeyword(category, keyword, page, size));
         }
         else if (category.toLowerCase().equalsIgnoreCase("jobs"))
         {
-            if(StringUtils.isNotBlank(searchEngine) && searchEngine.equalsIgnoreCase("elasticsearch"))
-            {
-                result.set("result", SearchDAO.elasticSearchFlowByKeyword(category, keyword, page, size));
-
-            }
-            else
-            {
                 result.set("result", SearchDAO.getPagedJobByKeyword(category, keyword, page, size));
-            }
         }
         else if (category.toLowerCase().equalsIgnoreCase("comments"))
         {
-            if(StringUtils.isNotBlank(searchEngine) && searchEngine.equalsIgnoreCase("elasticsearch"))
-            {
-                result.set("result", SearchDAO.elasticSearchDatasetByKeyword(category, keyword, null, page, size));
-            }
-            else
-            {
                 result.set("result", SearchDAO.getPagedCommentsByKeyword(category, keyword, page, size));
-            }
 
         }
         else if (category.toLowerCase().equalsIgnoreCase("all"))
         {
-            if(StringUtils.isNotBlank(searchEngine) && searchEngine.equalsIgnoreCase("elasticsearch"))
-            {
-                result.set("result", SearchDAO.elasticSearchDatasetByKeyword(category, keyword, null, page, size));
-            }
-            else
-            {
                 result.set("result", SearchDAO.getPagedAllByKeyword(category, keyword, page, size));
-            }
 
         }
         else
         {
-            if(StringUtils.isNotBlank(searchEngine) && searchEngine.equalsIgnoreCase("elasticsearch"))
-            {
-                result.set("result", SearchDAO.elasticSearchDatasetByKeyword(category, keyword, source, page, size));
-            }
-            else
-            {
                 result.set("result", SearchDAO.getPagedDatasetByKeyword(category, keyword, source, page, size));
-            }
         }
 
         return ok(result);

@@ -97,7 +97,7 @@ public class Urn {
   public static boolean validateUrn(String urnString) {
 
     String[] splitResult = urnString.split(":///");
-    if (splitResult[0].matches("\\w+") && splitResult.length > 1) {
+    if (splitResult.length == 2) {
       return true;
     }
     return false;

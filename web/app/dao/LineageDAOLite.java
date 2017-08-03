@@ -495,8 +495,10 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
             JsonNode prop = Json.parse((String) row.get("properties"));
             for (String p : propList) {
                 try {
-                    if (p.substring(0, 5).equals("prop/") && prop != null && prop.has(p.substring(5))) {
-                        node.setStringField(p.substring(5), prop.get(p.substring(5)).asText());
+                    if (p.substring(0, 5).equals("prop/")) {
+                        if (prop != null && prop.has(p.substring(5))) {
+                            node.setStringField(p.substring(5), prop.get(p.substring(5)).asText());
+                        }
                     } else {
                         node.setStringField(p, (String) row.get(p));
                     }
@@ -518,7 +520,7 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
             }
         }
         List<String> sortList = Arrays.asList(sortsattr.split(","));
-        Logger.debug("sortList: " + sortList);
+        Logger.trace("sortList: " + sortList);
         for (String sl : sortList) {
             node._sort_list.add(sl);
         }
@@ -644,13 +646,14 @@ public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {
     public static List<ImpactDataset> getImpactDatasetsByUrn(String urn) {
         List<ImpactDataset> impactDatasetList = new ArrayList<ImpactDataset>();
 
-         if (urn != null && StringUtils.isNotBlank(urn))
-         {
-             List<String> searchUrnList = new ArrayList<String>();
-             searchUrnList.add(urn);
-             getImpactDatasets(searchUrnList, impactDatasetList);
-         }
+        if (urn != null && StringUtils.isNotBlank(urn))
+        {
+            List<String> searchUrnList = new ArrayList<String>();
+            searchUrnList.add(urn);
+            getImpactDatasets(searchUrnList, impactDatasetList);
+        }
 
+        impactDatasetList.remove(0);
         return impactDatasetList;
 
     }

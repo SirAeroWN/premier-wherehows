@@ -5,6 +5,8 @@
 # Home page
 GET     /                                   controllers.Application.index()
 
+GET     /health                             controllers.Application.healthcheck()
+
 GET     /login                              controllers.Application.login()
 
 GET     /logout                             controllers.Application.logout()
@@ -22,8 +24,6 @@ GET     /lineage                                    controllers.Application.line
 GET     /lineage/dataset/:id                        controllers.Application.datasetLineage(id: Int)
 
 GET     /lineage/metric/:id                         controllers.Application.metricLineage(id: Int)
-
-GET     /schemaHistory                              controllers.Application.schemaHistory()
 
 GET     /api/v1/owner/types                 controllers.api.v1.Dataset.getDatasetOwnerTypes()
 
@@ -62,8 +62,6 @@ GET     /api/v1/datasets/:id/partitions     controllers.api.v1.Dataset.getDatase
 #GET     /api/v1/datasets/:id/access         controllers.api.v1.Dataset.getDatasetAccess(id:Long)
 
 GET     /api/v1/datasets/:id/properties     controllers.api.v1.Dataset.getDatasetPropertiesByID(id:Int)
-
-GET     /api/v1/datasets/:id/sample         controllers.api.v1.Dataset.getDatasetSampleDataByID(id:Int)
 
 GET     /api/v1/datasets/:id/impacts        controllers.api.v1.Dataset.getDatasetImpactAnalysisByID(id:Int)
 

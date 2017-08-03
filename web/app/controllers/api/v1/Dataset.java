@@ -183,26 +183,6 @@ public class Dataset extends Controller
         return ok(result);
     }
 
-    public static Result getDatasetSampleDataByID(int id)
-    {
-        JsonNode sampleData = DatasetsDAO.getDatasetSampleDataByID(id);
-
-        ObjectNode result = Json.newObject();
-
-        if (sampleData != null)
-        {
-            result.put("status", "ok");
-            result.set("sampleData", sampleData);
-        }
-        else
-        {
-            result.put("status", "error");
-            result.put("message", "record not found");
-        }
-
-        return ok(result);
-    }
-
     public static Result getDatasetOwnersByID(int id)
     {
         ObjectNode result = Json.newObject();
