@@ -32,7 +32,6 @@ import org.springframework.jdbc.core.namedparam.NamedParameterJdbcTemplate;
 import play.Logger;
 import play.Play;
 import play.libs.Json;
-import utils.Lineage;
 import utils.Property;
 
 public class LineageDAOLite extends AbstractMySQLOpenSourceDAO {

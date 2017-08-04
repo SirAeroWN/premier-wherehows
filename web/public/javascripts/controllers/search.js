@@ -131,19 +131,6 @@ App.SearchController = Ember.Controller.extend({
             return false;
         }
     }.property('model.page'),
-    actions: {
-        switchSearchToMetric: function(keyword){
-            this.transitionToRoute
-            ( 'search'
-                , { queryParams:
-                { category: 'Metric'
-                    , keywords: this.get('keywords')
-                    , page: 1
-                    , source: null
-                }
-                }
-            )
-        },
         switchSearchToFlow: function(keyword){
             this.transitionToRoute
             ( 'search'

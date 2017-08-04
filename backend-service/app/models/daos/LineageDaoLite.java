@@ -28,7 +28,6 @@ import play.Play;
 import utils.Urn;
 import utils.JdbcUtil;
 import wherehows.common.DatasetPath;
-import wherehows.common.LineageCombiner;
 import wherehows.common.schemas.ApplicationRecord;
 import wherehows.common.schemas.LineageDatasetRecord;
 import wherehows.common.schemas.LineageRecordLite;

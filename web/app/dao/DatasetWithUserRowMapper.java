@@ -39,7 +39,6 @@ public class DatasetWithUserRowMapper implements RowMapper<Dataset>
     public static String FAVORITE_DATASET_ID_COLUMN = "dataset_id";
     public static String DATASET_WATCH_ID_COLUMN = "watch_id";
     public static String DATASET_PROPERTIES_COLUMN = "properties";
-    public static String SCHEMA_HISTORY_ID_COLUMN = "schema_history_id";
     public static String DATASET_OWNER_ID_COLUMN = "owner_id";
     public static String DATASET_OWNER_NAME_COLUMN = "owner_name";
     public static String HDFS_PREFIX = "hdfs";
@@ -55,7 +54,6 @@ public class DatasetWithUserRowMapper implements RowMapper<Dataset>
         Time created = rs.getTime(DATASET_CREATED_TIME_COLUMN);
         Time modified = rs.getTime(DATASET_MODIFIED_TIME_COLUMN);
         Integer favoriteId = rs.getInt(FAVORITE_DATASET_ID_COLUMN);
-        Integer schemaHistoryId = rs.getInt(SCHEMA_HISTORY_ID_COLUMN);
         Long watchId = rs.getLong(DATASET_WATCH_ID_COLUMN);
         Long sourceModifiedTime = rs.getLong(DATASET_SOURCE_MODIFIED_TIME_COLUMN);
         String strOwner = rs.getString(DATASET_OWNER_ID_COLUMN);
@@ -140,14 +138,7 @@ public class DatasetWithUserRowMapper implements RowMapper<Dataset>
             dataset.isWatched = false;
         }
 
-        if (schemaHistoryId != null && schemaHistoryId > 0)
-        {
-            dataset.hasSchemaHistory = true;
-        }
-        else
-        {
-            dataset.hasSchemaHistory = false;
-        }
+        dataset.hasSchemaHistory = false;
 
         return dataset;
     }
